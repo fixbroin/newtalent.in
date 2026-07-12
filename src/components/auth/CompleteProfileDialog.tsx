@@ -60,18 +60,22 @@ export default function CompleteProfileDialog({
 
   const cleanPhoneNumber = useCallback((value: string, countryCode: string = "+91") => {
     let cleaned = value.trim().replace(/\s+/g, '');
-    const codeWithoutPlus = countryCode.replace('+', '');
     
+    // Case 1: Starts with + (autofill, contact selection, copy-paste format)
     if (cleaned.startsWith('+')) {
       if (cleaned.startsWith(countryCode)) {
         cleaned = cleaned.substring(countryCode.length);
       } else {
         cleaned = cleaned.replace(/^\+\d+/, '');
       }
-    } else if (cleaned.startsWith(codeWithoutPlus) && cleaned.length > 10) {
-      cleaned = cleaned.substring(codeWithoutPlus.length);
+    } 
+    // Case 2: Leading 0 format (starts with 0 and has more than 10 digits)
+    else if (cleaned.startsWith('0') && cleaned.length > 10) {
+      cleaned = cleaned.substring(1);
     }
     
+    // For manual typing (e.g. 91xxxxxxxxxx without + or 0), we do NOT automatically strip 91.
+    // If there is an 11-digit typo, it is preserved so they see the error and correct it.
     return cleaned.replace(/\D/g, '');
   }, []);
 
