@@ -411,7 +411,9 @@ export default function ArtistRegistrationPage() {
             smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort,
             smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail,
             siteName: globalSettings.websiteName || "Newtalent",
-            logoUrl: globalSettings.logoUrl,
+            logoUrl: (globalSettings.logoUrl && globalSettings.logoUrl.startsWith('http'))
+              ? globalSettings.logoUrl
+              : `${getBaseUrl()}${globalSettings.logoUrl ? (globalSettings.logoUrl.startsWith('/') ? globalSettings.logoUrl : '/' + globalSettings.logoUrl) : '/android-chrome-512x512.png'}`,
           };
           try { 
             const result = await sendNewArtistApplicationAdminEmail(emailInput); 

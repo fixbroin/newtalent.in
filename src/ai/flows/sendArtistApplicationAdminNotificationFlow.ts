@@ -28,6 +28,17 @@ const NewArtistApplicationAdminEmailInputSchema = z.object({
   senderEmail: z.string().email().optional().describe("The email address to send from."),
   siteName: z.string().optional(),
   logoUrl: z.string().url().optional(),
+  // Additional details
+  ArtistMobile: z.string().optional(),
+  ArtistGender: z.string().optional(),
+  ArtistExperience: z.string().optional(),
+  ArtistLocation: z.string().optional(),
+  ArtistAge: z.number().optional(),
+  ArtistHeight: z.string().optional(),
+  ArtistWeight: z.string().optional(),
+  ArtistSkinTone: z.string().optional(),
+  ArtistQualification: z.string().optional(),
+  ArtistLanguages: z.string().optional(),
 });
 
 export type NewArtistApplicationAdminEmailInput = z.infer<typeof NewArtistApplicationAdminEmailInputSchema>;
