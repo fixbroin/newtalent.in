@@ -1346,6 +1346,7 @@ export interface ArtistApplication {
   languagesSpokenIds?: string[]; // Array of LanguageOption IDs
   languagesSpokenLabels?: string[]; // Denormalized array of labels
   profilePhotoUrl?: string; // Standard profile photo
+  otherLanguageText?: string; // Custom typed language for "other" option
   faceCloseUpUrl?: string;
   midShotUrl?: string;
   rightProfileUrl?: string;

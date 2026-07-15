@@ -80,7 +80,7 @@ export default function ArtistFeesSetupTab() {
           <CardTitle className="flex items-center"><HandCoins className="mr-2 h-5 w-5"/>Artist Fee Setup</CardTitle>
           <CardDescription>Define the fee structure for Artist payouts.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
+        <CardContent className="space-y-4 p-2"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
       </Card>
     );
   }
@@ -93,7 +93,7 @@ export default function ArtistFeesSetupTab() {
             <CardTitle className="flex items-center"><HandCoins className="mr-2 h-5 w-5"/>Artist Fee Setup</CardTitle>
             <CardDescription>Define the service fee deducted from each Artist's booking payout.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 p-6">
+          <CardContent className="space-y-6 p-2">
             <FormField
               control={form.control}
               name="artistFeeType"

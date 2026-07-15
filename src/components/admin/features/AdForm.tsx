@@ -171,7 +171,7 @@ export default function AdForm({ onSubmit: onSubmitProp, initialData, onCancel, 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-6 overflow-y-auto">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-2 overflow-y-auto">
         <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Ad Name (Internal)</FormLabel><FormControl><Input placeholder="e.g., Summer Sale Banner" {...field} disabled={effectiveIsSubmitting} /></FormControl><FormMessage /></FormItem>)} />
         <FormItem>
           <FormLabel>Ad Image <span className="text-destructive">*</span></FormLabel>
@@ -206,7 +206,7 @@ export default function AdForm({ onSubmit: onSubmitProp, initialData, onCancel, 
         </div>
         <FormField control={form.control} name="isActive" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Ad Active</FormLabel><FormDescription>Enable this ad to be shown.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={effectiveIsSubmitting} /></FormControl></FormItem>)}/>
         
-        <div className="p-6 border-t sticky bottom-0 bg-background flex justify-end space-x-3">
+        <div className="p-2 border-t sticky bottom-0 bg-background flex justify-end space-x-3">
           <Button type="button" variant="outline" onClick={onCancel} disabled={effectiveIsSubmitting}>Cancel</Button>
           <Button type="submit" disabled={effectiveIsSubmitting}>
             {effectiveIsSubmitting && !statusMessage.includes("Uploading") && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

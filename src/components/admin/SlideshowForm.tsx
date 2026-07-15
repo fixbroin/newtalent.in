@@ -290,7 +290,7 @@ export default function SlideshowForm({
 
   return (
     <Form {...form} key={initialData ? `slide-form-${initialData.id}` : 'new-slide-form'}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-6 overflow-y-auto">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-2 overflow-y-auto">
         <FormField control={form.control} name="title" render={({ field }) => (
             <FormItem><FormLabel>Title (Optional)</FormLabel><FormControl><Input placeholder="E.g., Summer Sale" {...field} disabled={effectiveIsSubmitting} /></FormControl><FormMessage /></FormItem>
         )}/>
@@ -419,7 +419,7 @@ export default function SlideshowForm({
             </FormItem>
         )}/>
 
-        <div className="p-6 border-t sticky bottom-0 bg-background flex justify-end space-x-3">
+        <div className="p-2 border-t sticky bottom-0 bg-background flex justify-end space-x-3">
           <Button type="button" variant="outline" onClick={onCancel} disabled={effectiveIsSubmitting}>Cancel</Button>
           <Button type="submit" disabled={effectiveIsSubmitting}>
             {effectiveIsSubmitting && !statusMessage.includes("Uploading") && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

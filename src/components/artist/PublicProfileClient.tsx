@@ -246,7 +246,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                 )}
               </div>
               
-              <div className="p-6">
+              <div className="p-2">
                 <div className="mb-4">
                   <h1 className="text-2xl font-black mb-1">{artist.fullName}</h1>
                   <p className="text-primary font-bold">{artist.workCategoryName}</p>
@@ -364,7 +364,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
           <div className="lg:col-span-2 space-y-8">
             
             {/* Bio Section */}
-            <section className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
+            <section className="bg-card border rounded-3xl p-2 md:p-8 shadow-sm">
               <h2 className="text-xl font-black mb-4 flex items-center gap-2">
                 <UserCircle2 className="w-5 h-5 text-primary" /> About Me
               </h2>
@@ -435,7 +435,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
             {/* Videos Section */}
             {artist.videos && artist.videos.length > 0 && (
-              <section className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
+              <section className="bg-card border rounded-3xl p-2 md:p-8 shadow-sm">
                 <h2 className="text-xl font-black mb-6 flex items-center gap-2">
                   <Video className="w-5 h-5 text-primary" /> Audition & Work Videos
                 </h2>
@@ -465,7 +465,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
             {/* Certificates Section */}
             {artist.certificates && artist.certificates.length > 0 && (
-              <section className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
+              <section className="bg-card border rounded-3xl p-2 md:p-8 shadow-sm">
                 <h2 className="text-xl font-black mb-6 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" /> Certifications & Awards
                 </h2>

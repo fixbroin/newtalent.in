@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import type { ArtistApplication, ArtistControlOptions, LanguageOption, QualificationOption } from '@/types/firestore';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Loader2, User, Mail, Phone, MapPin, BookOpen, Languages, Camera, Image as ImageIcon, Trash2, AlertCircle, ArrowLeft, ChevronRight, Check } from "lucide-react";
+import { Loader2, User, Mail, Phone, MapPin, BookOpen, Languages, Camera, Image as ImageIcon, Trash2, AlertCircle, ArrowLeft, ChevronRight, Check, Info } from "lucide-react";
 import NextImage from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
@@ -49,7 +49,7 @@ const step2PersonalInfoSchema = z.object({
   age: z.coerce.number().min(5, "Must be at least 5.").max(99, "Age seems incorrect."),
   qualificationId: z.string({ required_error: "Please select your qualification." }),
   alternateMobile: z.string().max(15).regex(/^\+?[1-9]\d{1,14}$/, "Invalid alternate phone format.").optional().or(z.literal('')),
-  languagesSpokenIds: z.array(z.string()).min(1, "Select at least one language spoken.").max(5, "Select up to 5 languages."),
+  bio: z.string().max(500, "Bio cannot exceed 500 characters.").optional().or(z.literal('')),
   profilePhotoUrl: z.string().url("Invalid photo URL.").optional().nullable(),
 });
 
@@ -104,12 +104,93 @@ export default function Step2PersonalInfo({
       age: initialData?.age ?? undefined, 
       qualificationId: initialData?.qualificationId || undefined,
       alternateMobile: initialData?.alternateMobile || "",
-      languagesSpokenIds: initialData?.languagesSpokenIds || [],
+      bio: initialData?.bio || "",
       profilePhotoUrl: initialData?.profilePhotoUrl || null,
     },
   });
 
   const watchedPinCode = form.watch('pinCode');
+  const watchedFields = form.watch();
+  const bioManuallyEdited = useRef(!!initialData.bio);
+
+  useEffect(() => {
+    if (bioManuallyEdited.current) return;
+
+    const categoryName = initialData.workCategoryName || "";
+    const experienceLevel = initialData.experienceLevelLabel || "";
+    const gender = initialData.gender || "";
+    const fullName = watchedFields.fullName || "";
+    
+    const parts: string[] = [];
+    
+    if (fullName) {
+      parts.push(`Hello, I am ${fullName}.`);
+    }
+    
+    const descriptionDetails: string[] = [];
+    if (gender) descriptionDetails.push(gender.toLowerCase());
+    if (categoryName) descriptionDetails.push(categoryName);
+    
+    if (descriptionDetails.length > 0) {
+      let intro = `I am a ${descriptionDetails.join(" ")}`;
+      if (experienceLevel) {
+        intro += ` with ${experienceLevel.toLowerCase()} of experience`;
+      }
+      const location = watchedFields.area && watchedFields.city ? `${watchedFields.area}, ${watchedFields.city}` : (watchedFields.city || "");
+      if (location) {
+        intro += `, based in ${location}`;
+      }
+      intro += ".";
+      parts.push(intro);
+    }
+    
+    const physicalStats: string[] = [];
+    if (watchedFields.age) physicalStats.push(`${watchedFields.age} years old`);
+    if (watchedFields.height) physicalStats.push(`${watchedFields.height} cm tall`);
+    if (watchedFields.weight) physicalStats.push(`weighing ${watchedFields.weight} kg`);
+    if (watchedFields.skinTone) physicalStats.push(`with a ${watchedFields.skinTone.toLowerCase()} skin tone`);
+    
+    if (physicalStats.length > 0) {
+      parts.push(`I am ${physicalStats.join(", ")}.`);
+    }
+    
+    const qualificationLabel = controlOptions?.qualificationOptions?.find(q => q.id === watchedFields.qualificationId)?.label;
+    if (qualificationLabel) {
+      parts.push(`I have completed my ${qualificationLabel}.`);
+    }
+    
+    const selectedLangIds = initialData.languagesSpokenIds || [];
+    const standardLangs = controlOptions?.languageOptions
+      .filter(lang => selectedLangIds.includes(lang.id) && lang.id !== 'other')
+      .map(lang => lang.label) || [];
+      
+    if (selectedLangIds.includes('other') && initialData.otherLanguageText) {
+      standardLangs.push(initialData.otherLanguageText);
+    }
+    const languagesList = standardLangs.join(", ");
+      
+    if (languagesList) {
+      parts.push(`I speak ${languagesList}.`);
+    }
+    
+    const generatedBio = parts.join(" ");
+    form.setValue("bio", generatedBio, { shouldValidate: true });
+  }, [
+    watchedFields.fullName,
+    watchedFields.city,
+    watchedFields.area,
+    watchedFields.height,
+    watchedFields.weight,
+    watchedFields.skinTone,
+    watchedFields.age,
+    watchedFields.qualificationId,
+    initialData.workCategoryName,
+    initialData.experienceLevelLabel,
+    initialData.gender,
+    initialData.languagesSpokenIds,
+    initialData.otherLanguageText,
+    controlOptions
+  ]);
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -214,7 +295,7 @@ export default function Step2PersonalInfo({
             age: initialData.age ?? undefined, 
             qualificationId: initialData.qualificationId || undefined,
             alternateMobile: initialData.alternateMobile || "",
-            languagesSpokenIds: initialData.languagesSpokenIds || [],
+            bio: initialData.bio || "",
             profilePhotoUrl: initialData.profilePhotoUrl || null,
         });
         setCurrentImagePreview(initialData.profilePhotoUrl || null);
@@ -222,14 +303,27 @@ export default function Step2PersonalInfo({
   }, [initialData, firestoreUser, user, form, isMounted]);
 
 
-  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      if (file.size > 15 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: "Image must be < 15MB.", variant: "destructive" });
+      let file = event.target.files[0];
+      if (file.size > 50 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
         if (fileInputRef.current) fileInputRef.current.value = "";
         setSelectedFile(null); setCurrentImagePreview(form.getValues('profilePhotoUrl') || initialData.profilePhotoUrl || null); return;
       }
+
+      if (file.size > 1 * 1024 * 1024 && file.type.startsWith('image/')) {
+        setStatusMessage("Compressing image...");
+        try {
+          const { compressImage } = await import('@/lib/imageCompression');
+          file = await compressImage(file);
+        } catch (err) {
+          console.error("Compression error:", err);
+        } finally {
+          setStatusMessage("");
+        }
+      }
+
       setSelectedFile(file); setCurrentImagePreview(URL.createObjectURL(file));
       form.setValue('profilePhotoUrl', null, { shouldValidate: false });
       setShowPhotoError(false);
@@ -289,9 +383,11 @@ export default function Step2PersonalInfo({
     }
     
     const qualification = controlOptions?.qualificationOptions.find(q => q.id === data.qualificationId);
-    const languages = controlOptions?.languageOptions.filter(lang => data.languagesSpokenIds.includes(lang.id));
     const cityName = controlOptions?.cities?.find(c => c.id === data.city)?.name;
     const areaName = controlOptions?.areas?.find(a => a.id === data.area)?.name;
+
+    const selectedLangIds = initialData.languagesSpokenIds || [];
+    const languages = controlOptions?.languageOptions.filter(lang => selectedLangIds.includes(lang.id));
 
     const applicationStepData: Partial<ArtistApplication> = {
       ...data,
@@ -300,13 +396,14 @@ export default function Step2PersonalInfo({
       age: Number(data.age) || undefined, 
       profilePhotoUrl: (finalPhotoUrl as string | undefined) || undefined,
       qualificationLabel: qualification?.label,
-      languagesSpokenLabels: languages?.map(l => l.label),
+      languagesSpokenIds: selectedLangIds,
+      languagesSpokenLabels: languages?.map(l => l.label) || [],
     };
     onNext(applicationStepData, finalPhotoUrl === undefined ? initialData.profilePhotoUrl : finalPhotoUrl);
   };
 
   const displayPreviewUrl = isValidImageSrc(currentImagePreview) ? currentImagePreview : null;
-  const effectiveIsSaving = isSaving || statusMessage.startsWith("Uploading");
+  const effectiveIsSaving = isSaving || statusMessage.startsWith("Uploading") || statusMessage.startsWith("Compressing");
 
 
   if (!controlOptions) {
@@ -538,69 +635,98 @@ export default function Step2PersonalInfo({
             </FormItem>
           )}/>
           
-          <FormItem>
-            <FormLabel className="flex items-center"><Languages className="mr-2 h-4 w-4 text-muted-foreground"/>Languages Spoken (Select at least one) <span className="text-destructive ml-1">*</span></FormLabel>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 border rounded-md max-h-40 overflow-y-auto">
-              {controlOptions.languageOptions.map((language) => (
-                <FormField key={language.id} control={form.control} name="languagesSpokenIds"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-2 space-y-0 p-1.5 rounded hover:bg-accent/50">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value?.includes(language.id)}
-                          onCheckedChange={(checked) => {
-                            return checked
-                              ? field.onChange([...(field.value || []), language.id])
-                              : field.onChange((field.value || []).filter((id) => id !== language.id));
-                          }}
-                          disabled={effectiveIsSaving}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm font-normal cursor-pointer">{language.label}</FormLabel>
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-             <FormMessage>{form.formState.errors.languagesSpokenIds?.message}</FormMessage>
-          </FormItem>
+          <FormField
+            control={form.control}
+            name="bio"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center"><Info className="mr-2 h-4 w-4 text-muted-foreground"/>Bio / About Me</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Briefly describe your professional background..." 
+                    {...field}
+                    onChange={(e) => {
+                      bioManuallyEdited.current = true;
+                      field.onChange(e);
+                    }}
+                    disabled={effectiveIsSaving}
+                    rows={4}
+                  />
+                </FormControl>
+                <FormDescription>Tell us a bit about your work experience and expertise (Autogenerated default template provided, feel free to customize).</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <FormLabel className={cn("flex items-center", showPhotoError && "text-destructive")}>
-                <Camera className="mr-2 h-4 w-4" />Passport Size Profile Photo <span className="text-destructive ml-1">*</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <FormLabel className={cn("text-base font-bold flex items-center", showPhotoError && "text-destructive")}>
+                <Camera className="mr-2 h-5 w-5 text-primary" /> Passport Size Profile Photo <span className="text-destructive ml-1">*</span>
               </FormLabel>
-              {showPhotoError && <Badge variant="destructive" className="h-4 px-1 text-[10px] animate-pulse">REQUIRED</Badge>}
+              {showPhotoError && <Badge variant="destructive" className="h-5 px-2 text-[10px] animate-pulse">REQUIRED</Badge>}
             </div>
-            
-            <div 
-              onClick={() => !effectiveIsSaving && fileInputRef.current?.click()}
-              className={cn(
-                "relative w-32 h-32 rounded-full border-2 transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden mx-auto shadow-sm",
-                showPhotoError ? "border-destructive bg-destructive/5 animate-pulse" : "border-muted-foreground/25 hover:border-primary/50 bg-muted/30"
-              )}
-            >
-              {displayPreviewUrl ? (
-                <>
-                  <NextImage src={displayPreviewUrl} alt="Profile preview" fill className="object-cover" data-ai-hint="person profile" unoptimized={displayPreviewUrl.startsWith('blob:')} sizes="128px"/>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Camera className="h-8 w-8 text-white" />
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-1">
-                  <Camera className={cn("h-10 w-10", showPhotoError ? "text-destructive" : "text-muted-foreground")} />
-                  {showPhotoError && <AlertCircle className="h-5 w-5 text-destructive animate-bounce" />}
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Please upload a clear, professional passport-size photo. Do not upload selfies, casual photos, group photos, or pictures with filters. The photo should show your face clearly facing forward against a plain light background.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4 justify-items-center">
+              {/* Left Side: YOUR PHOTO */}
+              <div className="flex flex-col items-center w-full max-w-[200px]">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Your Photo</span>
+                <div 
+                  onClick={() => !effectiveIsSaving && fileInputRef.current?.click()}
+                  className={cn(
+                    "relative aspect-square w-full rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-muted/30 shadow-sm",
+                    showPhotoError ? "border-destructive bg-destructive/5 animate-pulse" : "border-muted-foreground/25 hover:border-primary/50"
+                  )}
+                >
+                  {displayPreviewUrl ? (
+                    <>
+                      <NextImage src={displayPreviewUrl} alt="Profile preview" fill className="object-cover" data-ai-hint="person profile" unoptimized={displayPreviewUrl.startsWith('blob:')} sizes="200px"/>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="h-8 w-8 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 p-4 text-center">
+                      <Camera className={cn("h-8 w-8 text-muted-foreground", showPhotoError && "text-destructive")} />
+                      <span className="text-[10px] font-bold text-muted-foreground">CLICK TO UPLOAD</span>
+                    </div>
+                  )}
+                  
+                  {uploadProgress !== null && selectedFile && (
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-2">
+                      <Loader2 className="h-6 w-6 text-white animate-spin mb-1" />
+                      <Progress value={uploadProgress} className="h-1 w-10/12 bg-white/20" />
+                      <span className="text-[9px] text-white mt-1 font-bold">{Math.round(uploadProgress)}%</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              {uploadProgress !== null && selectedFile && (
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-2">
-                  <Loader2 className="h-6 w-6 text-white animate-spin mb-1" />
-                  <Progress value={uploadProgress} className="h-1 w-10/12 bg-white/20" />
-                  <span className="text-[9px] text-white mt-1 font-bold">{Math.round(uploadProgress)}%</span>
+                <span className="text-[10px] text-muted-foreground mt-2 text-center">
+                  Max size: 50MB
+                </span>
+              </div>
+
+              {/* Right Side: EXAMPLE / DEMO */}
+              <div className="flex flex-col items-center w-full max-w-[200px]">
+                <span className="text-[11px] font-bold text-green-600 uppercase tracking-wider mb-2 flex items-center">
+                  <Check className="h-3.5 w-3.5 mr-1" /> Example / Demo
+                </span>
+                <div className="relative aspect-square w-full rounded-2xl border border-border overflow-hidden bg-muted shadow-sm">
+                  <NextImage 
+                    src="/indian_passport_demo.png" 
+                    alt="Formal Passport Size Demo" 
+                    fill 
+                    className="object-cover"
+                    sizes="200px"
+                  />
                 </div>
-              )}
+                <span className="text-[10px] text-muted-foreground mt-2 text-center font-medium">
+                  Formal Passport Size
+                </span>
+              </div>
             </div>
 
             <FormControl>
@@ -614,31 +740,15 @@ export default function Step2PersonalInfo({
               />
             </FormControl>
 
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2">
-                <Button 
-                  type="button" 
-                  variant={showPhotoError ? "destructive" : "outline"} 
-                  size="sm" 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={effectiveIsSaving}
-                >
-                  Choose File
-                </Button>
-                {showPhotoError && (
-                  <span className="text-xs font-bold text-destructive animate-pulse flex items-center">
-                    <ArrowLeft className="h-3 w-3 mr-1 animate-bounce" /> THIS FIELD IS REQUIRED
-                  </span>
-                )}
+            {showPhotoError && (
+              <div className="text-center text-xs font-bold text-destructive animate-pulse mt-2 flex items-center justify-center">
+                <ArrowLeft className="h-3 w-3 mr-1 animate-bounce" /> Passport Size Profile Photo is required.
               </div>
-              <span className="text-xs text-muted-foreground">
-                {selectedFile ? selectedFile.name : "PNG, JPG, WEBP (Max 15MB)"}
-              </span>
-            </div>
+            )}
 
             {(displayPreviewUrl || selectedFile) && !showPhotoError && (
-              <div className="flex justify-center">
-                <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} disabled={effectiveIsSaving} className="text-xs text-destructive">
+              <div className="flex justify-center mt-2">
+                <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} disabled={effectiveIsSaving} className="text-xs text-destructive hover:bg-destructive/5">
                   <Trash2 className="h-3 w-3 mr-1" /> Remove Photo
                 </Button>
               </div>

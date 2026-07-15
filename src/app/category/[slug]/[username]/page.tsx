@@ -64,14 +64,30 @@ export async function generateMetadata(
   if (!artist) return { title: 'Artist Not Found | Newtalent' };
 
   const placeholderData = { 
-    serviceName: artist.fullName, 
-    categoryName: artist.workCategoryName,
+    serviceName: artist.fullName || '', 
+    categoryName: artist.workCategoryName || '',
     cityName: artist.city || 'Bangalore'
   };
 
-  const title = replacePlaceholders(seoSettings.servicePageTitlePattern, placeholderData) || `${artist.fullName} | ${artist.workCategoryName} on Newtalent`;
-  const description = replacePlaceholders(seoSettings.servicePageDescriptionPattern, placeholderData) || artist.bio || `View ${artist.fullName}'s professional portfolio and connect with them.`;
-  const keywords = replacePlaceholders(seoSettings.servicePageKeywordsPattern, placeholderData).split(',').map(k => k.trim());
+  const title = replacePlaceholders(seoSettings.servicePageTitlePattern, placeholderData) || `${artist.fullName || ''} | ${artist.workCategoryName || ''} on Newtalent`;
+  const defaultDesc = `View ${artist.fullName || ''}'s professional portfolio. Connect with this verified ${artist.workCategoryName || ''} based in ${artist.city || 'Bangalore'} on Newtalent for film auditions, casting calls, and acting/production jobs.`;
+  const description = replacePlaceholders(seoSettings.servicePageDescriptionPattern, placeholderData) || 
+    (artist.bio ? `${artist.bio.slice(0, 140)}... Connect with this verified ${artist.workCategoryName || ''} in ${artist.city || 'Bangalore'} on Newtalent.` : defaultDesc);
+
+  let keywords = replacePlaceholders(seoSettings.servicePageKeywordsPattern, placeholderData)
+    .split(',')
+    .map(k => k.trim())
+    .filter(k => k);
+  
+  if (keywords.length === 0) {
+    keywords = [
+      artist.fullName || "",
+      artist.workCategoryName || "",
+      `${artist.workCategoryName || ""} in ${artist.city || 'Bangalore'}`,
+      `${artist.workCategoryName || ""} portfolio`,
+      "film auditions", "casting calls", "movie jobs", "newtalent"
+    ];
+  }
   
   // Try to find the best image for sharing
   const rawOgImage = artist.profilePhotoUrl || artist.faceCloseUpUrl || artist.midShotUrl || `/default-image.png`;
@@ -98,7 +114,7 @@ export async function generateMetadata(
         height: 630, 
         alt: artist.fullName 
       }],
-      type: 'website',
+      type: 'profile',
       siteName: seoSettings.siteName || 'Newtalent',
     },
     twitter: {

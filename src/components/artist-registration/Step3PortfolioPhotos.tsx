@@ -62,14 +62,28 @@ export default function Step3PortfolioPhotos({
     backProfile: "Back Full Profile"
   };
 
-  const handleFileChange = (id: string, file: File) => {
-    if (file.size > 15 * 1024 * 1024) {
-      toast({ title: "File Too Large", description: "Image must be < 15MB.", variant: "destructive" });
+  const handleFileChange = async (id: string, file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
       return;
     }
+
+    let processedFile = file;
+    if (file.size > 1 * 1024 * 1024 && file.type.startsWith('image/')) {
+      setIsFormBusy(true);
+      try {
+        const { compressImage } = await import('@/lib/imageCompression');
+        processedFile = await compressImage(file);
+      } catch (err) {
+        console.error("Compression error:", err);
+      } finally {
+        setIsFormBusy(false);
+      }
+    }
+
     setPhotos(prev => ({
       ...prev,
-      [id]: { ...prev[id], file, previewUrl: URL.createObjectURL(file), uploadProgress: null }
+      [id]: { ...prev[id], file: processedFile, previewUrl: URL.createObjectURL(processedFile), uploadProgress: null }
     }));
   };
 

@@ -64,7 +64,7 @@ const SubscriptionPlansDialog: React.FC<SubscriptionPlansDialogProps> = ({ open,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-        <div className="bg-gradient-to-br from-primary/10 via-background to-background p-6 md:p-8">
+        <div className="bg-gradient-to-br from-primary/10 via-background to-background p-2 md:p-8">
           <DialogHeader className="mb-8">
             <div className="flex justify-center mb-4">
               <div className="bg-primary/20 p-3 rounded-full animate-pulse">
@@ -93,7 +93,7 @@ const SubscriptionPlansDialog: React.FC<SubscriptionPlansDialogProps> = ({ open,
                 <div 
                   key={plan.id}
                   className={cn(
-                    "relative flex flex-col bg-card border-2 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]",
+                    "relative flex flex-col bg-card border-2 rounded-3xl p-2 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]",
                     plan.order === 1 ? "border-primary shadow-lg ring-1 ring-primary/20" : "border-border/50"
                   )}
                 >

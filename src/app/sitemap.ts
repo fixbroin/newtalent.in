@@ -5,8 +5,8 @@ import type { FirestoreCategory, ArtistApplication, FirestoreCity, FirestoreArea
 import { getBaseUrl } from '@/lib/config'; 
 import { unstable_cache } from 'next/cache';
 
-export const dynamic = 'force-static'; 
-export const revalidate = false;
+export const dynamic = 'force-dynamic'; 
+export const revalidate = 86400; // Revalidate sitemap every 24 hours
 
 const safeToISOString = (timestamp: Timestamp | undefined | string | Date, fallbackDate: string): string => {
   try {
@@ -36,7 +36,7 @@ async function getSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     '', '/about-us', '/contact-us', '/careers', '/terms-and-conditions',
     '/privacy-policy', '/faq', '/service-disclaimer', '/cancellation-policy', '/damage-and-claims-policy', '/categories', 
-    '/blog', '/sitemap',
+    '/blog', '/sitemap', '/script-writing',
   ];
 
   staticPages.forEach(page => {

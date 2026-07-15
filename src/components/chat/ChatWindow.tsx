@@ -450,7 +450,7 @@ export default function ChatWindow({ onClose, otherUserId, otherUserName, otherU
 
       <CardContent className="p-0 flex-grow overflow-hidden relative bg-background">
         {isChatRestricted && (
-          <div className="absolute inset-0 z-20 bg-background/60 backdrop-blur-[2px] flex items-center justify-center p-6 text-center">
+          <div className="absolute inset-0 z-20 bg-background/60 backdrop-blur-[2px] flex items-center justify-center p-2 text-center">
             <div className="bg-card border shadow-xl rounded-3xl p-8 max-w-sm animate-in zoom-in duration-300">
               <ShieldAlert className="h-12 w-12 text-destructive mx-auto mb-4" />
               <h3 className="text-lg font-bold mb-2">Chat Restricted</h3>

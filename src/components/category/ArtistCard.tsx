@@ -47,27 +47,51 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
   return (
     <div className="bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group">
       {/* Image Section */}
-      <div className="relative aspect-square w-full bg-muted flex items-center justify-center">
-        <AppImage 
-          src={mainImage} 
-          alt={artist.fullName || "Artist"} 
-          fill 
-          className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
-        />
-        {artist.status === 'approved' && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-green-500/90 hover:bg-green-600 text-white border-none backdrop-blur-sm">
-              <CheckCircle className="w-3 h-3 mr-1" /> Verified
-            </Badge>
-          </div>
-        )}
-      </div>
+      {profileUrl ? (
+        <Link href={profileUrl} onClick={handleAboutClick} className="relative aspect-square w-full bg-muted flex items-center justify-center cursor-pointer overflow-hidden">
+          <AppImage 
+            src={mainImage} 
+            alt={artist.fullName || "Artist"} 
+            fill 
+            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
+          />
+          {artist.status === 'approved' && (
+            <div className="absolute top-3 right-3 z-10">
+              <Badge className="bg-green-500/90 hover:bg-green-600 text-white border-none backdrop-blur-sm">
+                <CheckCircle className="w-3 h-3 mr-1" /> Verified
+              </Badge>
+            </div>
+          )}
+        </Link>
+      ) : (
+        <div className="relative aspect-square w-full bg-muted flex items-center justify-center">
+          <AppImage 
+            src={mainImage} 
+            alt={artist.fullName || "Artist"} 
+            fill 
+            className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
+          />
+          {artist.status === 'approved' && (
+            <div className="absolute top-3 right-3">
+              <Badge className="bg-green-500/90 hover:bg-green-600 text-white border-none backdrop-blur-sm">
+                <CheckCircle className="w-3 h-3 mr-1" /> Verified
+              </Badge>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content Section */}
       <div className="p-4 flex flex-col flex-grow">
         <div className="mb-2">
-          <h3 className="font-bold text-lg leading-tight line-clamp-1 text-foreground">
-            {artist.fullName || "New Talent"}
+          <h3 className="font-bold text-lg leading-tight line-clamp-1 text-foreground hover:text-primary transition-colors">
+            {profileUrl ? (
+              <Link href={profileUrl} onClick={handleAboutClick}>
+                {artist.fullName || "New Talent"}
+              </Link>
+            ) : (
+              artist.fullName || "New Talent"
+            )}
           </h3>
           <p className="text-sm text-primary font-medium">{artist.workCategoryName || "Professional"}</p>
         </div>

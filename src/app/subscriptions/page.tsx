@@ -78,7 +78,7 @@ export default function SubscriptionsPage() {
         {/* Current Plan Status */}
         {user && (
           <Card className="mb-12 border-primary/20 bg-primary/5 overflow-hidden shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-2 md:p-8">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-6">
                   <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">

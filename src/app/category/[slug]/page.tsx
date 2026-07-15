@@ -13,6 +13,7 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
 import { serializeFirestoreData } from '@/lib/serializeUtils';
+import { getCategorySeoContent } from '@/lib/categorySeoData';
 
 export const revalidate = false;
 
@@ -141,15 +142,32 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       "name": `${data.category.name} Services`,
       "description": data.category.seo_description || `Professional ${data.category.name} services near you.`,
       "image": schemaImage,
-      "artist": {
+      "provider": {
         "@type": "LocalBusiness",
         "name": "Newtalent"
       }
     };
 
+    const seoContent = getCategorySeoContent(slug, data.category.name);
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": seoContent.faqs.map(faq => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    };
+
     return (
       <>
         <JsonLdScript data={categorySchema} idSuffix={`category-${data.category.id}`} />
+        {seoContent.faqs && seoContent.faqs.length > 0 && (
+          <JsonLdScript data={faqSchema} idSuffix={`faq-category-${data.category.id}`} />
+        )}
         <BreadcrumbSchema items={breadcrumbItems} />
         <CategoryPageClient 
             categorySlug={slug} 

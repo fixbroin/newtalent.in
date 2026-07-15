@@ -115,7 +115,7 @@ export default function SectionsControlTab() {
     return (
       <Card>
         <CardHeader><CardTitle className="flex items-center"><LayoutGrid className="mr-2 h-5 w-5"/>Section Visibility Control</CardTitle><CardDescription>Manage which content sections appear on your homepage.</CardDescription></CardHeader>
-        <CardContent className="space-y-4 p-6"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
+        <CardContent className="space-y-4 p-2"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
       </Card>
     );
   }
@@ -128,7 +128,7 @@ export default function SectionsControlTab() {
             <CardTitle className="flex items-center"><LayoutGrid className="mr-2 h-5 w-5"/>Section Visibility & App Configuration</CardTitle>
             <CardDescription>Toggle homepage sections and global platform behavior.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 p-6">
+          <CardContent className="space-y-6 p-2">
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
                <h3 className="text-sm font-bold flex items-center mb-3 text-primary uppercase tracking-wider"><Sparkles className="mr-2 h-4 w-4"/> Subscription Settings</h3>
                <FormField

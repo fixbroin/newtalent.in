@@ -108,25 +108,52 @@ export default function Step4KycDocuments({
     setAdditionalDocumentsData(initialAddDocs);
   }, [activeAdditionalDocTypes, initialData.additionalDocuments]);
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: (update: (prev: FileUploadState) => FileUploadState) => void
   ) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 15 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: "Image must be < 15MB.", variant: "destructive" });
+      let file = e.target.files[0];
+      if (file.size > 50 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
         e.target.value = ""; return;
       }
+
+      if (file.size > 1 * 1024 * 1024 && file.type.startsWith('image/')) {
+        setIsFormBusy(true);
+        try {
+          const { compressImage } = await import('@/lib/imageCompression');
+          file = await compressImage(file);
+        } catch (err) {
+          console.error("Compression error:", err);
+        } finally {
+          setIsFormBusy(false);
+        }
+      }
+
       setter(prev => ({ ...prev, file: file, previewUrl: URL.createObjectURL(file), uploadProgress: null, originalFileName: file.name }));
     }
   };
 
-  const handleAdditionalDocFileChange = (typeId: string, side: 'front' | 'back', file: File) => {
-    if (file.size > 15 * 1024 * 1024) {
-      toast({ title: "File Too Large", description: "Image must be < 15MB.", variant: "destructive" });
+  const handleAdditionalDocFileChange = async (typeId: string, side: 'front' | 'back', file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
       return;
     }
+
+    let processedFile = file;
+    if (file.size > 1 * 1024 * 1024 && file.type.startsWith('image/')) {
+      setIsFormBusy(true);
+      try {
+        const { compressImage } = await import('@/lib/imageCompression');
+        processedFile = await compressImage(file);
+      } catch (err) {
+        console.error("Compression error:", err);
+      } finally {
+        setIsFormBusy(false);
+      }
+    }
+
     setAdditionalDocumentsData(prev => {
       const current = prev[typeId];
       const sideState = side === 'front' ? current.front : (current.back || { file: null, previewUrl: null, uploadProgress: null });
@@ -134,7 +161,7 @@ export default function Step4KycDocuments({
         ...prev,
         [typeId]: {
           ...current,
-          [side]: { ...sideState, file, previewUrl: URL.createObjectURL(file), uploadProgress: null, originalFileName: file.name }
+          [side]: { ...sideState, file: processedFile, previewUrl: URL.createObjectURL(processedFile), uploadProgress: null, originalFileName: processedFile.name }
         }
       };
     });

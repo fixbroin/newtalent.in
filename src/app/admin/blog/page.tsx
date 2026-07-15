@@ -215,7 +215,7 @@ export default function AdminBlogPage() {
       </Card>
       <Dialog open={isFormOpen} onOpenChange={(open) => { if (!isSubmitting) { setIsFormOpen(open); if (!open) setEditingPost(null); } }}>
         <DialogContent className="w-[90vw] max-w-4xl max-h-[90vh] p-0 flex flex-col">
-          <DialogHeader className="p-6 pb-4 border-b"><DialogTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</DialogTitle></DialogHeader>
+          <DialogHeader className="p-2 pb-4 border-b"><DialogTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</DialogTitle></DialogHeader>
           <BlogForm 
             onSubmit={handleFormSubmit} 
             initialData={editingPost} 

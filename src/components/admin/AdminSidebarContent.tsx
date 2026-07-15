@@ -139,7 +139,7 @@ export default function AdminSidebarContent() {
 
   return (
     <>
-      <SidebarHeader className="p-6 border-b bg-card">
+      <SidebarHeader className="p-2 border-b bg-card">
         <Logo
           logoUrl={globalSettings?.logoUrl}
           websiteName={globalSettings?.websiteName}

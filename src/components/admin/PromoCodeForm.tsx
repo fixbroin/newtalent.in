@@ -145,7 +145,7 @@ export default function PromoCodeForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <div className="p-6 space-y-5">
+        <div className="p-2 space-y-5">
             <FormField
             control={form.control}
             name="code"
@@ -251,7 +251,7 @@ export default function PromoCodeForm({
             </div>
         </div>
         
-        <div className="p-6 border-t bg-background flex flex-col sm:flex-row sm:justify-end gap-3 sticky bottom-0">
+        <div className="p-2 border-t bg-background flex flex-col sm:flex-row sm:justify-end gap-3 sticky bottom-0">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>

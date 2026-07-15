@@ -209,6 +209,7 @@ const Header = () => {
   const baseNavItems = [
     { href: '/', label: 'Home', isProtected: false },
     { href: '/categories', label: 'Categories', isProtected: true },
+    { href: '/script-writing', label: 'Script Writing', isProtected: false },
   ];
 
   const userSpecificNavItems = [

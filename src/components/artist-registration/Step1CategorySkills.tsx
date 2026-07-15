@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import type { ArtistApplication, ArtistControlOptions } from '@/types/firestore';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Loader2, ChevronRight, Check } from "lucide-react";
+import { Loader2, ChevronRight, Check, Languages } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +20,16 @@ const step1CategorySkillsSchema = z.object({
   workCategoryId: z.string({ required_error: "Please select your primary work category." }),
   experienceLevelId: z.string({ required_error: "Please select your experience level." }),
   gender: z.string({ required_error: "Please select your gender." }),
-  bio: z.string().max(500, "Bio cannot exceed 500 characters.").optional().or(z.literal('')),
+  languagesSpokenIds: z.array(z.string()).min(1, "Select at least one language spoken.").max(7, "Select up to 7 languages."),
+  otherLanguageText: z.string().max(50, "Language name cannot exceed 50 characters.").optional().or(z.literal('')),
+}).refine((data) => {
+  if (data.languagesSpokenIds.includes('other') && (!data.otherLanguageText || data.otherLanguageText.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please specify your other language.",
+  path: ["otherLanguageText"],
 });
 
 type Step1FormData = z.infer<typeof step1CategorySkillsSchema>;
@@ -55,7 +65,8 @@ export default function Step1CategorySkills({
       workCategoryId: initialData.workCategoryId || undefined,
       experienceLevelId: initialData.experienceLevelId || undefined,
       gender: initialData.gender || undefined,
-      bio: initialData.bio || "",
+      languagesSpokenIds: initialData.languagesSpokenIds || [],
+      otherLanguageText: initialData.otherLanguageText || "",
     },
   });
 
@@ -83,6 +94,14 @@ export default function Step1CategorySkills({
     const experienceLevel = controlOptions?.experienceLevels.find(e => e.id === data.experienceLevelId);
     const genderLabel = GENDER_OPTIONS.find(opt => opt.id === data.gender)?.label;
 
+    const standardLangIds = data.languagesSpokenIds.filter(id => id !== 'other');
+    const languages = controlOptions?.languageOptions.filter(lang => standardLangIds.includes(lang.id)) || [];
+
+    const labels = languages.map(l => l.label);
+    if (data.languagesSpokenIds.includes('other') && data.otherLanguageText?.trim()) {
+      labels.push(data.otherLanguageText.trim());
+    }
+
     const applicationData: Partial<ArtistApplication> = {
       workCategoryId: data.workCategoryId,
       workCategoryName: category?.name,
@@ -90,7 +109,9 @@ export default function Step1CategorySkills({
       experienceLevelId: data.experienceLevelId,
       experienceLevelLabel: experienceLevel?.label,
       gender: genderLabel || data.gender,
-      bio: data.bio && data.bio.trim() !== "" ? data.bio : undefined,
+      languagesSpokenIds: data.languagesSpokenIds,
+      languagesSpokenLabels: labels,
+      otherLanguageText: data.languagesSpokenIds.includes('other') ? data.otherLanguageText : undefined,
     };
     onNext(applicationData);
   };
@@ -279,25 +300,79 @@ export default function Step1CategorySkills({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="bio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bio / About Me</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Briefly describe your professional background..." 
-                    {...field} 
-                    disabled={isSaving}
-                    rows={4}
-                  />
-                </FormControl>
-                <FormDescription>Tell us a bit about your work experience and expertise.</FormDescription>
-                <FormMessage />
-              </FormItem>
+          <FormItem>
+            <FormLabel className="flex items-center"><Languages className="mr-2 h-4 w-4 text-muted-foreground"/>Languages Spoken (Select at least one) <span className="text-destructive ml-1">*</span></FormLabel>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 border rounded-md max-h-40 overflow-y-auto">
+              {controlOptions.languageOptions.map((language) => (
+                <FormField key={language.id} control={form.control} name="languagesSpokenIds"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0 p-1.5 rounded hover:bg-accent/50">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value?.includes(language.id)}
+                          onCheckedChange={(checked) => {
+                            return checked
+                              ? field.onChange([...(field.value || []), language.id])
+                              : field.onChange((field.value || []).filter((id) => id !== language.id));
+                          }}
+                          disabled={isSaving}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal cursor-pointer">{language.label}</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              ))}
+              
+              {/* Other Language Checkbox */}
+              <FormField control={form.control} name="languagesSpokenIds"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0 p-1.5 rounded hover:bg-accent/50">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value?.includes('other')}
+                        onCheckedChange={(checked) => {
+                          const newValue = checked
+                            ? [...(field.value || []), 'other']
+                            : (field.value || []).filter((id) => id !== 'other');
+                          field.onChange(newValue);
+                          if (!checked) {
+                            form.setValue('otherLanguageText', ''); // Clear it if unchecked
+                          }
+                        }}
+                        disabled={isSaving}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm font-normal cursor-pointer">Other</FormLabel>
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Conditional input for other language */}
+            {form.watch('languagesSpokenIds')?.includes('other') && (
+              <FormField
+                control={form.control}
+                name="otherLanguageText"
+                render={({ field }) => (
+                  <FormItem className="mt-3">
+                    <FormLabel>Please Specify Other Language *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter language name..."
+                        {...field}
+                        disabled={isSaving}
+                        className="bg-background border-border"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+            
+            <FormMessage>{form.formState.errors.languagesSpokenIds?.message}</FormMessage>
+          </FormItem>
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button type="submit" disabled={isSaving}>

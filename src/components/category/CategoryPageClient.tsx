@@ -61,6 +61,7 @@ interface CategoryPageClientProps {
 
 import { sendConnectionRequestEmail } from '@/ai/flows/sendConnectionRequestEmailFlow';
 import { useApplicationConfig } from '@/hooks/useApplicationConfig';
+import { getCategorySeoContent } from '@/lib/categorySeoData';
 
 export default function CategoryPageClient({ 
   categorySlug, 
@@ -77,7 +78,7 @@ export default function CategoryPageClient({
   const { showLoading } = useLoading();
   const { featuresConfig } = useFeaturesConfig();
   const { config: appConfig } = useApplicationConfig();
-
+  
   const isArtist = firestoreUser?.roles?.includes('artist');
 
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function CategoryPageClient({
   }, [user]);
 
   const [category, setCategory] = useState<FirestoreCategory | null>(initialData?.category || null);
+  const seoContent = getCategorySeoContent(categorySlug, category?.name || 'Talent');
   const [artists, setArtists] = useState<ArtistApplication[]>(initialData?.artists || []);
   const [connectionsMap, setConnectionsMap] = useState<Record<string, 'pending' | 'accepted' | 'rejected' | null>>({});
   const [isLoading, setIsLoading] = useState(!initialData);
@@ -492,21 +494,21 @@ export default function CategoryPageClient({
 
       {/* Benefits Section */}
       <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-3xl border shadow-sm">
+        <div className="flex flex-col items-center text-center p-2 bg-card rounded-3xl border shadow-sm">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
             <Sparkles className="w-6 h-6 text-primary" />
           </div>
           <h4 className="font-bold mb-2">Verified Talent</h4>
           <p className="text-sm text-muted-foreground">Every artist on our platform undergoes a rigorous KYC verification process.</p>
         </div>
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-3xl border shadow-sm">
+        <div className="flex flex-col items-center text-center p-2 bg-card rounded-3xl border shadow-sm">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
             <Construction className="w-6 h-6 text-primary" />
           </div>
           <h4 className="font-bold mb-2">Direct Connection</h4>
           <p className="text-sm text-muted-foreground">Skip the middleman. Chat directly with artists to discuss your specific needs.</p>
         </div>
-        <div className="flex flex-col items-center text-center p-6 bg-card rounded-3xl border shadow-sm">
+        <div className="flex flex-col items-center text-center p-2 bg-card rounded-3xl border shadow-sm">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
             <Sparkles className="w-6 h-6 text-primary" />
           </div>
@@ -545,22 +547,62 @@ export default function CategoryPageClient({
       {/* Rich SEO Content Section */}
       <section className="mt-24 pt-16 border-t">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-black tracking-tight">The #1 {category?.name || 'Talent'} Network in {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'India'}</h2>
+          <h2 className="text-3xl font-black tracking-tight">
+            {seoContent.h2Title} {citySlug ? `in ${citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ')}` : ''}
+          </h2>
           <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
             <p>
-              Welcome to Newtalent, the premier professional network for the film and media industry. Our platform is dedicated to connecting top-tier {category?.name.toLowerCase() || 'talent'} with directors, producers, and fellow artists. Whether you are looking for new opportunities in {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Bangalore and across India'}, or seeking the perfect talent for your next project, our closed-loop connection system ensures high-quality interactions.
+              {(() => {
+                if (!citySlug) return seoContent.descriptionHtml;
+                const cityName = citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ');
+                return seoContent.descriptionHtml
+                  .replace(/in India/gi, `in ${cityName}`)
+                  .replace(/India's/gi, `${cityName}'s`)
+                  .replace(/across India/gi, `in ${cityName}`)
+                  .replace(/Indian film/gi, `${cityName} film`);
+              })()}
             </p>
             <p>
-              By joining our network, {category?.name || 'artists'} can build professional portfolios, showcase their work through videos and images, and securely connect with industry leaders. Experience the future of professional cinema networking with our unique "Request & Accept" model, designed to foster trust and meaningful collaborations in the vibrant Indian film ecosystem.
+              By joining the Newtalent network, {category?.name || 'artists'} can build professional portfolios, showcase their work through videos and images, and securely connect with industry leaders. Experience the future of professional cinema networking with our unique "Request & Accept" model, designed to foster trust and meaningful collaborations in the {citySlug ? `${citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ')}` : 'vibrant Indian'} film ecosystem.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Verified Profiles</div>
-            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Secure Connections</div>
-            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Professional Portfolios</div>
+            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Casting Calls</div>
+            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Film Auditions</div>
+            <div className="px-4 py-2 bg-primary/5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/10">Acting Jobs</div>
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      {seoContent.faqs && seoContent.faqs.length > 0 && (
+        <section className="mt-20 pt-16 border-t max-w-3xl mx-auto">
+          <h3 className="text-2xl font-black tracking-tight text-center mb-8">Frequently Asked Questions</h3>
+          <Accordion type="single" collapsible className="w-full">
+            {seoContent.faqs.map((faq, index) => {
+              const formatText = (txt: string) => {
+                if (!citySlug) return txt;
+                const cityName = citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ');
+                return txt
+                  .replace(/in India/gi, `in ${cityName}`)
+                  .replace(/India's/gi, `${cityName}'s`)
+                  .replace(/across India/gi, `in ${cityName}`)
+                  .replace(/Indian film/gi, `${cityName} film`);
+              };
+              return (
+                <AccordionItem key={index} value={`faq-item-${index}`} className="border-primary/10">
+                  <AccordionTrigger className="text-left font-bold text-slate-800 dark:text-slate-200 hover:no-underline">
+                    {formatText(faq.question)}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {formatText(faq.answer)}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </section>
+      )}
     </div>
   );
 }

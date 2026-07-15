@@ -56,7 +56,7 @@ export default function ArtistRegistrationToggleTab() {
           <CardTitle className="flex items-center"><Power className="mr-2 h-5 w-5"/>Artist Registration Access</CardTitle>
           <CardDescription>Control whether new Artists can register.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-6"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
+        <CardContent className="space-y-4 p-2"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
       </Card>
     );
   }
@@ -67,7 +67,7 @@ export default function ArtistRegistrationToggleTab() {
         <CardTitle className="flex items-center"><Power className="mr-2 h-5 w-5"/>Artist Registration Access</CardTitle>
         <CardDescription>Enable or disable the Artist registration form for new applicants.</CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-2">
         <div className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
           <div className="space-y-0.5">
             <label htmlFor="registration-toggle" className="text-base font-medium">

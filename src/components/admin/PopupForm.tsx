@@ -223,7 +223,7 @@ export default function PopupForm({ onSubmit: onSubmitProp, initialData, onCance
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-6 overflow-y-auto">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex-grow space-y-4 p-2 overflow-y-auto">
         <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Internal Popup Name *</FormLabel><FormControl><Input placeholder="e.g., Summer Sale Banner" {...field} disabled={effectiveIsSubmitting} /></FormControl><FormDescription>For admin identification only.</FormDescription><FormMessage /></FormItem>)} />
         
         <FormField control={form.control} name="targetPagesString" render={({ field }) => (

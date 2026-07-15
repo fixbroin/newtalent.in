@@ -230,7 +230,7 @@ export default function ArtistApplicationDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl w-[95vw] sm:w-[90vw] max-h-[90vh] grid grid-rows-[auto_1fr_auto] p-0 overflow-x-hidden">
-        <DialogHeader className="p-4 sm:p-6 border-b flex-shrink-0 w-full max-w-full overflow-hidden">
+        <DialogHeader className="p-4 sm:p-2 border-b flex-shrink-0 w-full max-w-full overflow-hidden">
           <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
             <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
               <AvatarImage src={application.profilePhotoUrl || undefined} alt={application.fullName || "Artist"} />
@@ -245,7 +245,7 @@ export default function ArtistApplicationDetailsModal({
         </DialogHeader>
 
         <div className="overflow-y-auto overflow-x-hidden flex-grow min-h-0">
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-2">
             <Tabs defaultValue="personal" className="w-full">
                 <div className="relative mb-6">
                     <TabsList className="h-11 w-full justify-start gap-1 bg-muted p-1 overflow-x-auto no-scrollbar flex-nowrap rounded-lg">
@@ -413,7 +413,7 @@ export default function ArtistApplicationDetailsModal({
             </div>
         </div>
 
-        <DialogFooter className="p-4 sm:p-6 border-t bg-muted/50 flex flex-col gap-2 sm:gap-0 sm:flex-row sm:justify-between items-center flex-shrink-0">
+        <DialogFooter className="p-4 sm:p-2 border-t bg-muted/50 flex flex-col gap-2 sm:gap-0 sm:flex-row sm:justify-between items-center flex-shrink-0">
           <Button variant="outline" onClick={handleDownloadArtistPdf} disabled={isLoadingStatusUpdate || isDownloadingPdf} className="w-full sm:w-auto order-last sm:order-first">
              {isDownloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>} Download PDF
           </Button>

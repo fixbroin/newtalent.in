@@ -340,7 +340,7 @@ export default function AdminReviewsPage() {
 
       <Dialog open={isFormOpen} onOpenChange={(open) => { if (!isSubmitting) { setIsFormOpen(open); if (!open) setEditingReview(null); } }}>
         <DialogContent className="w-[90vw] max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[90vh] p-0 flex flex-col">
-           <DialogHeader className="p-6 pb-4 border-b bg-background z-10">
+           <DialogHeader className="p-2 pb-4 border-b bg-background z-10">
             <DialogTitle>{editingReview ? 'Edit Review' : 'Add New Review'}</DialogTitle>
             <DialogDescription>
               {editingReview ? `Update details for review by ${editingReview.userName}.` : 'Fill in the details for a new review.'}
@@ -349,12 +349,12 @@ export default function AdminReviewsPage() {
           
           <div className="flex-grow overflow-y-auto">
             {isPrerequisitesLoading ? (
-              <div className="p-6 py-8 text-center flex justify-center items-center">
+              <div className="p-2 py-8 text-center flex justify-center items-center">
                   <Loader2 className="h-6 w-6 animate-spin text-primary"/>
                   <span className="ml-2">Loading artists...</span>
               </div>
             ) : artists.length === 0 && !editingReview ? (
-              <div className="p-6 py-8 text-center">
+              <div className="p-2 py-8 text-center">
                   <p className="text-destructive">Cannot add new reviews because no artists exist.</p>
                   <p className="text-muted-foreground text-sm mt-2">Please approve at least one artist first.</p>
               </div>

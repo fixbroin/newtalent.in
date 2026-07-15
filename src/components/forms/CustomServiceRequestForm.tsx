@@ -318,7 +318,7 @@ export default function CustomServiceRequestForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-2">
         {/* Title */}
         <FormField
           control={form.control}

@@ -7,6 +7,7 @@ import { useApplicationConfig } from '@/hooks/useApplicationConfig';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import JsonLdScript from '@/components/shared/JsonLdScript';
 import { replacePlaceholders } from '@/lib/seoUtils';
 import { doc, getDoc, collection, query, where, limit, getDocs, orderBy, Timestamp, documentId, onSnapshot, addDoc } from 'firebase/firestore';
@@ -281,8 +282,11 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
     const cachedSeoSettings = getCache<FirestoreSEOSettings>('seoSettings');
     const cachedStructuredData = getCache<Record<string, any>>('structuredData');
     
-    if (initialData && !citySlug && !areaSlug) {
+    if (initialData) {
       setPageH1(initialH1Title || initialData.seoSettings.homepageH1);
+      if (initialData.seoSettings) {
+        setSeoSettings(initialData.seoSettings);
+      }
       setIsLoadingPageData(false);
       return;
     }
@@ -647,7 +651,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
               isH1={true}
               subtitle={`Explore verified artists across categories like acting, singing, direction, and more.${citySlug ? ` in ${citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ')}` : ''}${areaSlug ? `, ${areaSlug.charAt(0).toUpperCase() + areaSlug.slice(1).replace(/-/g, ' ')}` : ''}.`}
             />
-            <HomeCategoriesSection />
+            <HomeCategoriesSection initialCategories={initialData?.allCategories} />
             
             <div className="text-center mt-8 md:mt-12">
               <Button
@@ -733,27 +737,91 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
               <h2 className="text-3xl md:text-6xl font-black tracking-tight leading-tight">
                 Building the Future of {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Indian'} Cinema
               </h2>
-              <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed">
+              <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed text-left md:text-center space-y-4">
                 <p>
-                  Newtalent is more than just a casting website; it is a professional social network designed for the pulse of the {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Indian'} film industry. In {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Bangalore and across the country'}, we are connecting directors with dancers, cinematographers with models, and singers with producers through a verified, secure platform.
+                  Newtalent is more than just a casting website or a standard casting agency; it is a professional social network designed for the pulse of the {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Indian'} film industry. In {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Bangalore and across the country'}, we connect directors with dancers, cinematographers with models, and singers with producers through a verified, secure platform.
                 </p>
                 <p>
-                  Our mission is to foster meaningful professional relationships within the cinematic community. By utilizing our advanced "Request & Accept" connection model, we ensure that every interaction on our platform is intentional and high-value. Whether you are an established professional or a rising star, Newtalent provides the tools to showcase your portfolio and grow your industry presence.
+                  Whether you are searching for an <strong>actor near me</strong>, looking for a <strong>female actor Bangalore</strong>, preparing for <strong>child actor auditions</strong>, or building your professional <strong>model portfolio</strong> and <strong>assistant director portfolio</strong>, Newtalent serves as your ultimate digital launchpad. We catalog verified opportunities for <strong>film auditions</strong>, <strong>movie auditions</strong>, <strong>casting calls India</strong>, and <strong>short film actor</strong> bookings.
+                </p>
+                <p>
+                  For film crew and creative specialists, our directory contains verified listings for <strong>assistant director jobs</strong>, <strong>cinematographer Bangalore</strong> profiles, <strong>music director for short film</strong> collaborations, <strong>singers for movies</strong>, <strong>voice over artists</strong>, <strong>screenplay writers</strong>, <strong>lyric writers</strong>, <strong>makeup artists for film</strong>, <strong>video editors freelance</strong>, and <strong>dance choreographers</strong>. We also list roles for <strong>production managers</strong>, <strong>camera operators</strong>, and partners looking for a <strong>casting agency</strong> or <strong>production house</strong>.
+                </p>
+                <p>
+                  Stay ahead with real-time updates on <strong>OTT auditions</strong>, including <strong>Netflix auditions</strong>, <strong>Amazon Prime auditions</strong>, and cinema opportunities across regions including <strong>Telugu movie auditions</strong>, <strong>Kannada auditions</strong>, <strong>Tamil auditions</strong>, <strong>Malayalam auditions</strong>, and <strong>Bollywood auditions</strong>. By utilizing our advanced "Request & Accept" connection model, we ensure that every interaction is intentional, high-value, and secure.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-                 <div className="p-6 bg-white rounded-3xl shadow-sm border border-primary/5">
+                 <div className="p-2 bg-white rounded-3xl shadow-sm border border-primary/5">
                     <p className="text-2xl font-black text-primary mb-1">100%</p>
                     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Verified Artists</p>
                  </div>
-                 <div className="p-6 bg-white rounded-3xl shadow-sm border border-primary/5">
+                 <div className="p-2 bg-white rounded-3xl shadow-sm border border-primary/5">
                     <p className="text-2xl font-black text-primary mb-1">Secure</p>
                     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Privacy First</p>
                  </div>
-                 <div className="p-6 bg-white rounded-3xl shadow-sm border border-primary/5">
+                 <div className="p-2 bg-white rounded-3xl shadow-sm border border-primary/5">
                     <p className="text-2xl font-black text-primary mb-1">No. 1</p>
                     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Growth Network</p>
                  </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Local Casting Directories Footer Index for Dominating Local SEO */}
+        <section className="container mx-auto px-4 mb-20">
+          <div className="border-t pt-16">
+            <h3 className="text-2xl md:text-4xl font-black mb-10 text-center tracking-tight">Top Casting & Audition Directories</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 text-sm">
+              <div>
+                <h4 className="font-extrabold text-foreground mb-4 uppercase tracking-wider text-xs border-b pb-2">Bangalore Auditions</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><Link href="/bangalore/category/male-actor" className="hover:text-primary transition-colors">Male Actor in Bangalore</Link></li>
+                  <li><Link href="/bangalore/category/female-actor" className="hover:text-primary transition-colors">Female Actor Bangalore</Link></li>
+                  <li><Link href="/bangalore/category/model" className="hover:text-primary transition-colors">Model Portfolio Bangalore</Link></li>
+                  <li><Link href="/bangalore/category/assistant-director" className="hover:text-primary transition-colors">Assistant Director Bangalore</Link></li>
+                  <li><Link href="/bangalore/category/cinematographer" className="hover:text-primary transition-colors">Cinematographer Bangalore</Link></li>
+                  <li><Link href="/bangalore/category/child-actor" className="hover:text-primary transition-colors">Child Actor Auditions Bangalore</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-extrabold text-foreground mb-4 uppercase tracking-wider text-xs border-b pb-2">Hyderabad Casting</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><Link href="/hyderabad/category/male-actor" className="hover:text-primary transition-colors">Telugu Movie Auditions</Link></li>
+                  <li><Link href="/hyderabad/category/female-actor" className="hover:text-primary transition-colors">Female Actors Hyderabad</Link></li>
+                  <li><Link href="/hyderabad/category/assistant-director" className="hover:text-primary transition-colors">Assistant Director Hyderabad</Link></li>
+                  <li><Link href="/hyderabad/category/cinematographer" className="hover:text-primary transition-colors">DOPs Hyderabad</Link></li>
+                  <li><Link href="/hyderabad/category/model" className="hover:text-primary transition-colors">Model Portfolios Hyderabad</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-extrabold text-foreground mb-4 uppercase tracking-wider text-xs border-b pb-2">Chennai Film Auditions</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><Link href="/chennai/category/male-actor" className="hover:text-primary transition-colors">Tamil Movie Auditions</Link></li>
+                  <li><Link href="/chennai/category/female-actor" className="hover:text-primary transition-colors">Female Actor Chennai</Link></li>
+                  <li><Link href="/chennai/category/assistant-director" className="hover:text-primary transition-colors">Assistant Directors Chennai</Link></li>
+                  <li><Link href="/chennai/category/dancer" className="hover:text-primary transition-colors">Dance Choreographers</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-extrabold text-foreground mb-4 uppercase tracking-wider text-xs border-b pb-2">Kochi & South Auditions</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><Link href="/kochi/category/male-actor" className="hover:text-primary transition-colors">Malayalam Auditions Kochi</Link></li>
+                  <li><Link href="/kochi/category/female-actor" className="hover:text-primary transition-colors">Female Actor Kochi</Link></li>
+                  <li><Link href="/kochi/category/singer" className="hover:text-primary transition-colors">Playback Singers Kochi</Link></li>
+                  <li><Link href="/kochi/category/music-talent" className="hover:text-primary transition-colors">Music Directors Kochi</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-extrabold text-foreground mb-4 uppercase tracking-wider text-xs border-b pb-2">Bollywood & OTT Casting</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  <li><Link href="/mumbai/category/male-actor" className="hover:text-primary transition-colors">Bollywood Auditions Mumbai</Link></li>
+                  <li><Link href="/mumbai/category/model" className="hover:text-primary transition-colors">Model Casting Mumbai</Link></li>
+                  <li><Link href="/category/male-actor" className="hover:text-primary transition-colors">Netflix Auditions India</Link></li>
+                  <li><Link href="/category/female-actor" className="hover:text-primary transition-colors">Amazon Prime Auditions</Link></li>
+                  <li><Link href="/category/child-actor" className="hover:text-primary transition-colors">OTT Series Auditions</Link></li>
+                </ul>
               </div>
             </div>
           </div>

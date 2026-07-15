@@ -311,17 +311,17 @@ export default function Step5WorkAreaSignature({
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
-          <DialogHeader className="p-6 border-b bg-primary text-primary-foreground">
+          <DialogHeader className="p-2 border-b bg-primary text-primary-foreground">
             <DialogTitle className="text-xl">Artist Terms & Conditions</DialogTitle>
             <DialogDescription className="text-primary-foreground/80">Please read and accept our terms to join the network.</DialogDescription>
           </DialogHeader>
           <div 
             ref={termsScrollRef}
             onScroll={handleScrollTerms}
-            className="flex-grow overflow-y-auto max-h-[60vh] p-6 text-sm leading-relaxed prose prose-sm dark:prose-invert"
+            className="flex-grow overflow-y-auto max-h-[60vh] p-2 text-sm leading-relaxed prose prose-sm dark:prose-invert"
             dangerouslySetInnerHTML={{ __html: termsContent || "<p>Loading terms...</p>" }}
           />
-          <DialogFooter className="p-6 border-t bg-muted/50 flex flex-col gap-3">
+          <DialogFooter className="p-2 border-t bg-muted/50 flex flex-col gap-3">
             <div className="flex items-center space-x-2 text-xs text-muted-foreground italic">
               {!canAgreeTerms && <span>Please scroll to the bottom to enable the Agree button.</span>}
               {canAgreeTerms && <span className="text-green-600 flex items-center gap-1"><Check className="h-3 w-3"/> Content read. You may proceed.</span>}
