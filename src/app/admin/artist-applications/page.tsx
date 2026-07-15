@@ -285,6 +285,12 @@ export default function AdminArtistApplicationsPage() {
               }
             }
 
+            if (appToDelete.certificates && Array.isArray(appToDelete.certificates)) {
+              for (const cert of appToDelete.certificates) {
+                if (cert.url) urlsToDelete.push(cert.url);
+              }
+            }
+
             if (appToDelete.bankDetails) {
               if (appToDelete.bankDetails.cancelledChequeUrl) urlsToDelete.push(appToDelete.bankDetails.cancelledChequeUrl);
             }
