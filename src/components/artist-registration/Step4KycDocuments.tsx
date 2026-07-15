@@ -240,20 +240,27 @@ export default function Step4KycDocuments({
         if (!docData?.front.file && !docData?.front.previewUrl) errors.push(`${type.label} Front Image`);
         if (type.imageCount === 2 && !docData?.back?.file && !docData?.back?.previewUrl) errors.push(`${type.label} Back Image`);
 
-        if (type.docNumberMinLength && docNumber.length < type.docNumberMinLength) {
-            errors.push(`${type.label} Number (Min ${type.docNumberMinLength} chars)`);
-        }
-        if (type.docNumberMaxLength && docNumber.length > type.docNumberMaxLength) {
-            errors.push(`${type.label} Number (Max ${type.docNumberMaxLength} chars)`);
-        }
-        if (type.docNumberType === 'numeric' && !/^\d*$/.test(docNumber)) {
-            errors.push(`${type.label} Number must be digits only`);
-        }
-        if (type.docNumberType === 'alphabetic' && !/^[a-zA-Z]*$/.test(docNumber)) {
-            errors.push(`${type.label} Number must be alphabets only`);
-        }
-        if (type.docNumberType === 'alphanumeric' && !/^[a-zA-Z0-9]*$/.test(docNumber)) {
-            errors.push(`${type.label} Number must be alphanumeric`);
+        if (!docNumber.trim()) {
+            errors.push(`${type.label} Number is required`);
+        } else {
+            const minLen = type.docNumberMinLength !== null && type.docNumberMinLength !== undefined ? Number(type.docNumberMinLength) : null;
+            const maxLen = type.docNumberMaxLength !== null && type.docNumberMaxLength !== undefined ? Number(type.docNumberMaxLength) : null;
+
+            if (minLen !== null && docNumber.length < minLen) {
+                errors.push(`${type.label} Number (Min ${minLen} chars)`);
+            }
+            if (maxLen !== null && docNumber.length > maxLen) {
+                errors.push(`${type.label} Number (Max ${maxLen} chars)`);
+            }
+            if (type.docNumberType === 'numeric' && !/^\d+$/.test(docNumber)) {
+                errors.push(`${type.label} Number must be digits only`);
+            }
+            if (type.docNumberType === 'alphabetic' && !/^[a-zA-Z]+$/.test(docNumber)) {
+                errors.push(`${type.label} Number must be alphabets only`);
+            }
+            if (type.docNumberType === 'alphanumeric' && !/^[a-zA-Z0-9]+$/.test(docNumber)) {
+                errors.push(`${type.label} Number must be alphanumeric`);
+            }
         }
       }
     });
