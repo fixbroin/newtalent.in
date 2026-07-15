@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import type { ArtistApplication, ArtistControlOptions } from '@/types/firestore';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MapPin, Camera, Image as ImageIcon, Trash2, Check, Lock, ChevronRight, AlertCircle, FileText, CheckCircle } from "lucide-react";
+import { Loader2, MapPin, Camera, Image as ImageIcon, Trash2, Check, Lock, ChevronRight, AlertCircle, FileText, CheckCircle, ChevronDown, ChevronsDown } from "lucide-react";
 import NextImage from 'next/image';
 import { useToast } from "@/hooks/use-toast";
 import { storage, db } from '@/lib/firebase';
@@ -315,18 +315,28 @@ export default function Step5WorkAreaSignature({
             <DialogTitle className="text-xl">Artist Terms & Conditions</DialogTitle>
             <DialogDescription className="text-primary-foreground/80">Please read and accept our terms to join the network.</DialogDescription>
           </DialogHeader>
-          <div 
-            ref={termsScrollRef}
-            onScroll={handleScrollTerms}
-            className="flex-grow overflow-y-auto max-h-[60vh] p-2 text-sm leading-relaxed prose prose-sm dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: termsContent || "<p>Loading terms...</p>" }}
-          />
-          <DialogFooter className="p-2 border-t bg-muted/50 flex flex-col gap-3">
+          
+          <div className="relative flex-grow min-h-0 border-b">
+            <div 
+              ref={termsScrollRef}
+              onScroll={handleScrollTerms}
+              className="overflow-y-auto max-h-[60vh] p-4 pr-6 text-sm leading-relaxed prose prose-sm dark:prose-invert select-none"
+              dangerouslySetInnerHTML={{ __html: termsContent || "<p>Loading terms...</p>" }}
+            />
+            {!canAgreeTerms && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-full shadow-lg border border-primary-foreground/10 text-xs font-bold animate-bounce pointer-events-none select-none z-10 opacity-90">
+                <ChevronsDown className="h-4 w-4 animate-pulse" />
+                <span>READ & SCROLL DOWN</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="p-2 bg-muted/50 flex flex-col gap-3">
             <div className="flex items-center space-x-2 text-xs text-muted-foreground italic">
               {!canAgreeTerms && <span>Please scroll to the bottom to enable the Agree button.</span>}
               {canAgreeTerms && <span className="text-green-600 flex items-center gap-1"><Check className="h-3 w-3"/> Content read. You may proceed.</span>}
             </div>
-            <Button onClick={handleAgreeTerms} disabled={!canAgreeTerms} className="w-full">
+            <Button onClick={handleAgreeTerms} disabled={!canAgreeTerms} className="w-full shadow-sm">
               I Agree to the Terms & Conditions
             </Button>
           </DialogFooter>

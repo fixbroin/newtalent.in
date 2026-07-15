@@ -32,45 +32,79 @@ const formatTimestampToReadable = (timestamp?: Timestamp | Date | string): strin
 };
 
 const addSectionTitle = (doc: jsPDF, title: string, yPos: number): number => {
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text(title, 14, yPos);
+  doc.setTextColor(15, 23, 42); // slate-900 primary
+  doc.text(title.toUpperCase(), 14, yPos);
+  
+  // Section underline divider
+  doc.setDrawColor(15, 23, 42); 
+  doc.setLineWidth(0.6);
+  doc.line(14, yPos + 2, 196, yPos + 2);
+  
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  return yPos + 7;
+  doc.setTextColor(0);
+  return yPos + 9;
 };
 
 const addDetail = (doc: jsPDF, label: string, value: string | string[] | undefined | null, yPos: number): number => {
   if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) {
     value = "N/A";
   }
-  const text = `${label}: ${Array.isArray(value) ? value.join(', ') : value}`;
-  const splitText = doc.splitTextToSize(text, 180);
-  doc.text(splitText, 14, yPos);
-  return yPos + (splitText.length * 5);
+  const valueText = Array.isArray(value) ? value.join(', ') : value;
+  const splitValue = doc.splitTextToSize(valueText, 120);
+  const height = Math.max(5, splitValue.length * 5);
+  
+  // Auto page break check inside addDetail
+  const newY = checkAndAddPage(doc, yPos, height + 4);
+
+  const labelText = `${label.toUpperCase()}`;
+
+  // Draw Label (left-aligned, bold, grey, 8pt)
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(100, 116, 139); // Slate-500 text
+  doc.text(labelText, 14, newY + 3);
+
+  // Draw Value (left-aligned at x=70, regular, 10pt)
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(30, 41, 59); // Slate-800 text
+  doc.text(splitValue, 70, newY + 3);
+
+  const lineY = newY + height + 1;
+
+  // Draw thin border line below the detail row
+  doc.setDrawColor(226, 232, 240); // slate-200 border
+  doc.setLineWidth(0.25);
+  doc.line(14, lineY, 196, lineY);
+
+  doc.setTextColor(0); // reset color
+  return lineY + 5; // Return y position for next row
 };
 
 async function getImageDataUri(url: string): Promise<{ dataUri: string; format: string } | null> {
-  if (!url || !url.startsWith('http')) return null;
+  if (!url) return null;
+  if (url.startsWith('data:')) {
+    const mime = url.match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const format = mime.split('/')[1]?.toUpperCase() || 'JPEG';
+    return { dataUri: url, format };
+  }
+  if (!url.startsWith('http')) return null;
   try {
-    const response = await fetch(url);
+    // Route image fetches through local proxy to bypass browser CORS settings
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
     if (!response.ok) {
-      console.warn(`Failed to fetch image from ${url}: ${response.statusText}`);
+      console.warn(`Failed to fetch image proxy from ${proxyUrl}: ${response.statusText}`);
       return null;
     }
-    const blob = await response.blob();
-    const format = blob.type.split('/')[1]?.toUpperCase() || 'JPEG'; // e.g., JPEG, PNG
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve({ dataUri: reader.result as string, format });
-      reader.onerror = (error) => {
-        console.error(`FileReader error for ${url}:`, error);
-        reject(null);
-      };
-      reader.readAsDataURL(blob);
-    });
+    const dataUri = await response.text();
+    const mime = dataUri.match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const format = mime.split('/')[1]?.toUpperCase() || 'JPEG';
+    return { dataUri, format };
   } catch (error) {
-    console.error(`Error fetching or converting image ${url}:`, error);
+    console.error(`Error proxying image ${url}:`, error);
     return null;
   }
 }
@@ -96,8 +130,11 @@ const addImageToPdf = async (
   let newY = currentY;
   if (imageUrl) {
     newY = checkAndAddPage(doc, newY, imageMaxHeightMm + 10); 
-    doc.setFontSize(9);
-    doc.text(label, 14, newY);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(100, 116, 139);
+    doc.text(label.toUpperCase(), 14, newY);
+    doc.setTextColor(0);
     newY += 4;
     const imageData = await getImageDataUri(imageUrl);
     if (imageData) {
@@ -125,8 +162,11 @@ const addImageToPdf = async (
     }
   } else {
     newY = checkAndAddPage(doc, newY, 10);
-    doc.setFontSize(9);
-    doc.text(`${label}: Not provided`, 14, newY);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${label.toUpperCase()}: NOT PROVIDED`, 14, newY);
+    doc.setTextColor(0);
     newY += 5;
   }
   return newY;
@@ -174,7 +214,7 @@ export const generateArtistApplicationPdf = async (
   y += 10;
 
   // Personal Information
-  y = checkAndAddPage(doc, y, 40);
+  y = checkAndAddPage(doc, y, 20);
   y = addSectionTitle(doc, "Personal Information", y);
   if (application.profilePhotoUrl) {
     y = await addImageToPdf(doc, application.profilePhotoUrl, "Profile Photo", y, 30, 30);
@@ -192,21 +232,33 @@ export const generateArtistApplicationPdf = async (
   y = addDetail(doc, "Age", application.age?.toString(), y);
   y = addDetail(doc, "Qualification", application.qualificationLabel, y);
   y = addDetail(doc, "Languages Spoken", application.languagesSpokenLabels, y);
+  if (application.languagesSpokenIds?.includes('other')) {
+    y = addDetail(doc, "Other Language Specified", application.otherLanguageText, y);
+  }
   y += 5;
 
   // Work Information
-  y = checkAndAddPage(doc, y, 30);
+  y = checkAndAddPage(doc, y, 20);
   y = addSectionTitle(doc, "Work Information", y);
   y = addDetail(doc, "Primary Work Category", application.workCategoryName, y);
   y = addDetail(doc, "Experience Level", application.experienceLevelLabel, y);
   y = addDetail(doc, "Gender", application.gender, y);
   if (application.bio) {
     y = checkAndAddPage(doc, y, 15);
-    doc.text("Bio:", 14, y);
-    y += 5;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(100, 116, 139);
+    doc.text("BIO / ABOUT ME", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    y += 4;
     const bioLines = doc.splitTextToSize(application.bio, 180);
     doc.text(bioLines, 14, y);
     y += (bioLines.length * 5) + 5;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, y, 196, y);
+    y += 5;
   }
   y += 5;
 
@@ -230,15 +282,9 @@ export const generateArtistApplicationPdf = async (
   }
 
   if (application.additionalDocuments && application.additionalDocuments.length > 0) {
-    y = checkAndAddPage(doc, y, 15);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Additional Documents:", 14, y);
-    y += 6;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    y = checkAndAddPage(doc, y, 20);
+    y = addSectionTitle(doc, "Additional Documents", y);
     for (const optDoc of application.additionalDocuments) {
-      y = checkAndAddPage(doc, y, 10);
       y = addDetail(doc, optDoc.docLabel || optDoc.docType || "Document", optDoc.docNumber, y);
       y = await addImageToPdf(doc, optDoc.frontImageUrl, `${optDoc.docLabel || optDoc.docType || "Optional Doc"} - Front`, y);
       y = await addImageToPdf(doc, optDoc.backImageUrl, `${optDoc.docLabel || optDoc.docType || "Optional Doc"} - Back`, y);
@@ -248,28 +294,15 @@ export const generateArtistApplicationPdf = async (
   }
   y += 5;
 
-  // Work Location & Bank Details
+  // Work Location & Terms
   y = checkAndAddPage(doc, y, 20);
-  y = addSectionTitle(doc, "Work Location & Bank Details", y);
+  y = addSectionTitle(doc, "Work Location & Terms", y);
   y = addDetail(doc, "Work Area Center", application.workAreaCenter ? `${application.workAreaCenter.latitude.toFixed(4)}, ${application.workAreaCenter.longitude.toFixed(4)}` : "N/A", y);
   y = addDetail(doc, "Service Radius", application.workAreaRadiusKm ? `${application.workAreaRadiusKm} km` : "N/A", y);
-  y += 3; 
-
-  if (application.bankDetails) {
-    const bank = application.bankDetails;
-    y = addDetail(doc, "Bank Name", bank.bankName, y);
-    y = addDetail(doc, "Account Holder", bank.accountHolderName, y);
-    y = addDetail(doc, "Account Number", bank.accountNumber, y);
-    y = addDetail(doc, "IFSC Code", bank.ifscCode, y);
-    y = await addImageToPdf(doc, bank.cancelledChequeUrl, "Cancelled Cheque", y);
-    y = addDetail(doc, "Bank Details Status", bank.verified ? "Verified" : "Pending", y);
-  } else {
-    y = addDetail(doc, "Bank Details", "Not Provided", y);
-  }
-  y += 5;
+  y += 5; 
 
   // Digital Consent & Signature
-  y = checkAndAddPage(doc, y, 65);
+  y = checkAndAddPage(doc, y, 40);
   y = addSectionTitle(doc, "Digital Consent & Agreement", y);
   
   doc.setFontSize(9);
@@ -288,7 +321,6 @@ export const generateArtistApplicationPdf = async (
     y = await addImageToPdf(doc, application.signatureUrl, "Digital Signature", y, 60, 25);
     y += 5;
   }
-
 
   if (application.adminReviewNotes) {
     y = checkAndAddPage(doc, y, 15);

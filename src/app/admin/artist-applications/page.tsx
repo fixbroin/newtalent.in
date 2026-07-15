@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users2, Eye, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, Loader2, PackageSearch, UserCircle } from "lucide-react";
 import type { ArtistApplication, ArtistApplicationStatus, FirestoreNotification } from '@/types/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { triggerPushNotification } from '@/lib/fcmUtils';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, deleteDoc, addDoc, where, getDocs, limit, getDoc } from "firebase/firestore";
+import { ref as storageRef, deleteObject } from "firebase/storage";
  
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -238,11 +239,60 @@ export default function AdminArtistApplicationsPage() {
     }
   };
   
+  const deleteStorageFile = async (url: string | null | undefined) => {
+    if (!url || typeof url !== 'string' || !url.startsWith('http') || !url.includes('firebasestorage.googleapis.com')) {
+      return;
+    }
+    try {
+      const fileRef = storageRef(storage, url);
+      await deleteObject(fileRef);
+    } catch (error) {
+      console.error(`Failed to delete storage file: ${url}`, error);
+    }
+  };
+
   const handleDeleteApplication = async (applicationId: string) => {
     if (!applicationId) return;
     setIsUpdating(applicationId);
     try {
         const appToDelete = applications.find(app => app.id === applicationId);
+        if (appToDelete) {
+            const urlsToDelete: string[] = [];
+
+            if (appToDelete.profilePhotoUrl) urlsToDelete.push(appToDelete.profilePhotoUrl);
+            if (appToDelete.faceCloseUpUrl) urlsToDelete.push(appToDelete.faceCloseUpUrl);
+            if (appToDelete.midShotUrl) urlsToDelete.push(appToDelete.midShotUrl);
+            if (appToDelete.rightProfileUrl) urlsToDelete.push(appToDelete.rightProfileUrl);
+            if (appToDelete.leftProfileUrl) urlsToDelete.push(appToDelete.leftProfileUrl);
+            if (appToDelete.frontProfileUrl) urlsToDelete.push(appToDelete.frontProfileUrl);
+            if (appToDelete.backProfileUrl) urlsToDelete.push(appToDelete.backProfileUrl);
+            if (appToDelete.signatureUrl) urlsToDelete.push(appToDelete.signatureUrl);
+
+            if (appToDelete.aadhaar) {
+              if (appToDelete.aadhaar.frontImageUrl) urlsToDelete.push(appToDelete.aadhaar.frontImageUrl);
+              if (appToDelete.aadhaar.backImageUrl) urlsToDelete.push(appToDelete.aadhaar.backImageUrl);
+            }
+
+            if (appToDelete.pan) {
+              if (appToDelete.pan.frontImageUrl) urlsToDelete.push(appToDelete.pan.frontImageUrl);
+              if (appToDelete.pan.backImageUrl) urlsToDelete.push(appToDelete.pan.backImageUrl);
+            }
+
+            if (appToDelete.additionalDocuments && Array.isArray(appToDelete.additionalDocuments)) {
+              for (const docItem of appToDelete.additionalDocuments) {
+                if (docItem.frontImageUrl) urlsToDelete.push(docItem.frontImageUrl);
+                if (docItem.backImageUrl) urlsToDelete.push(docItem.backImageUrl);
+              }
+            }
+
+            if (appToDelete.bankDetails) {
+              if (appToDelete.bankDetails.cancelledChequeUrl) urlsToDelete.push(appToDelete.bankDetails.cancelledChequeUrl);
+            }
+
+            // Delete all collected files in parallel, allowing successful deletions to continue if individual files are missing.
+            await Promise.allSettled(urlsToDelete.map(deleteStorageFile));
+        }
+
         await deleteDoc(doc(db, Artist_APPLICATION_COLLECTION, applicationId));
 
         // Trigger SmartSync Revalidation
@@ -255,7 +305,7 @@ export default function AdminArtistApplicationsPage() {
             await triggerRefresh(`category-${appToDelete.workCategorySlug}`);
         }
 
-        toast({title: "Success", description: "Artist application deleted."});
+        toast({title: "Success", description: "Artist application and all associated media deleted."});
     } catch (error) {
         toast({title: "Error", description: "Could not delete application.", variant: "destructive"});
     } finally {

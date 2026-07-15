@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCircle, Briefcase, FileText, Banknote, MapPin, Image as ImageIcon, ShieldCheck, CheckCircle, AlertTriangle, XCircle, Loader2, Download, Edit as EditIcon, ExternalLink } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import NextImage from 'next/image';
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -134,6 +134,13 @@ const BankDetailsDisplay: React.FC<{
 };
 
 
+const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex flex-col sm:flex-row py-1.5 border-b border-border/40 gap-1 sm:gap-4 sm:items-start">
+    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground w-full sm:w-56 shrink-0">{label}</span>
+    <span className="text-sm font-medium text-foreground break-all text-left">{value ?? 'N/A'}</span>
+  </div>
+);
+
 export default function ArtistApplicationDetailsModal({
   application,
   isOpen,
@@ -146,6 +153,7 @@ export default function ArtistApplicationDetailsModal({
   const { settings: globalCompanySettings } = useGlobalSettings();
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [verifyingDocType, setVerifyingDocType] = useState<string | null>(null);
+  const [tabsListEl, setTabsListEl] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (application) {
@@ -154,6 +162,62 @@ export default function ArtistApplicationDetailsModal({
       setAdminNotes("");
     }
   }, [application]);
+
+  useEffect(() => {
+    if (!tabsListEl) return;
+
+    let isDown = false;
+    let startX: number;
+    let scrollLeft: number;
+    let hasMoved = false;
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDown = true;
+      startX = e.pageX - tabsListEl.offsetLeft;
+      scrollLeft = tabsListEl.scrollLeft;
+      hasMoved = false;
+    };
+
+    const onMouseLeave = () => {
+      isDown = false;
+    };
+
+    const onMouseUp = () => {
+      isDown = false;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      const x = e.pageX - tabsListEl.offsetLeft;
+      const walk = (x - startX) * 1.8; // scroll speed multiplier
+      if (Math.abs(walk) > 4) {
+        hasMoved = true;
+        e.preventDefault();
+        tabsListEl.scrollLeft = scrollLeft - walk;
+      }
+    };
+
+    const onClick = (e: MouseEvent) => {
+      if (hasMoved) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    tabsListEl.addEventListener('mousedown', onMouseDown);
+    tabsListEl.addEventListener('mouseleave', onMouseLeave);
+    tabsListEl.addEventListener('mouseup', onMouseUp);
+    tabsListEl.addEventListener('mousemove', onMouseMove);
+    tabsListEl.addEventListener('click', onClick, true); // Capture phase blocker
+
+    return () => {
+      tabsListEl.removeEventListener('mousedown', onMouseDown);
+      tabsListEl.removeEventListener('mouseleave', onMouseLeave);
+      tabsListEl.removeEventListener('mouseup', onMouseUp);
+      tabsListEl.removeEventListener('mousemove', onMouseMove);
+      tabsListEl.removeEventListener('click', onClick, true);
+    };
+  }, [tabsListEl]);
 
   if (!application) return null;
 
@@ -229,7 +293,7 @@ export default function ArtistApplicationDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[95vw] sm:w-[90vw] max-h-[90vh] grid grid-rows-[auto_1fr_auto] p-0 overflow-x-hidden">
+      <DialogContent className="max-w-3xl w-[calc(100vw-8px)] sm:w-[90vw] h-[calc(100vh-8px)] max-h-[calc(100vh-8px)] grid grid-rows-[auto_1fr_auto] p-0 overflow-x-hidden border-border/80">
         <DialogHeader className="p-4 sm:p-2 border-b flex-shrink-0 w-full max-w-full overflow-hidden">
           <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
             <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
@@ -246,89 +310,74 @@ export default function ArtistApplicationDetailsModal({
 
         <div className="overflow-y-auto overflow-x-hidden flex-grow min-h-0">
             <div className="p-4 sm:p-2">
-            <Tabs defaultValue="personal" className="w-full">
+            <Tabs defaultValue="step1" className="w-full">
                 <div className="relative mb-6">
-                    <TabsList className="h-11 w-full justify-start gap-1 bg-muted p-1 overflow-x-auto no-scrollbar flex-nowrap rounded-lg">
-                        <TabsTrigger value="personal" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><UserCircle className="mr-1.5 h-4 w-4 shrink-0"/>Personal</TabsTrigger>
-                        <TabsTrigger value="work" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><Briefcase className="mr-1.5 h-4 w-4 shrink-0"/>Work Info</TabsTrigger>
-                        <TabsTrigger value="kyc" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><FileText className="mr-1.5 h-4 w-4 shrink-0"/>KYC Docs</TabsTrigger>
-                        <TabsTrigger value="portfolio" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><ImageIcon className="mr-1.5 h-4 w-4 shrink-0"/>Portfolio</TabsTrigger>
-                        <TabsTrigger value="bank" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><Banknote className="mr-1.5 h-4 w-4 shrink-0"/>Bank & Area</TabsTrigger>
-                        <TabsTrigger value="confirmation" className="px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><EditIcon className="mr-1.5 h-4 w-4 shrink-0"/>Status</TabsTrigger>
+                    <TabsList 
+                      ref={setTabsListEl} 
+                      style={{ scrollbarWidth: 'none' }}
+                      className="h-12 w-full justify-start gap-4 bg-muted p-1 overflow-x-auto select-none flex-nowrap rounded-lg cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
+                    >
+                        <TabsTrigger value="step1" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><Briefcase className="mr-2 h-4 w-4 shrink-0"/>Category & Languages</TabsTrigger>
+                        <TabsTrigger value="step2" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><UserCircle className="mr-2 h-4 w-4 shrink-0"/>Personal Info</TabsTrigger>
+                        <TabsTrigger value="step3" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><ImageIcon className="mr-2 h-4 w-4 shrink-0"/>Portfolio Photos</TabsTrigger>
+                        <TabsTrigger value="step4" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><FileText className="mr-2 h-4 w-4 shrink-0"/>KYC Documents</TabsTrigger>
+                        <TabsTrigger value="step5" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><MapPin className="mr-2 h-4 w-4 shrink-0"/>Location & Terms</TabsTrigger>
                     </TabsList>
                 </div>
 
-                <TabsContent value="personal" className="space-y-3 text-sm focus-visible:outline-none focus-visible:ring-0 mt-0">
-                    <p><strong>Full Name:</strong> {application.fullName || 'N/A'}</p>
-                    <p><strong>Email:</strong> {application.email || 'N/A'}</p>
-                    <p><strong>Mobile:</strong> {application.mobileNumber || 'N/A'}</p>
-                    <p><strong>Alternate Mobile:</strong> {application.alternateMobile || 'N/A'}</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <p><strong>Pin Code:</strong> {application.pinCode || 'N/A'}</p>
-                      <p><strong>City:</strong> {application.city || 'N/A'}</p>
-                      <p><strong>Area:</strong> {application.area || 'N/A'}</p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <p><strong>Height:</strong> {application.height || 'N/A'}</p>
-                      <p><strong>Weight:</strong> {application.weight || 'N/A'}</p>
-                      <p><strong>Skin Tone:</strong> {application.skinTone || 'N/A'}</p>
-                    </div>
-                    <p><strong>Age:</strong> {application.age || 'N/A'}</p>
-                    <p><strong>Qualification:</strong> {application.qualificationLabel || 'N/A'}</p>
-                    <p><strong>Languages Spoken:</strong> {application.languagesSpokenLabels?.join(', ') || 'N/A'}</p>
-                    <p><strong>Submitted:</strong> {formatTimestampToReadable(application.submittedAt || application.createdAt)}</p>
-                </TabsContent>
-
-                <TabsContent value="work" className="space-y-3 text-sm focus-visible:outline-none focus-visible:ring-0">
-                    <p><strong>Category:</strong> {application.workCategoryName || 'N/A'}</p>
-                    <p><strong>Experience:</strong> {application.experienceLevelLabel || 'N/A'}</p>
-                    <p><strong>Gender:</strong> {application.gender || 'N/A'}</p>
-                    <div className="pt-2">
-                        <strong>Bio / About Me:</strong>
-                        <p className="text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-muted/20">
-                            {application.bio || 'No bio provided.'}
-                        </p>
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="kyc" className="space-y-4 text-sm focus-visible:outline-none focus-visible:ring-0">
-                    {(application.aadhaar?.docNumber || application.aadhaar?.frontImageUrl) && (
-                      <KycDocDisplay 
-                          doc={application.aadhaar} 
-                          docName="Aadhaar Card"
-                          onVerify={() => handleVerifyDocument('aadhaar')}
-                          isVerifying={verifyingDocType === 'aadhaar'}
-                      />
-                    )}
-                    {(application.pan?.docNumber || application.pan?.frontImageUrl) && (
-                      <KycDocDisplay 
-                          doc={application.pan} 
-                          docName="PAN Card"
-                          onVerify={() => handleVerifyDocument('pan')}
-                          isVerifying={verifyingDocType === 'pan'}
-                      />
-                    )}
-                    
-                    {application.additionalDocuments && application.additionalDocuments.length > 0 && (
-                        <div className="pt-2">
-                          <h4 className="font-bold text-base mb-3 border-b pb-1">Additional Documents</h4>
-                          <div className="space-y-4">
-                            {application.additionalDocuments.map((doc, idx) => (
-                                <KycDocDisplay 
-                                  key={idx} 
-                                  doc={doc} 
-                                  docName={doc.docLabel || doc.docType || `Additional Document ${idx+1}`}
-                                  onVerify={() => handleVerifyDocument(doc.docType)}
-                                  isVerifying={verifyingDocType === doc.docType}
-                                />
-                            ))}
-                          </div>
-                        </div>
+                <TabsContent value="step1" className="space-y-1 focus-visible:outline-none mt-0">
+                    <DetailRow label="Primary Work Category" value={application.workCategoryName} />
+                    <DetailRow label="Experience Level" value={application.experienceLevelLabel} />
+                    <DetailRow label="Gender" value={application.gender} />
+                    <DetailRow label="Languages Spoken" value={application.languagesSpokenLabels?.join(', ')} />
+                    {application.languagesSpokenIds?.includes('other') && (
+                      <DetailRow label="Other Language Specified" value={application.otherLanguageText} />
                     )}
                 </TabsContent>
 
-                <TabsContent value="portfolio" className="space-y-4 focus-visible:outline-none focus-visible:ring-0">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <TabsContent value="step2" className="space-y-1 focus-visible:outline-none mt-0">
+                    {application.profilePhotoUrl && (
+                      <div className="flex justify-center py-3 border-b border-border/40">
+                        <a 
+                          href={application.profilePhotoUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="block relative h-32 w-32 rounded-xl overflow-hidden border border-border bg-muted shadow-sm hover:opacity-90 transition-opacity cursor-pointer"
+                          title="Click to view full image"
+                        >
+                          <NextImage 
+                            src={application.profilePhotoUrl} 
+                            alt="Profile Photo" 
+                            fill 
+                            className="object-cover"
+                            sizes="128px"
+                          />
+                        </a>
+                      </div>
+                    )}
+                    <DetailRow label="Full Name" value={application.fullName} />
+                    <DetailRow label="Email" value={application.email} />
+                    <DetailRow label="Mobile Number" value={application.mobileNumber} />
+                    <DetailRow label="Alternate Mobile" value={application.alternateMobile || 'N/A'} />
+                    <DetailRow label="Pin Code" value={application.pinCode} />
+                    <DetailRow label="City" value={application.city} />
+                    <DetailRow label="Area" value={application.area} />
+                    <DetailRow label="Height" value={application.height} />
+                    <DetailRow label="Weight" value={application.weight} />
+                    <DetailRow label="Skin Tone" value={application.skinTone} />
+                    <DetailRow label="Age" value={application.age ? `${application.age} YRS` : undefined} />
+                    <DetailRow label="Qualification" value={application.qualificationLabel} />
+                    <DetailRow label="Submitted At" value={formatTimestampToReadable(application.submittedAt || application.createdAt)} />
+                    <div className="py-2 border-b border-border/40 space-y-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bio / About Me</span>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed italic bg-muted/20 p-2.5 rounded-lg border border-border/40">
+                        "{application.bio || 'No bio provided.'}"
+                      </p>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="step3" className="space-y-4 focus-visible:outline-none mt-0">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
                         {[
                             { url: application.faceCloseUpUrl, label: "Face Close-up" },
                             { url: application.midShotUrl, label: "Mid Shot" },
@@ -353,40 +402,65 @@ export default function ArtistApplicationDetailsModal({
                     )}
                 </TabsContent>
 
-                <TabsContent value="bank" className="space-y-4 text-sm focus-visible:outline-none focus-visible:ring-0">
+                <TabsContent value="step4" className="space-y-4 focus-visible:outline-none mt-0">
+                    {(application.aadhaar?.docNumber || application.aadhaar?.frontImageUrl) && (
+                      <KycDocDisplay 
+                          doc={application.aadhaar} 
+                          docName="Aadhaar Card"
+                          onVerify={() => handleVerifyDocument('aadhaar')}
+                          isVerifying={verifyingDocType === 'aadhaar'}
+                      />
+                    )}
+                    {(application.pan?.docNumber || application.pan?.frontImageUrl) && (
+                      <KycDocDisplay 
+                          doc={application.pan} 
+                          docName="PAN Card"
+                          onVerify={() => handleVerifyDocument('pan')}
+                          isVerifying={verifyingDocType === 'pan'}
+                      />
+                    )}
+                    
+                    {application.additionalDocuments && application.additionalDocuments.length > 0 && (
+                        <div className="pt-2">
+                          <h4 className="font-bold text-sm mb-3 border-b pb-1 uppercase tracking-wider text-muted-foreground">Additional Documents</h4>
+                          <div className="space-y-4">
+                            {application.additionalDocuments.map((doc, idx) => (
+                                <KycDocDisplay 
+                                  key={idx} 
+                                  doc={doc} 
+                                  docName={doc.docLabel || doc.docType || `Additional Document ${idx+1}`}
+                                  onVerify={() => handleVerifyDocument(doc.docType)}
+                                  isVerifying={verifyingDocType === doc.docType}
+                                />
+                            ))}
+                          </div>
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="step5" className="space-y-4 focus-visible:outline-none mt-0">
                     <div>
-                        <h4 className="font-semibold mb-1">Work Area:</h4>
-                        <p><strong>Center:</strong> {application.workAreaCenter ? `${application.workAreaCenter.latitude.toFixed(4)}, ${application.workAreaCenter.longitude.toFixed(4)}` : 'N/A'}</p>
-                        <p><strong>Radius:</strong> {application.workAreaRadiusKm ? `${application.workAreaRadiusKm} km` : 'N/A'}</p>
+                        <h4 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2">Work Area & Location:</h4>
+                        <DetailRow label="Work Center Lat/Long" value={application.workAreaCenter ? `${application.workAreaCenter.latitude.toFixed(4)}, ${application.workAreaCenter.longitude.toFixed(4)}` : 'N/A'} />
+                        <DetailRow label="Radius" value={application.workAreaRadiusKm ? `${application.workAreaRadiusKm} km` : 'N/A'} />
                         {application.workAreaCenter && (
-                            <Button variant="link" size="sm" onClick={() => window.open(`https://www.google.com/maps?q=${application.workAreaCenter?.latitude},${application.workAreaCenter?.longitude}`, '_blank')} className="px-0 h-auto">
+                            <Button variant="link" size="sm" onClick={() => window.open(`https://www.google.com/maps?q=${application.workAreaCenter?.latitude},${application.workAreaCenter?.longitude}`, '_blank')} className="px-0 h-auto text-xs">
                                 View on Map <ExternalLink className="ml-1 h-3 w-3"/>
                             </Button>
                         )}
                     </div>
                     <Separator />
                     <div>
-                        <h4 className="font-semibold mb-1">Bank Details:</h4>
-                        <BankDetailsDisplay 
-                            details={application.bankDetails} 
-                            onVerify={() => handleVerifyDocument('bank')}
-                            isVerifying={verifyingDocType === 'bank'}
-                        />
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="confirmation" className="space-y-4 text-sm focus-visible:outline-none focus-visible:ring-0">
-                    <div>
-                        <h4 className="font-semibold mb-1">Terms Confirmation:</h4>
+                        <h4 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2">Terms & Confirmation:</h4>
                         {application.termsConfirmedAt ? (
-                            <p className="flex items-center text-green-600"><CheckCircle className="mr-2 h-4 w-4"/>Confirmed on {formatTimestampToReadable(application.termsConfirmedAt)}</p>
+                            <p className="flex items-center text-xs text-green-600 font-medium"><CheckCircle className="mr-2 h-4 w-4"/>Confirmed on {formatTimestampToReadable(application.termsConfirmedAt)}</p>
                         ) : (
-                            <p className="flex items-center text-destructive"><XCircle className="mr-2 h-4 w-4"/>Not Confirmed</p>
+                            <p className="flex items-center text-xs text-destructive font-medium"><XCircle className="mr-2 h-4 w-4"/>Not Confirmed</p>
                         )}
                     </div>
                      {application.signatureUrl && (
                        <div>
-                          <h4 className="font-semibold mb-1">Signature:</h4>
+                          <h4 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-2">Signature:</h4>
                           <div className="mt-1">
                               <a href={application.signatureUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">View Signature ({application.signatureFileName || 'View Image'})</a>
                               {application.signatureUrl.startsWith('http') && <div className="relative w-48 h-24 mt-1 border rounded bg-white"><NextImage src={application.signatureUrl} alt="Artist Signature" fill className="object-contain p-1"/></div>}
@@ -413,29 +487,61 @@ export default function ArtistApplicationDetailsModal({
             </div>
         </div>
 
-        <DialogFooter className="p-4 sm:p-2 border-t bg-muted/50 flex flex-col gap-2 sm:gap-0 sm:flex-row sm:justify-between items-center flex-shrink-0">
-          <Button variant="outline" onClick={handleDownloadArtistPdf} disabled={isLoadingStatusUpdate || isDownloadingPdf} className="w-full sm:w-auto order-last sm:order-first">
-             {isDownloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>} Download PDF
+        <DialogFooter className="p-2 border-t bg-muted/50 flex flex-col sm:flex-row sm:justify-between items-center gap-2 flex-shrink-0">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownloadArtistPdf} 
+            disabled={isLoadingStatusUpdate || isDownloadingPdf} 
+            className="w-full sm:w-auto h-8 text-xs font-semibold"
+          >
+             {isDownloadingPdf ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin"/> : <Download className="mr-1.5 h-3.5 w-3.5"/>} Download PDF
           </Button>
           
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <DialogClose asChild><Button variant="outline" disabled={isLoadingStatusUpdate} className="w-full sm:w-auto">Close</Button></DialogClose>
-            
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Edit button */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.href = `/artist-registration?editApplicationId=${application.id}`}
+              disabled={isLoadingStatusUpdate} 
+              className="h-8 text-xs border-primary text-primary hover:bg-primary/5 font-semibold"
+            >
+              <EditIcon className="mr-1.5 h-3.5 w-3.5" /> Edit
+            </Button>
+
             {application.status !== 'approved' && (
-                <Button onClick={() => handleStatusAction('approved')} disabled={isLoadingStatusUpdate} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                {isLoadingStatusUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} <CheckCircle className="mr-2 h-4 w-4"/>Approve
+                <Button 
+                  onClick={() => handleStatusAction('approved')} 
+                  disabled={isLoadingStatusUpdate} 
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 h-8 text-xs font-semibold"
+                >
+                  {isLoadingStatusUpdate && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin"/>} <CheckCircle className="mr-1.5 h-3.5 w-3.5"/> Approve
                 </Button>
             )}
             
             {application.status !== 'rejected' && (
-                <Button variant="destructive" onClick={() => handleStatusAction('rejected')} disabled={isLoadingStatusUpdate} className="w-full sm:w-auto">
-                    {isLoadingStatusUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} <XCircle className="mr-2 h-4 w-4"/>Reject
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleStatusAction('rejected')} 
+                  disabled={isLoadingStatusUpdate} 
+                  size="sm"
+                  className="h-8 text-xs font-semibold"
+                >
+                  {isLoadingStatusUpdate && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin"/>} <XCircle className="mr-1.5 h-3.5 w-3.5"/> Reject
                 </Button>
             )}
             
             {application.status !== 'needs_update' && (
-                <Button variant="outline" onClick={() => handleStatusAction('needs_update')} disabled={isLoadingStatusUpdate} className="border-yellow-500 text-yellow-600 hover:bg-yellow-500/10 w-full sm:w-auto">
-                    {isLoadingStatusUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} <AlertTriangle className="mr-2 h-4 w-4"/>Needs Update
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleStatusAction('needs_update')} 
+                  disabled={isLoadingStatusUpdate} 
+                  size="sm"
+                  className="border-yellow-500 text-yellow-600 hover:bg-yellow-500/10 h-8 text-xs font-semibold"
+                >
+                  {isLoadingStatusUpdate && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin"/>} <AlertTriangle className="mr-1.5 h-3.5 w-3.5"/> Needs Update
                 </Button>
             )}
           </div>
