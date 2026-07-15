@@ -62,6 +62,46 @@ export default function Step3PortfolioPhotos({
     backProfile: "Back Full Profile"
   };
 
+  const demoSilhouettes: Record<string, React.ReactNode> = {
+    faceCloseUp: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-6 opacity-[0.14] text-muted-foreground pointer-events-none select-none">
+        <path d="M50 25C40 25 32 32 32 45C32 58 40 68 50 68C60 68 68 58 68 45C68 32 60 25 50 25Z" fill="currentColor"/>
+        <path d="M50 74C35 74 20 82 20 95C20 98 25 105 50 105C75 105 80 98 80 95C80 82 65 74 50 74Z" fill="currentColor"/>
+      </svg>
+    ),
+    midShot: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-4 opacity-[0.14] text-muted-foreground pointer-events-none select-none">
+        <path d="M50 20C42 20 35 27 35 38C35 49 42 58 50 58C58 58 65 49 65 38C65 27 58 20 50 20Z" fill="currentColor"/>
+        <path d="M50 64C28 64 12 76 12 95V115H88V95C88 76 72 64 50 64Z" fill="currentColor"/>
+      </svg>
+    ),
+    rightProfile: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-3 opacity-[0.14] text-muted-foreground pointer-events-none select-none">
+        <path d="M48 20C40 20 34 26 34 36C34 44 38 48 44 51C45 54 44 56 46 58C48 60 52 59 55 58C58 57 59 53 58 50C62 47 64 41 64 36C64 26 56 20 48 20Z" fill="currentColor"/>
+        <path d="M40 64C25 64 14 74 14 90V120H72C70 105 60 78 40 64Z" fill="currentColor"/>
+      </svg>
+    ),
+    leftProfile: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-3 opacity-[0.14] text-muted-foreground pointer-events-none select-none scale-x-[-1]">
+        <path d="M48 20C40 20 34 26 34 36C34 44 38 48 44 51C45 54 44 56 46 58C48 60 52 59 55 58C58 57 59 53 58 50C62 47 64 41 64 36C64 26 56 20 48 20Z" fill="currentColor"/>
+        <path d="M40 64C25 64 14 74 14 90V120H72C70 105 60 78 40 64Z" fill="currentColor"/>
+      </svg>
+    ),
+    frontProfile: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-2 opacity-[0.14] text-muted-foreground pointer-events-none select-none">
+        <path d="M50 12C44 12 39 17 39 25C39 33 44 38 50 38C56 38 61 33 61 25C61 17 56 12 50 12Z" fill="currentColor"/>
+        <path d="M50 43C32 43 22 52 22 66V125H78V66C78 52 68 43 50 43Z" fill="currentColor"/>
+      </svg>
+    ),
+    backProfile: (
+      <svg viewBox="0 0 100 133" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full object-cover p-2 opacity-[0.14] text-muted-foreground pointer-events-none select-none">
+        <path d="M50 12C44 12 39 17 39 25C39 33 44 38 50 38C56 38 61 33 61 25C61 17 56 12 50 12Z" fill="currentColor"/>
+        <path d="M50 43C32 43 22 52 22 66V125H78V66C78 52 68 43 50 43Z" fill="currentColor"/>
+        <path d="M42 25C42 35 45 44 50 44C55 44 58 35 58 25" stroke="#FFFFFF" strokeWidth="1" opacity="0.4"/>
+      </svg>
+    ),
+  };
+
   const handleFileChange = async (id: string, file: File) => {
     if (file.size > 50 * 1024 * 1024) {
       toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
@@ -216,10 +256,13 @@ export default function Step3PortfolioPhotos({
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <Camera className={cn("h-10 w-10", hasError ? "text-destructive" : "text-muted-foreground")} />
-                      {hasError && <AlertCircle className="h-5 w-5 text-destructive animate-bounce" />}
-                    </div>
+                    <>
+                      {demoSilhouettes[id]}
+                      <div className="flex flex-col items-center gap-2 z-10">
+                        <Camera className={cn("h-10 w-10", hasError ? "text-destructive" : "text-muted-foreground/60")} />
+                        {hasError && <AlertCircle className="h-5 w-5 text-destructive animate-bounce" />}
+                      </div>
+                    </>
                   )}
                   
                   {fileState.uploadProgress !== null && (
