@@ -19,33 +19,46 @@ const firebaseConfig = {
 // Initialize Firebase
 let app: FirebaseApp;
 
+const globalForFirebase = globalThis as unknown as {
+  _firebaseApp?: FirebaseApp;
+  _firestoreDb?: Firestore;
+};
+
 if (!firebaseConfig.apiKey) {
   console.error("Firebase API Key from process.env.NEXT_PUBLIC_FIREBASE_API_KEY is undefined or empty.");
   throw new Error("Firebase API key is not set. Please check your environment variables NEXT_PUBLIC_FIREBASE_API_KEY.");
 }
 
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+if (!globalForFirebase._firebaseApp) {
+  if (!getApps().length) {
+    globalForFirebase._firebaseApp = initializeApp(firebaseConfig);
+  } else {
+    globalForFirebase._firebaseApp = getApps()[0];
+  }
 }
+app = globalForFirebase._firebaseApp;
 
 let db: Firestore;
 
-if (typeof window !== "undefined") {
-  try {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    });
-    console.log("[Firestore] Persistent browser cache enabled successfully.");
-  } catch (error) {
-    console.warn("[Firestore] Failed to initialize persistent browser cache, falling back to standard:", error);
+if (globalForFirebase._firestoreDb) {
+  db = globalForFirebase._firestoreDb;
+} else {
+  if (typeof window !== "undefined") {
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      });
+      console.log("[Firestore] Persistent browser cache enabled successfully.");
+    } catch (error) {
+      console.warn("[Firestore] Failed to initialize persistent browser cache, falling back to standard:", error);
+      db = getFirestore(app);
+    }
+  } else {
     db = getFirestore(app);
   }
-} else {
-  db = getFirestore(app);
+  globalForFirebase._firestoreDb = db;
 }
 
 const auth: Auth = getAuth(app);
