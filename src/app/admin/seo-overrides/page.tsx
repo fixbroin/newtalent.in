@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import CitySeoForm from '@/components/admin/CitySeoForm';
+import CityCategorySeoForm from '@/components/admin/CityCategorySeoForm';
+import AreaCategorySeoForm from '@/components/admin/AreaCategorySeoForm';
 import { triggerRefresh, submitPathToGoogleIndexing } from '@/lib/revalidateUtils';
 
 const generateSeoSlug = (parts: (string | undefined)[]): string => {
@@ -416,9 +418,26 @@ export default function SeoOverridesPage() {
                 isSubmitting={isSubmitting} 
               />
             ) : formType === 'cityCategory' ? (
-              <div className="py-8 text-center text-muted-foreground">CityCategorySeoForm Component Missing</div>
+              <CityCategorySeoForm 
+                initialData={editingSetting} 
+                cities={cities} 
+                categories={categories} 
+                existingOverrides={cityCategorySettings}
+                onSubmit={handleCityCategoryFormSubmit} 
+                onCancel={() => setIsFormOpen(false)} 
+                isSubmitting={isSubmitting} 
+              />
             ) : formType === 'areaCategory' ? (
-              <div className="py-8 text-center text-muted-foreground">AreaCategorySeoForm Component Missing</div>
+              <AreaCategorySeoForm 
+                initialData={editingSetting} 
+                cities={cities} 
+                areas={areas} 
+                categories={categories} 
+                existingOverrides={areaCategorySettings}
+                onSubmit={handleAreaCategoryFormSubmit} 
+                onCancel={() => setIsFormOpen(false)} 
+                isSubmitting={isSubmitting} 
+              />
             ) : null}
           </div>
         </DialogContent>

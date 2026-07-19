@@ -62,6 +62,23 @@ export async function getGoogleIndexingToken(): Promise<string> {
   return tokenData.access_token;
 }
 
+import { adminDb } from './firebaseAdmin';
+import { Timestamp } from 'firebase-admin/firestore';
+
+async function logGoogleIndexing(url: string, type: string, status: 'success' | 'failure', errorMsg?: string) {
+  try {
+    await adminDb.collection('googleIndexingLogs').add({
+      url,
+      type,
+      status,
+      error: errorMsg || null,
+      processedDate: Timestamp.now()
+    });
+  } catch (err) {
+    console.error("Failed to write indexing log to Firestore:", err);
+  }
+}
+
 export async function submitToGoogleIndexing(url: string, type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED') {
   try {
     const accessToken = await getGoogleIndexingToken();
@@ -80,14 +97,17 @@ export async function submitToGoogleIndexing(url: string, type: 'URL_UPDATED' | 
     if (!response.ok) {
       const errText = await response.text();
       console.error(`Google Indexing API error for ${url}:`, errText);
+      await logGoogleIndexing(url, type, 'failure', errText);
       return { success: false, error: errText };
     }
 
     const data = await response.json();
     console.log(`[Google Indexing] Successfully submitted URL: ${url} (${type})`);
+    await logGoogleIndexing(url, type, 'success');
     return { success: true, data };
   } catch (error: any) {
     console.error(`[Google Indexing] Exception during submission for ${url}:`, error);
+    await logGoogleIndexing(url, type, 'failure', error.message);
     return { success: false, error: error.message };
   }
 }

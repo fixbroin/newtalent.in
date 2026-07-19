@@ -28,7 +28,7 @@ const safeToISOString = (timestamp: Timestamp | undefined | string | Date, fallb
   }
 };
 
-async function getSitemapEntries(): Promise<MetadataRoute.Sitemap> {
+export async function getSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const appBaseUrl = getBaseUrl(); 
   const entries: MetadataRoute.Sitemap = [];
   const currentDate = new Date().toISOString();

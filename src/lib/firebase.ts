@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
 import { getStorage, type FirebaseStorage } from "firebase/storage"; // Import Firebase Storage
 
@@ -30,7 +30,24 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-const db: Firestore = getFirestore(app);
+let db: Firestore;
+
+if (typeof window !== "undefined") {
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+    console.log("[Firestore] Persistent browser cache enabled successfully.");
+  } catch (error) {
+    console.warn("[Firestore] Failed to initialize persistent browser cache, falling back to standard:", error);
+    db = getFirestore(app);
+  }
+} else {
+  db = getFirestore(app);
+}
+
 const auth: Auth = getAuth(app);
 const storage: FirebaseStorage = getStorage(app); // Initialize Firebase Storage
 

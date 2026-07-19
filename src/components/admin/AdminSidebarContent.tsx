@@ -45,6 +45,7 @@ const navItems = [
 
   { href: '/admin/seo-settings', label: 'Global SEO Patterns', icon: Target },
   { href: '/admin/seo-overrides', label: 'Advanced SEO', icon: Zap },
+  { href: '/admin/google-indexing', label: 'Google Indexing', icon: Globe2 },
   { type: 'separator', label: 'Operations & Finance' },
   { href: '/admin/referral-settings', label: 'Referral System', icon: Handshake },
   
@@ -134,6 +135,7 @@ export default function AdminSidebarContent() {
     '/admin/artist-withdrawals',
     '/admin/reviews',
     '/admin/subscriptions',
+    '/admin/google-indexing',
   ];
 
 
