@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import CitySeoForm from '@/components/admin/CitySeoForm';
 import CityCategorySeoForm from '@/components/admin/CityCategorySeoForm';
 import AreaCategorySeoForm from '@/components/admin/AreaCategorySeoForm';
+import AreaForm from '@/components/admin/AreaForm';
 import { triggerRefresh, submitPathToGoogleIndexing } from '@/lib/revalidateUtils';
 
 const generateSeoSlug = (parts: (string | undefined)[]): string => {
@@ -33,7 +34,7 @@ export default function SeoOverridesPage() {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSetting, setEditingSetting] = useState<any>(null);
-  const [formType, setFormType] = useState<'cityCategory' | 'areaCategory' | 'city' | null>(null);
+  const [formType, setFormType] = useState<'cityCategory' | 'areaCategory' | 'city' | 'area' | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,17 +48,43 @@ export default function SeoOverridesPage() {
     setIsLoading(true);
     try {
       const [catSnap, citySnap, areaSnap, cityCatSeoSnap, areaCatSeoSnap] = await Promise.all([
-        getDocs(query(collection(db, "adminCategories"), orderBy("name"))),
-        getDocs(query(citiesRef, orderBy("name"))),
-        getDocs(query(collection(db, "areas"), orderBy("name"))),
-        getDocs(query(cityCatSeoRef, orderBy("cityName"), orderBy("categoryName"))),
-        getDocs(query(areaCatSeoRef, orderBy("cityName"), orderBy("areaName"), orderBy("categoryName"))),
+        getDocs(collection(db, "adminCategories")),
+        getDocs(citiesRef),
+        getDocs(collection(db, "areas")),
+        getDocs(cityCatSeoRef),
+        getDocs(areaCatSeoRef),
       ]);
-      setCategories(catSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCategory)));
-      setCities(citySnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCity)));
-      setAreas(areaSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreArea)));
-      setCityCategorySettings(cityCatSeoSnap.docs.map(d => ({ ...d.data(), id: d.id } as CityCategorySeoSetting)));
-      setAreaCategorySettings(areaCatSeoSnap.docs.map(d => ({ ...d.data(), id: d.id } as AreaCategorySeoSetting)));
+
+      const fetchedCategories = catSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCategory));
+      fetchedCategories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setCategories(fetchedCategories);
+
+      const fetchedCities = citySnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCity));
+      fetchedCities.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setCities(fetchedCities);
+
+      const fetchedAreas = areaSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreArea));
+      fetchedAreas.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setAreas(fetchedAreas);
+
+      const fetchedCityCat = cityCatSeoSnap.docs.map(d => ({ ...d.data(), id: d.id } as CityCategorySeoSetting));
+      fetchedCityCat.sort((a, b) => {
+        const cityComp = (a.cityName || '').localeCompare(b.cityName || '');
+        if (cityComp !== 0) return cityComp;
+        return (a.categoryName || '').localeCompare(b.categoryName || '');
+      });
+      setCityCategorySettings(fetchedCityCat);
+
+      const fetchedAreaCat = areaCatSeoSnap.docs.map(d => ({ ...d.data(), id: d.id } as AreaCategorySeoSetting));
+      fetchedAreaCat.sort((a, b) => {
+        const cityComp = (a.cityName || '').localeCompare(b.cityName || '');
+        if (cityComp !== 0) return cityComp;
+        const areaComp = (a.areaName || '').localeCompare(b.areaName || '');
+        if (areaComp !== 0) return areaComp;
+        return (a.categoryName || '').localeCompare(b.categoryName || '');
+      });
+      setAreaCategorySettings(fetchedAreaCat);
+
     } catch (error) {
       console.error("Error fetching SEO override data:", error);
       toast({ title: "Error", description: "Could not load SEO override data.", variant: "destructive" });
@@ -71,21 +98,25 @@ export default function SeoOverridesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAddSetting = (type: 'cityCategory' | 'areaCategory' | 'city') => {
+  const handleAddSetting = (type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
     setEditingSetting(null);
     setFormType(type);
     setIsFormOpen(true);
   };
 
-  const handleEditSetting = (setting: any, type: 'cityCategory' | 'areaCategory' | 'city') => {
+  const handleEditSetting = (setting: any, type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
     setEditingSetting(setting);
     setFormType(type);
     setIsFormOpen(true);
   };
 
-  const handleDeleteSetting = async (id: string, type: 'cityCategory' | 'areaCategory' | 'city') => {
+  const handleDeleteSetting = async (id: string, type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
     setIsSubmitting(true);
-    const collectionRef = type === 'cityCategory' ? cityCatSeoRef : type === 'areaCategory' ? areaCatSeoRef : citiesRef;
+    const collectionRef = 
+      type === 'cityCategory' ? cityCatSeoRef : 
+      type === 'areaCategory' ? areaCatSeoRef : 
+      type === 'area' ? collection(db, 'areas') : 
+      citiesRef;
     try {
       if (type === 'city') {
           await updateDoc(doc(citiesRef, id), {
@@ -102,18 +133,22 @@ export default function SeoOverridesPage() {
       await triggerRefresh(type === 'city' ? 'cities' : 'global-cache');
       await triggerRefresh('sitemap');
 
-      toast({ title: "Success", description: "SEO override deleted/reset successfully." });
+      toast({ title: "Success", description: "Deleted successfully." });
       fetchData(); 
     } catch (error) {
-      toast({ title: "Error", description: "Could not delete SEO override.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not delete.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleToggleActive = async (setting: any, type: 'cityCategory' | 'areaCategory' | 'city') => {
+  const handleToggleActive = async (setting: any, type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
     setIsSubmitting(true);
-    const collectionRef = type === 'cityCategory' ? cityCatSeoRef : type === 'areaCategory' ? areaCatSeoRef : citiesRef;
+    const collectionRef = 
+      type === 'cityCategory' ? cityCatSeoRef : 
+      type === 'areaCategory' ? areaCatSeoRef : 
+      type === 'area' ? collection(db, 'areas') : 
+      citiesRef;
     try {
         await updateDoc(doc(collectionRef, setting.id!), { isActive: !setting.isActive, updatedAt: Timestamp.now() });
         
@@ -164,6 +199,57 @@ export default function SeoOverridesPage() {
           }
 
           toast({ title: "Success", description: "City SEO settings saved." });
+          setIsFormOpen(false); 
+          fetchData();
+      } catch (e) {
+          toast({ title: "Error", description: (e as Error).message || "Could not save setting.", variant: "destructive" });
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
+
+  const handleAreaFormSubmit = async (data: any) => {
+      setIsSubmitting(true);
+      const city = cities.find(c => c.id === data.cityId);
+      if (!city) {
+          toast({ title: "Error", description: "Selected parent city not found.", variant: "destructive" });
+          setIsSubmitting(false);
+          return;
+      }
+      
+      try {
+          const payload = {
+              name: data.name,
+              cityId: data.cityId,
+              cityName: city.name,
+              slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+              isActive: data.isActive,
+              updatedAt: Timestamp.now()
+          };
+
+          const areasRef = collection(db, 'areas');
+          if (data.id && data.id !== 'new') {
+              await updateDoc(doc(areasRef, data.id), payload);
+          } else {
+              await addDoc(areasRef, { ...payload, createdAt: Timestamp.now() });
+          }
+          
+          await triggerRefresh('global-cache');
+          await triggerRefresh('sitemap');
+
+          const citySlug = city.slug;
+          const areaSlug = payload.slug;
+          if (citySlug && areaSlug && payload.isActive) {
+            submitPathToGoogleIndexing(`/${citySlug}/${areaSlug}`, 'URL_UPDATED').catch(err => {
+              console.error("Google Indexing error on area save:", err);
+            });
+          } else if (citySlug && areaSlug && !payload.isActive) {
+            submitPathToGoogleIndexing(`/${citySlug}/${areaSlug}`, 'URL_DELETED').catch(err => {
+              console.error("Google Indexing error on area save (inactive):", err);
+            });
+          }
+
+          toast({ title: "Success", description: "Locality / Area saved successfully." });
           setIsFormOpen(false); 
           fetchData();
       } catch (e) {
@@ -314,10 +400,11 @@ export default function SeoOverridesPage() {
         </CardHeader>
       </Card>
       <Tabs defaultValue="city-homepage">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="city-homepage">City Homepages</TabsTrigger>
           <TabsTrigger value="city-category">City-Category SEO</TabsTrigger>
           <TabsTrigger value="area-category">Area-Category SEO</TabsTrigger>
+          <TabsTrigger value="manage-areas">Localities / Areas</TabsTrigger>
         </TabsList>
         <TabsContent value="city-homepage">
           <Card>
@@ -375,7 +462,7 @@ export default function SeoOverridesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>Area-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/[area]/[categorySlug] pages.</CardDescription></div>
-              <Button onClick={() => handleAddSetting('areaCategory')} disabled={isSubmitting || cities.length === 0 || areas.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+              <Button onClick={() => handleAddSetting('areaCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
             </CardHeader>
             <CardContent>
             {areaCategorySettings.length === 0 ? (
@@ -399,16 +486,45 @@ export default function SeoOverridesPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="manage-areas">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div><CardTitle>Localities / Areas Management</CardTitle><CardDescription>Create and manage areas/localities within cities.</CardDescription></div>
+              <Button onClick={() => handleAddSetting('area')} disabled={isSubmitting || cities.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New Area</Button>
+            </CardHeader>
+            <CardContent>
+              {areas.length === 0 ? (
+                 <div className="text-center py-10"><PackageSearch className="mx-auto h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">No Areas/Localities found.</p></div>
+              ) : (
+                <Table>
+                  <TableHeader><TableRow><TableHead>Area Name</TableHead><TableHead>Parent City</TableHead><TableHead>Slug</TableHead><TableHead className="text-center">Active</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {areas.map(area => (
+                      <TableRow key={area.id}>
+                        <TableCell className="font-bold">{area.name}</TableCell>
+                        <TableCell>{area.cityName || cities.find(c => c.id === area.cityId)?.name || 'Unknown'}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">/{area.slug}</TableCell>
+                        <TableCell className="text-center"><Switch checked={area.isActive} onCheckedChange={() => handleToggleActive(area, 'area')} disabled={isSubmitting}/></TableCell>
+                        <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => handleEditSetting(area, 'area')} disabled={isSubmitting}><Edit className="h-4 w-4 mr-2"/>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete locality {area.name}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(area.id!, 'area')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Dialog open={isFormOpen} onOpenChange={(open) => { if (!isSubmitting) { setIsFormOpen(open); if (!open) { setEditingSetting(null); setFormType(null); } }}}>
         <DialogContent className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto p-0">
           <DialogHeader className="p-2 pb-4 border-b">
-            <DialogTitle>{editingSetting ? 'Edit' : 'Add New'} {formType === 'city' ? 'City Homepage' : formType === 'cityCategory' ? 'City-Category' : 'Area-Category'} SEO Setting</DialogTitle>
-            <DialogDescription>Fill in the details for the SEO override.</DialogDescription>
+            <DialogTitle>{editingSetting ? 'Edit' : 'Add New'} {formType === 'city' ? 'City Homepage' : formType === 'area' ? 'Locality / Area' : formType === 'cityCategory' ? 'City-Category' : 'Area-Category'} Setting</DialogTitle>
+            <DialogDescription>Fill in the details below.</DialogDescription>
           </DialogHeader>
           <div className="p-2">
-            {(formType !== 'city' && (cities.length === 0 || categories.length === 0)) || (formType === 'areaCategory' && areas.length === 0) ? (
+            {(formType !== 'city' && formType !== 'area' && (cities.length === 0 || categories.length === 0)) || (formType === 'area' && cities.length === 0) ? (
                  <div className="py-8 text-center"><PackageSearch className="mx-auto h-10 w-10 text-muted-foreground mb-3" /><p className="text-destructive">Cannot add settings: Cities, Categories (and Areas for area-specific) must exist first.</p></div>
             ) : formType === 'city' ? (
               <CitySeoForm 
@@ -437,6 +553,14 @@ export default function SeoOverridesPage() {
                 onSubmit={handleAreaCategoryFormSubmit} 
                 onCancel={() => setIsFormOpen(false)} 
                 isSubmitting={isSubmitting} 
+              />
+            ) : formType === 'area' ? (
+              <AreaForm
+                initialData={editingSetting}
+                cities={cities}
+                onSubmit={handleAreaFormSubmit}
+                onCancel={() => setIsFormOpen(false)}
+                isSubmitting={isSubmitting}
               />
             ) : null}
           </div>

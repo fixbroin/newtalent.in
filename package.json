@@ -8,7 +8,7 @@
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "npx next build",
     "export": "npx next build && npx next export",
-    "start": "PORT=3001 node .next/standalone/server.js",
+    "start": "PORT=3005 node .next/standalone/server.js",
     "lint": "npx eslint .",
     "typecheck": "tsc --noEmit"
   },
