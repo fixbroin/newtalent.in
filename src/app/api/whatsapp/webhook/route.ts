@@ -1,14 +1,13 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebaseAdmin';
 import type { MarketingSettings } from '@/types/firestore';
 
 const getWhatsAppVerifyToken = async (): Promise<string | undefined> => {
   try {
-    const settingsDocRef = doc(db, "webSettings", "marketingConfiguration");
-    const docSnap = await getDoc(settingsDocRef);
-    if (docSnap.exists()) {
+    const settingsDocRef = adminDb.collection("webSettings").doc("marketingConfiguration");
+    const docSnap = await settingsDocRef.get();
+    if (docSnap.exists) {
       const settings = docSnap.data() as MarketingSettings;
       return settings.whatsAppVerifyToken;
     }

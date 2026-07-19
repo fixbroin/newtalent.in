@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebaseAdmin';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { FirestoreVisitorInfoLog } from '@/types/firestore';
 import { headers } from 'next/headers';
 
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       userAgent: userAgent,
     };
 
-    await addDoc(collection(db, 'visitorInfoLogs'), {
+    await adminDb.collection('visitorInfoLogs').add({
       ...visitorLog,
       timestamp: Timestamp.now(),
     });
