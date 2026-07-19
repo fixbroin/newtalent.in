@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { getCategoryFullData } from '@/lib/homepageUtils';
 import { getBaseUrl } from '@/lib/config';
 import { serializeFirestoreData } from '@/lib/serializeUtils';
-import type { FirestoreCity, FirestoreArea, FirestoreCategory, FirestoreSEOSettings } from '@/types/firestore';
+import type { FirestoreCity, FirestoreArea, FirestoreCategory, FirestoreSEOSettings, AreaCategorySeoSetting } from '@/types/firestore';
 import CategoryPageClient from '@/components/category/CategoryPageClient';
 import JsonLdScript from '@/components/shared/JsonLdScript';
 import BreadcrumbSchema from '@/components/shared/BreadcrumbSchema';
@@ -67,6 +67,29 @@ const getCategoryData = cache(async (slug: string): Promise<FirestoreCategory | 
     )();
 });
 
+const getAreaCategorySeoOverride = cache(async (cityId: string, areaId: string, categoryId: string): Promise<AreaCategorySeoSetting | null> => {
+    return unstable_cache(
+        async () => {
+            try {
+                const snapshot = await adminDb.collection('areaCategorySeoSettings')
+                    .where('cityId', '==', cityId)
+                    .where('areaId', '==', areaId)
+                    .where('categoryId', '==', categoryId)
+                    .where('isActive', '==', true)
+                    .limit(1)
+                    .get();
+                if (snapshot.empty) return null;
+                return { id: snapshot.docs[0].id, ...serializeFirestoreData<any>(snapshot.docs[0].data()) } as AreaCategorySeoSetting;
+            } catch (error) {
+                console.error(`Error fetching area-category SEO override:`, error);
+                return null;
+            }
+        },
+        [`area-category-seo-${cityId}-${areaId}-${categoryId}`],
+        { tags: ['global-cache'] }
+    )();
+});
+
 export async function generateMetadata(
     { params }: { params: Promise<{ citySlug: string, areaSlug: string, slug: string }> }
 ): Promise<Metadata> {
@@ -76,13 +99,16 @@ export async function generateMetadata(
     const area = await getAreaData(areaSlug, city.id);
     if (!area) return {};
 
-    const seoSettings = await getGlobalSEOSettings();
+    const [seoSettings, override] = await Promise.all([
+        getGlobalSEOSettings(),
+        getAreaCategorySeoOverride(city.id, area.id, category.id)
+    ]);
     const appBaseUrl = getBaseUrl();
     const placeholderData = { cityName: city.name, areaName: area.name, categoryName: category.name };
 
-    const title = replacePlaceholders(seoSettings.areaCategoryPageTitlePattern, placeholderData) || `${category.name} in ${area.name}, ${city.name} | Newtalent`;
-    const description = replacePlaceholders(seoSettings.areaCategoryPageDescriptionPattern, placeholderData) || `Professional ${category.name} in ${area.name}, ${city.name}.`;
-    const keywords = (replacePlaceholders(seoSettings.areaCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
+    const title = override?.meta_title || replacePlaceholders(seoSettings.areaCategoryPageTitlePattern, placeholderData) || `${category.name} in ${area.name}, ${city.name} | Newtalent`;
+    const description = override?.meta_description || replacePlaceholders(seoSettings.areaCategoryPageDescriptionPattern, placeholderData) || `Professional ${category.name} in ${area.name}, ${city.name}.`;
+    const keywords = (override?.meta_keywords || replacePlaceholders(seoSettings.areaCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
 
     return {
         title,
@@ -112,7 +138,15 @@ export default async function AreaCategoryPage({ params }: { params: Promise<{ c
     const area = await getAreaData(areaSlug, city.id);
     if (!area) notFound();
 
-    const fullCategoryData = await getCategoryFullData(slug);
+    const [fullCategoryData, seoSettings, override] = await Promise.all([
+        getCategoryFullData(slug),
+        getGlobalSEOSettings(),
+        getAreaCategorySeoOverride(city.id, area.id, categoryData.id)
+    ]);
+
+    const placeholderData = { cityName: city.name, areaName: area.name, categoryName: categoryData.name };
+    const h1Title = override?.h1_title || replacePlaceholders(seoSettings.areaCategoryPageH1Pattern, placeholderData) || `Top ${categoryData.name} in ${area.name}, ${city.name}`;
+
     const breadcrumbItems = [
         { label: 'Home', href: '/' },
         { label: city.name, href: `/${citySlug}` },
@@ -147,6 +181,7 @@ export default async function AreaCategoryPage({ params }: { params: Promise<{ c
                 areaSlug={areaSlug}
                 breadcrumbItems={breadcrumbItems} 
                 initialData={fullCategoryData || undefined}
+                initialH1Title={h1Title}
             />
         </>
     );

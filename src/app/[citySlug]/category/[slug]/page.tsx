@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { getCategoryFullData } from '@/lib/homepageUtils';
 import { getBaseUrl } from '@/lib/config';
 import { serializeFirestoreData } from '@/lib/serializeUtils';
-import type { FirestoreCity, FirestoreCategory, FirestoreSEOSettings } from '@/types/firestore';
+import type { FirestoreCity, FirestoreCategory, FirestoreSEOSettings, CityCategorySeoSetting } from '@/types/firestore';
 import CategoryPageClient from '@/components/category/CategoryPageClient';
 import JsonLdScript from '@/components/shared/JsonLdScript';
 import BreadcrumbSchema from '@/components/shared/BreadcrumbSchema';
@@ -50,6 +50,28 @@ const getCategoryData = cache(async (slug: string): Promise<FirestoreCategory | 
     )();
 });
 
+const getCityCategorySeoOverride = cache(async (cityId: string, categoryId: string): Promise<CityCategorySeoSetting | null> => {
+    return unstable_cache(
+        async () => {
+            try {
+                const snapshot = await adminDb.collection('cityCategorySeoSettings')
+                    .where('cityId', '==', cityId)
+                    .where('categoryId', '==', categoryId)
+                    .where('isActive', '==', true)
+                    .limit(1)
+                    .get();
+                if (snapshot.empty) return null;
+                return { id: snapshot.docs[0].id, ...serializeFirestoreData<any>(snapshot.docs[0].data()) } as CityCategorySeoSetting;
+            } catch (error) {
+                console.error(`Error fetching city-category SEO override:`, error);
+                return null;
+            }
+        },
+        [`city-category-seo-${cityId}-${categoryId}`],
+        { tags: ['global-cache'] }
+    )();
+});
+
 export async function generateMetadata(
     { params }: { params: Promise<{ citySlug: string, slug: string }> }
 ): Promise<Metadata> {
@@ -57,14 +79,17 @@ export async function generateMetadata(
     const [city, category] = await Promise.all([getCityData(citySlug), getCategoryData(slug)]);
     if (!city || !category) return {};
 
-    const seoSettings = await getGlobalSEOSettings();
+    const [seoSettings, override] = await Promise.all([
+        getGlobalSEOSettings(),
+        getCityCategorySeoOverride(city.id, category.id)
+    ]);
     const appBaseUrl = getBaseUrl();
     const placeholderData = { cityName: city.name, categoryName: category.name };
 
     // Use specific city-category override if exists, or global pattern
-    const title = replacePlaceholders(seoSettings.cityCategoryPageTitlePattern, placeholderData) || `${category.name} in ${city.name} | Newtalent`;
-    const description = replacePlaceholders(seoSettings.cityCategoryPageDescriptionPattern, placeholderData) || `Find and hire top ${category.name} in ${city.name}.`;
-    const keywords = (replacePlaceholders(seoSettings.cityCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
+    const title = override?.meta_title || replacePlaceholders(seoSettings.cityCategoryPageTitlePattern, placeholderData) || `${category.name} in ${city.name} | Newtalent`;
+    const description = override?.meta_description || replacePlaceholders(seoSettings.cityCategoryPageDescriptionPattern, placeholderData) || `Find and hire top ${category.name} in ${city.name}.`;
+    const keywords = (override?.meta_keywords || replacePlaceholders(seoSettings.cityCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
 
     return {
         title,
@@ -94,7 +119,15 @@ export default async function CityCategoryPage({ params }: { params: Promise<{ c
         notFound();
     }
 
-    const fullCategoryData = await getCategoryFullData(slug);
+    const [fullCategoryData, seoSettings, override] = await Promise.all([
+        getCategoryFullData(slug),
+        getGlobalSEOSettings(),
+        getCityCategorySeoOverride(city.id, categoryData.id)
+    ]);
+
+    const placeholderData = { cityName: city.name, categoryName: categoryData.name };
+    const h1Title = override?.h1_title || replacePlaceholders(seoSettings.cityCategoryPageH1Pattern, placeholderData) || `Top ${categoryData.name} in ${city.name}`;
+
     const appBaseUrl = getBaseUrl();
     const breadcrumbItems = [
         { label: 'Home', href: '/' },
@@ -127,6 +160,7 @@ export default async function CityCategoryPage({ params }: { params: Promise<{ c
                 citySlug={citySlug}
                 breadcrumbItems={breadcrumbItems} 
                 initialData={fullCategoryData || undefined}
+                initialH1Title={h1Title}
             />
         </>
     );
