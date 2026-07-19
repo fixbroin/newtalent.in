@@ -26,24 +26,28 @@ const PageViewTracker = () => {
   
   const { settings: marketingSettings, isLoading: isLoadingMarketingSettings } = useMarketingSettings();
   const { user, isLoading: isLoadingAuth } = useAuth();
-  const initialLogDoneRef = useRef(false);
+  const lastLoggedUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isVisitorBot || isLoadingMarketingSettings || isLoadingAuth || initialLogDoneRef.current) {
+    if (isVisitorBot || isLoadingMarketingSettings || isLoadingAuth) {
       return;
     }
 
     const fullUrl = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
 
     // Exclude admin, Artist, API routes, and common static file extensions from logging
-    const excludedPrefixes = ['/admin', '/artist', '/api/', '/_next/', '/firebase-messaging-sw.js'];
+    const excludedPrefixes = ['/admin', '/api/', '/_next/', '/firebase-messaging-sw.js'];
     const excludedExtensions = ['.ico', '.png', '.jpg', '.jpeg', '.svg', '.webmanifest', '.xml', '.txt'];
     if (excludedPrefixes.some(prefix => pathname.startsWith(prefix)) || 
         excludedExtensions.some(ext => pathname.endsWith(ext))) {
       return;
     }
     
-    initialLogDoneRef.current = true; // Mark that we're attempting the initial log for this mount/load
+    // Prevent duplicate logs for the same page view
+    if (lastLoggedUrlRef.current === fullUrl) {
+      return;
+    }
+    lastLoggedUrlRef.current = fullUrl;
 
     // Log page view to Firestore via UserActivity logger
     const guestId = !user ? getGuestId() : null;
@@ -89,14 +93,6 @@ const PageViewTracker = () => {
         page_title: typeof document !== 'undefined' ? document.title : undefined,
       });
     }
-    
-    // Reset ref for next route change after a short delay to handle potential fast navigations
-    // This component might remount or its dependencies might change for a new "page".
-    // A more robust solution for SPA page views might involve a listener on router events.
-    const timer = setTimeout(() => {
-        initialLogDoneRef.current = false;
-    }, 500); 
-    return () => clearTimeout(timer);
 
   }, [pathname, searchParams, marketingSettings, isLoadingMarketingSettings, user, isLoadingAuth]);
 
