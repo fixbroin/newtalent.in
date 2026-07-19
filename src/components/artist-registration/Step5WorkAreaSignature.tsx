@@ -207,9 +207,18 @@ export default function Step5WorkAreaSignature({
 
   const effectiveIsSaving = isSaving;
   
+  const handleInvalid = () => {
+    setTimeout(() => {
+      const firstErrorEl = document.querySelector('[aria-invalid="true"], .border-destructive, .text-destructive');
+      if (firstErrorEl) {
+        firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <form onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}>
         <CardContent className="space-y-6">
           <Card className="p-4 border bg-muted/10 shadow-sm">
             <CardHeader className="p-0 pb-3">

@@ -127,9 +127,18 @@ export default function Step1CategorySkills({
     );
   }
 
+  const handleInvalid = () => {
+    setTimeout(() => {
+      const firstErrorEl = document.querySelector('[aria-invalid="true"], .border-destructive, .text-destructive');
+      if (firstErrorEl) {
+        firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit, handleInvalid)} className="space-y-6">
         <CardContent className="space-y-4">
           
           {/* Work Category Popup */}

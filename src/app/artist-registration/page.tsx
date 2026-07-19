@@ -414,6 +414,16 @@ export default function ArtistRegistrationPage() {
             logoUrl: (globalSettings.logoUrl && globalSettings.logoUrl.startsWith('http'))
               ? globalSettings.logoUrl
               : `${getBaseUrl()}${globalSettings.logoUrl ? (globalSettings.logoUrl.startsWith('/') ? globalSettings.logoUrl : '/' + globalSettings.logoUrl) : '/android-chrome-512x512.png'}`,
+            ArtistMobile: completeFinalData.mobileNumber || "N/A",
+            ArtistGender: completeFinalData.gender || "N/A",
+            ArtistExperience: completeFinalData.experienceLevelLabel || "N/A",
+            ArtistLocation: completeFinalData.city && completeFinalData.area ? `${completeFinalData.area}, ${completeFinalData.city}` : (completeFinalData.city || completeFinalData.area || "N/A"),
+            ArtistAge: completeFinalData.age || undefined,
+            ArtistHeight: completeFinalData.height || "N/A",
+            ArtistWeight: completeFinalData.weight || "N/A",
+            ArtistSkinTone: completeFinalData.skinTone || "N/A",
+            ArtistQualification: completeFinalData.qualificationLabel || "N/A",
+            ArtistLanguages: completeFinalData.languagesSpokenLabels?.join(', ') || "N/A",
           };
           try { 
             const result = await sendNewArtistApplicationAdminEmail(emailInput); 

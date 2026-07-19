@@ -188,6 +188,12 @@ export default function Step3PortfolioPhotos({
     if (errors.length > 0) {
       setValidationErrors(errors);
       toast({ title: "Validation Error", description: "Close-up Face photo is required.", variant: "destructive" });
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('.border-destructive, .text-destructive, [aria-invalid="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
       return;
     }
 

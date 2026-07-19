@@ -128,6 +128,7 @@ const newArtistApplicationAdminEmailFlow = ai.defineFlow(
         smtpHost, smtpPort, smtpUser, smtpPass, senderEmail,
         applicationId, ArtistName, ArtistEmail, ArtistCategory, applicationUrl,
         siteName = "Newtalent", logoUrl,
+        ArtistMobile, ArtistGender, ArtistExperience, ArtistLocation, ArtistAge, ArtistHeight, ArtistWeight, ArtistSkinTone, ArtistQualification, ArtistLanguages
       } = details;
 
       const adminEmail = "fixbro.in@gmail.com";
@@ -136,14 +137,81 @@ const newArtistApplicationAdminEmailFlow = ai.defineFlow(
       const emailSubject = `New Artist Application: ${ArtistName}`;
       const emailBodyContent = `
         <p>A new Artist application has been submitted on ${siteName}.</p>
-        <h3>Application Details:</h3>
-        <ul>
-            <li><strong>Artist Name:</strong> ${ArtistName}</li>
-            <li><strong>Artist Email:</strong> ${ArtistEmail}</li>
-            ${ArtistCategory ? `<li><strong>Primary Category:</strong> ${ArtistCategory}</li>` : ''}
-            <li><strong>Application ID:</strong> ${applicationId}</li>
-        </ul>
-        <p>Please review the application at your earliest convenience:</p>
+        
+        <div class="summary-box">
+            <div class="section-title">Application Summary</div>
+            <table width="100%" cellpadding="6" cellspacing="0" style="font-size: 14px; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td width="35%" style="color: #666666; font-weight: bold; padding: 8px 0;">Full Name:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistName}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Email:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistEmail}</td>
+                </tr>
+                ${ArtistMobile ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Mobile:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistMobile}</td>
+                </tr>` : ''}
+                ${ArtistCategory ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Category:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistCategory}</td>
+                </tr>` : ''}
+                ${ArtistExperience ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Experience:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistExperience}</td>
+                </tr>` : ''}
+                ${ArtistGender ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Gender:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistGender}</td>
+                </tr>` : ''}
+                ${ArtistAge ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Age:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistAge} Years</td>
+                </tr>` : ''}
+                ${ArtistLocation ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Location:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistLocation}</td>
+                </tr>` : ''}
+                ${ArtistHeight ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Height:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistHeight}</td>
+                </tr>` : ''}
+                ${ArtistWeight ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Weight:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistWeight} kg</td>
+                </tr>` : ''}
+                ${ArtistSkinTone ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Skin Tone:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistSkinTone}</td>
+                </tr>` : ''}
+                ${ArtistQualification ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Qualification:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistQualification}</td>
+                </tr>` : ''}
+                ${ArtistLanguages ? `
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Languages:</td>
+                    <td style="color: #111111; padding: 8px 0;">${ArtistLanguages}</td>
+                </tr>` : ''}
+                <tr>
+                    <td style="color: #666666; font-weight: bold; padding: 8px 0;">Application ID:</td>
+                    <td style="color: #111111; font-family: monospace; padding: 8px 0;">${applicationId}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Please review the application at your earliest convenience by clicking the button below:</p>
         <p><a href="${applicationUrl}" class="button">View Application</a></p>
         <p>The ${siteName} System</p>
       `;
