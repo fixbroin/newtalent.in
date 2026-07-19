@@ -131,7 +131,14 @@ export default function Step1CategorySkills({
     setTimeout(() => {
       const firstErrorEl = document.querySelector('[aria-invalid="true"], .border-destructive, .text-destructive');
       if (firstErrorEl) {
-        firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const rect = firstErrorEl.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        window.scrollTo({ top: rect.top + scrollTop - 100, behavior: 'smooth' });
+        
+        const inputEl = firstErrorEl.querySelector('input, textarea, select') || firstErrorEl;
+        if (inputEl instanceof HTMLElement && typeof inputEl.focus === 'function') {
+          inputEl.focus();
+        }
       }
     }, 50);
   };

@@ -102,29 +102,12 @@ export default function ArtistRegistrationPage() {
   const prevStepRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (isLoadingPage || !formContainerRef.current) return;
+    if (isLoadingPage) return;
 
     const isInitialOrRefresh = prevStepRef.current === null;
-    const isForward = !isInitialOrRefresh && currentStep > (prevStepRef.current || 0);
     
-    if (isInitialOrRefresh) {
-      const timer = setTimeout(() => {
-        const firstIncomplete = formContainerRef.current?.querySelector('.border-destructive, input:not([value]), textarea:not(:empty)') as HTMLElement;
-        if (firstIncomplete) {
-          firstIncomplete.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          firstIncomplete.focus();
-        } else {
-          formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-
-    if (isForward) {
-      const timer = setTimeout(() => {
-        formContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 150);
-      return () => clearTimeout(timer);
+    if (!isInitialOrRefresh) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
     
     prevStepRef.current = currentStep;
