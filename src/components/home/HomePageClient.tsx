@@ -151,8 +151,9 @@ const ArtistCarousel: React.FC<{
   artists: ArtistApplication[], 
   onRequest: (artist: ArtistApplication) => void, 
   isRequesting: string | null,
-  connectionsMap: Record<string, 'pending' | 'accepted' | 'rejected' | null>
-}> = ({ artists, onRequest, isRequesting, connectionsMap }) => {
+  connectionsMap: Record<string, 'pending' | 'accepted' | 'rejected' | null>,
+  blockedUsers: string[]
+}> = ({ artists, onRequest, isRequesting, connectionsMap, blockedUsers }) => {
   const plugin = React.useRef(Autoplay({ 
     delay: 2500, 
     stopOnInteraction: false,
@@ -178,6 +179,7 @@ const ArtistCarousel: React.FC<{
                 isLoading={isRequesting === artist.id}
                 categorySlug={artist.workCategorySlug}
                 connectionStatus={connectionsMap[artist.userId] || null}
+                isBlocked={blockedUsers.includes(artist.userId)}
               />
             </div>
           </CarouselItem>
@@ -209,6 +211,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
   const [popularArtists, setPopularArtists] = useState<ArtistApplication[]>(() => initialData?.popularArtists || getCache<ArtistApplication[]>('popularArtists', true) || []);
   const [recentArtists, setRecentArtists] = useState<ArtistApplication[]>(() => initialData?.recentArtists || getCache<ArtistApplication[]>('recentArtists', true) || []);
   const [connectionsMap, setConnectionsMap] = useState<Record<string, 'pending' | 'accepted' | 'rejected' | null>>({});
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   
   const [activeAds, setActiveAds] = useState<HomepageAd[]>(() => (initialData?.featuresConfig.ads || getCache<FeaturesConfiguration>('featuresConfig', true)?.ads || []).filter(ad => ad.isActive).sort((a, b) => a.order - b.order));
   
@@ -233,31 +236,52 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
 
     setIsRequesting(artist.id!);
     try {
-      await addDoc(collection(db, "connectionRequests"), {
+      const requestData: any = {
         senderId: user.uid,
         senderName: firestoreUser?.displayName || "User",
-        senderEmail: user.email || undefined,
         receiverId: artist.userId,
         receiverName: artist.fullName,
-        receiverEmail: artist.email || undefined,
         status: 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      };
+      if (user.email) requestData.senderEmail = user.email;
+      if (artist.email) requestData.receiverEmail = artist.email;
+
+      await addDoc(collection(db, "connectionRequests"), requestData);
 
       // Trigger Email Flow
       if (appConfig?.smtpHost && artist.email) {
-          sendConnectionRequestEmail({
-              artistName: artist.fullName || "Artist",
-              artistEmail: artist.email,
-              senderName: firestoreUser?.displayName || "A user",
-              requestorEmail: user.email || undefined,
-              smtpHost: appConfig.smtpHost,
-              smtpPort: appConfig.smtpPort,
-              smtpUser: appConfig.smtpUser,
-              smtpPass: appConfig.smtpPass,
-              senderEmail: appConfig.senderEmail,
-          }).catch(err => console.error("Failed to send connection request email:", err));
+          const recipientEmail = artist.email;
+          const triggerEmail = async () => {
+              let senderAge: number | undefined = undefined;
+              let senderCategory: string | undefined = undefined;
+              try {
+                  const senderAppSnap = await getDoc(doc(db, "ArtistApplications", user.uid));
+                  if (senderAppSnap.exists()) {
+                      const appData = senderAppSnap.data();
+                      senderAge = appData.age;
+                      senderCategory = appData.workCategoryName;
+                  }
+              } catch (err) {
+                  console.error("Error fetching sender artist details:", err);
+              }
+
+              await sendConnectionRequestEmail({
+                  artistName: artist.fullName || "Artist",
+                  artistEmail: recipientEmail,
+                  senderName: firestoreUser?.displayName || "A user",
+                  senderAge,
+                  senderCategory,
+                  smtpHost: appConfig.smtpHost,
+                  smtpPort: appConfig.smtpPort,
+                  smtpUser: appConfig.smtpUser,
+                  smtpPass: appConfig.smtpPass,
+                  senderEmail: appConfig.senderEmail,
+              });
+          };
+
+          triggerEmail().catch(err => console.error("Failed to send connection request email:", err));
       }
 
       toast({ 
@@ -493,6 +517,34 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
     return () => unsubscribe();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) {
+      setBlockedUsers([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "chats"),
+      where("participants", "array-contains", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const blockedList: string[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.blockedBy && data.blockedBy.length > 0) {
+          const otherId = data.participants.find((p: string) => p !== user.uid);
+          if (otherId) {
+            blockedList.push(otherId);
+          }
+        }
+      });
+      setBlockedUsers(blockedList);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   const handleSimpleNavigation = useCallback((intendedHref: string) => {
     showLoading();
     router.push(intendedHref);
@@ -556,6 +608,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
                 isLoading={isRequesting === artist.id}
                 categorySlug={artist.workCategorySlug}
                 connectionStatus={connectionsMap[artist.userId] || null}
+                isBlocked={blockedUsers.includes(artist.userId)}
               />
             ))}
           </div>
@@ -594,6 +647,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
               onRequest={handleArtistRequest} 
               isRequesting={isRequesting}
               connectionsMap={connectionsMap}
+              blockedUsers={blockedUsers}
             />
           </div>
         </section>

@@ -13,6 +13,8 @@ const ConnectionRequestEmailInputSchema = z.object({
   artistName: z.string(),
   artistEmail: z.string().email(),
   senderName: z.string(),
+  senderAge: z.number().optional(),
+  senderCategory: z.string().optional(),
   requestorEmail: z.string().email().optional(),
   // SMTP Settings
   smtpHost: z.string().optional(),
@@ -100,7 +102,7 @@ const connectionRequestEmailFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean(), message: z.string() }),
   },
   async (details) => {
-    const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, artistName, artistEmail, senderName, requestorEmail, siteName = "Newtalent", logoUrl } = details;
+    const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, artistName, artistEmail, senderName, senderAge, senderCategory, requestorEmail, siteName = "Newtalent", logoUrl } = details;
     
     const canAttemptRealEmail = smtpHost && smtpPort && smtpUser && smtpPass && senderEmail;
 
@@ -108,7 +110,14 @@ const connectionRequestEmailFlow = ai.defineFlow(
     const emailSubject = `New Connection Request from ${senderName} on ${siteName}`;
     const emailBodyContent = `
         <p>Hi ${artistName},</p>
-        <p>You have received a new connection request from <strong>${senderName}</strong> ${requestorEmail ? `(${requestorEmail})` : ''} on ${siteName}.</p>
+        <p>You have received a new connection request on ${siteName}.</p>
+        <p><strong>Sender Details:</strong></p>
+        <ul style="list-style-type: none; padding-left: 0; line-height: 1.8;">
+          <li><strong>Name:</strong> ${senderName}</li>
+          ${senderAge ? `<li><strong>Age:</strong> ${senderAge}</li>` : ''}
+          ${senderCategory ? `<li><strong>Category:</strong> ${senderCategory}</li>` : ''}
+        </ul>
+        <br />
         <p>They are interested in your profile and would like to connect with you.</p>
         <p>You can review and respond to this request in your connections dashboard:</p>
         <p><a href="${connectionsUrl}" class="button">Review Request</a></p>

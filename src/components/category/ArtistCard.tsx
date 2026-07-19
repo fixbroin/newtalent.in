@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { User, MapPin, CheckCircle, Info, MessageSquare, Clock } from 'lucide-react';
+import { User, MapPin, CheckCircle, Info, MessageSquare, Clock, Ban, X } from 'lucide-react';
 import type { ArtistApplication } from '@/types/firestore';
 import AppImage from '@/components/ui/AppImage';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,10 @@ interface ArtistCardProps {
   isLoading?: boolean;
   categorySlug?: string;
   connectionStatus?: 'pending' | 'accepted' | 'rejected' | null;
+  isBlocked?: boolean;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, categorySlug, connectionStatus }) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, categorySlug, connectionStatus, isBlocked }) => {
   const { user, triggerAuthRedirect } = useAuth();
   const isSelf = user?.uid === artist.userId;
   const profileUrl = artist.username 
@@ -133,20 +134,25 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
           {!isSelf && (
             <Button 
               size="sm" 
-              variant={connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'secondary' : 'default'}
+              variant={isBlocked ? 'secondary' : connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'secondary' : 'default'}
               className={cn(
                 "flex-1 h-9 rounded-xl px-2 sm:px-4 transition-all duration-300",
                 connectionStatus === 'pending' && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-80",
-                connectionStatus === 'accepted' && "bg-green-600 hover:bg-green-700 text-white"
+                connectionStatus === 'rejected' && "bg-destructive/10 text-destructive border-none cursor-not-allowed opacity-80",
+                isBlocked && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-85"
               )}
-              onClick={() => connectionStatus !== 'pending' && onRequest(artist)}
+              onClick={() => connectionStatus !== 'pending' && connectionStatus !== 'rejected' && !isBlocked && onRequest(artist)}
               isLoading={isLoading}
-              disabled={connectionStatus === 'pending'}
+              disabled={connectionStatus === 'pending' || connectionStatus === 'rejected' || isBlocked}
             >
-              {connectionStatus === 'accepted' ? (
+              {isBlocked ? (
+                <><Ban className="w-3.5 h-3.5 mr-1.5 shrink-0" /> <span className="text-xs sm:text-sm">Blocked</span></>
+              ) : connectionStatus === 'accepted' ? (
                 <><MessageSquare className="w-3.5 h-3.5 mr-1.5 shrink-0" /> <span className="text-xs sm:text-sm">Chat</span></>
               ) : connectionStatus === 'pending' ? (
                 <><Clock className="w-3.5 h-3.5 mr-1.5 shrink-0" /> <span className="text-xs sm:text-sm">Requested</span></>
+              ) : connectionStatus === 'rejected' ? (
+                <><X className="w-3.5 h-3.5 mr-1.5 shrink-0" /> <span className="text-xs sm:text-sm">Rejected</span></>
               ) : (
                 <><MessageSquare className="w-3.5 h-3.5 mr-1.5 shrink-0" /> <span className="text-xs sm:text-sm">Request</span></>
               )}

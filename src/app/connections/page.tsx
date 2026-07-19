@@ -9,6 +9,8 @@ import {
   onSnapshot, 
   doc, 
   updateDoc, 
+  deleteDoc,
+  getDoc,
   Timestamp,
   addDoc,
   or
@@ -29,7 +31,16 @@ import { triggerPushNotification } from '@/lib/fcmUtils';
 import { cn } from '@/lib/utils';
 import { useApplicationConfig } from '@/hooks/useApplicationConfig';
 import { sendConnectionAcceptedEmail } from '@/ai/flows/sendConnectionAcceptedEmailFlow';
-import { getDoc } from 'firebase/firestore';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ConnectionsPage() {
   const { user, firestoreUser } = useAuth();
@@ -39,6 +50,7 @@ export default function ConnectionsPage() {
   const [requests, setRequests] = useState<ConnectionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [requestToCancel, setRequestToCancel] = useState<ConnectionRequest | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -148,6 +160,30 @@ export default function ConnectionsPage() {
     }
   };
 
+  const handleCancelRequest = (request: ConnectionRequest) => {
+    setRequestToCancel(request);
+  };
+
+  const confirmCancelRequest = async () => {
+    if (!requestToCancel) return;
+    const request = requestToCancel;
+    setRequestToCancel(null);
+    setProcessingId(request.id);
+    try {
+      const requestRef = doc(db, "connectionRequests", request.id);
+      await deleteDoc(requestRef);
+      toast({ 
+        title: "Request Cancelled",
+        description: `Your connection request to ${request.receiverName || 'Artist'} has been cancelled and deleted.`
+      });
+    } catch (error) {
+      console.error("Error deleting connection request:", error);
+      toast({ title: "Error", description: "Failed to cancel request.", variant: "destructive" });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleChat = (request: ConnectionRequest) => {
     const otherUserId = request.senderId === user?.uid ? request.receiverId : request.senderId;
     router.push(`/chat?with=${otherUserId}`);
@@ -157,7 +193,8 @@ export default function ConnectionsPage() {
   const sentRequests = requests.filter(r => r.senderId === user?.uid);
   
   const pendingReceived = receivedRequests.filter(r => r.status === 'pending');
-  const acceptedReceived = receivedRequests.filter(r => r.status === 'accepted');
+  const pendingSent = sentRequests.filter(r => r.status === 'pending');
+  const acceptedConnections = requests.filter(r => r.status === 'accepted');
 
   const RequestCard = ({ request, type }: { request: ConnectionRequest, type: 'sent' | 'received' }) => (
     <Card key={request.id} className="overflow-hidden transition-all hover:shadow-md border-muted/60">
@@ -224,8 +261,22 @@ export default function ConnectionsPage() {
         )}
 
         {type === 'sent' && request.status === 'pending' && (
-           <div className="mt-6 p-3 bg-muted/50 rounded-xl text-center">
-              <p className="text-xs font-medium text-muted-foreground italic">Waiting for artist to respond...</p>
+           <div className="flex flex-col gap-2 mt-6">
+              <div className="p-3 bg-muted/50 rounded-xl text-center">
+                 <p className="text-xs font-medium text-muted-foreground italic">Waiting for artist to respond...</p>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full rounded-xl h-10 font-bold border-destructive text-destructive hover:bg-destructive hover:text-white transition-all"
+                onClick={() => handleCancelRequest(request)}
+                disabled={processingId === request.id}
+              >
+                {processingId === request.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <><UserX className="w-4 h-4 mr-2" /> Cancel Request</>
+                )}
+              </Button>
            </div>
         )}
       </CardContent>
@@ -248,41 +299,82 @@ export default function ConnectionsPage() {
         </div>
 
         {/* Stats Summary Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="bg-primary/5 border-primary/10">
             <CardContent className="p-4 flex flex-col items-center justify-center">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Received</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 text-center">Total Sent</p>
+              <p className="text-3xl font-black">{sentRequests.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary/10">
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 text-center">Total Received</p>
               <p className="text-3xl font-black">{receivedRequests.length}</p>
             </CardContent>
           </Card>
-          <Card className="bg-red-500/5 border-red-500/10">
-            <CardContent className="p-4 flex flex-col items-center justify-center text-red-600">
-              <p className="text-xs font-bold uppercase tracking-widest text-red-600/60 mb-1">Pending</p>
-              <p className="text-3xl font-black">{pendingReceived.length}</p>
+          <Card className="bg-amber-500/5 border-amber-500/10">
+            <CardContent className="p-4 flex flex-col items-center justify-center text-amber-600">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-600/60 mb-1 text-center">Pending</p>
+              <p className="text-3xl font-black">
+                {sentRequests.filter(r => r.status === 'pending').length + pendingReceived.length}
+              </p>
             </CardContent>
           </Card>
           <Card className="bg-green-500/5 border-green-500/10">
             <CardContent className="p-4 flex flex-col items-center justify-center text-green-600">
-              <p className="text-xs font-bold uppercase tracking-widest text-green-600/60 mb-1">Accepted</p>
-              <p className="text-3xl font-black">{acceptedReceived.length}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-600/60 mb-1 text-center">Accepted</p>
+              <p className="text-3xl font-black">
+                {requests.filter(r => r.status === 'accepted').length}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="received" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-2xl h-14">
+        <Tabs defaultValue="accepted" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-muted/50 p-1 rounded-2xl h-14">
+            <TabsTrigger value="accepted" className="rounded-xl font-bold h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Accepted {acceptedConnections.length > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-green-500 text-white hover:bg-green-600 rounded-full">
+                  {acceptedConnections.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="received" className="rounded-xl font-bold h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Received {pendingReceived.length > 0 && <Badge variant="destructive" className="ml-2 bg-red-500 text-white rounded-full">{pendingReceived.length}</Badge>}
+              Received {pendingReceived.length > 0 && (
+                <Badge variant="destructive" className="ml-2 bg-red-500 text-white rounded-full">
+                  {pendingReceived.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="sent" className="rounded-xl font-bold h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Sent {sentRequests.filter(r => r.status === 'pending').length > 0 && <Badge variant="outline" className="ml-2">{sentRequests.filter(r => r.status === 'pending').length}</Badge>}
+              Sent {pendingSent.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  {pendingSent.length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="accepted" className="space-y-6">
+            {acceptedConnections.length > 0 ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {acceptedConnections.map(r => {
+                    const cardType = r.senderId === user?.uid ? 'sent' : 'received';
+                    return <RequestCard key={r.id} request={r} type={cardType} />;
+                  })}
+               </div>
+            ) : (
+              <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
+                <UserCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-bold">No Connections Yet</h3>
+                <p className="text-muted-foreground">Once connection requests are accepted, they will appear here.</p>
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="received" className="space-y-6">
-             {/* Pending Received */}
              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">New Requests</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Received Requests</h3>
                 {isLoading ? (
                   <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
                 ) : pendingReceived.length > 0 ? (
@@ -296,32 +388,47 @@ export default function ConnectionsPage() {
                   </div>
                 )}
              </div>
-
-             {/* Accepted Received */}
-             {acceptedReceived.length > 0 && (
-               <div className="space-y-4 pt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Accepted Connections</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {acceptedReceived.map(r => <RequestCard key={r.id} request={r} type="received" />)}
-                  </div>
-               </div>
-             )}
           </TabsContent>
 
           <TabsContent value="sent" className="space-y-6">
-            {sentRequests.length > 0 ? (
+            {pendingSent.length > 0 ? (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sentRequests.map(r => <RequestCard key={r.id} request={r} type="sent" />)}
+                  {pendingSent.map(r => <RequestCard key={r.id} request={r} type="sent" />)}
                </div>
             ) : (
               <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
                 <Send className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-bold">No Sent Requests</h3>
+                <h3 className="text-xl font-bold">No Pending Sent Requests</h3>
                 <p className="text-muted-foreground">When you request to connect with artists, they'll show up here.</p>
               </div>
             )}
           </TabsContent>
         </Tabs>
+        {/* Custom Confirmation Dialog for Cancellation */}
+        <AlertDialog open={!!requestToCancel} onOpenChange={(open) => !open && setRequestToCancel(null)}>
+          <AlertDialogContent className="rounded-2xl max-w-sm p-6 w-[calc(100%-2rem)] mx-auto">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
+                <UserX className="h-5 w-5 text-destructive" />
+                Cancel Request?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground text-sm mt-2">
+                Are you sure you want to cancel and delete your connection request to <strong>{requestToCancel?.receiverName || 'Artist'}</strong>? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6 flex flex-row gap-2 sm:gap-0 justify-end">
+              <AlertDialogCancel className="rounded-xl flex-1 font-bold border-muted-foreground/20 hover:bg-muted">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmCancelRequest} 
+                className="rounded-xl flex-1 font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Request
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ProtectedRoute>
   );

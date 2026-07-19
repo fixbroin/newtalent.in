@@ -156,7 +156,6 @@ export default function ChatWindow({ onClose, otherUserId, otherUserName, otherU
       const sessionSnap = await getDoc(sessionDocRef);
       if (sessionSnap.exists()) {
         const sessionData = sessionSnap.data() as ChatSession;
-        setBlockedBy(sessionData.blockedBy || []);
         // Reset unread count based on who is viewing
         if (sessionData.userId === currentUser.uid) {
             await updateDoc(sessionDocRef, { userUnreadCount: 0, updatedAt: serverTimestamp() });
@@ -183,6 +182,28 @@ export default function ChatWindow({ onClose, otherUserId, otherUserName, otherU
 
     return () => {
         unsubscribe();
+    };
+  }, [currentUser, chatSessionId, otherUser.uid, isLoadingOtherUser]);
+
+  // Listen to the parent chat session for block status in real-time
+  useEffect(() => {
+    if (!currentUser || !chatSessionId || !otherUser.uid || isLoadingOtherUser) {
+      return;
+    }
+
+    const sessionDocRef = doc(db, 'chats', chatSessionId);
+
+    const unsubscribeSession = onSnapshot(sessionDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const sessionData = docSnap.data() as ChatSession;
+        setBlockedBy(sessionData.blockedBy || []);
+      }
+    }, (error) => {
+      console.error("ChatWindow: Error listening to session:", error);
+    });
+
+    return () => {
+      unsubscribeSession();
     };
   }, [currentUser, chatSessionId, otherUser.uid, isLoadingOtherUser]);
 
@@ -232,7 +253,7 @@ export default function ChatWindow({ onClose, otherUserId, otherUserName, otherU
           triggerPushNotification({
             userId: otherUser.uid,
             title: "Chat Restricted",
-            body: `${currentUser.displayName || 'The other user'} has restricted this conversation.`,
+            body: `You have been blocked by ${currentUser.displayName || 'this user'}.`,
           }).catch(err => console.error("Error sending block push:", err));
         }
       }
@@ -457,7 +478,7 @@ export default function ChatWindow({ onClose, otherUserId, otherUserName, otherU
               <p className="text-sm text-muted-foreground">
                 {isBlocked 
                   ? "You have blocked this conversation. Unblock to resume." 
-                  : "This conversation is no longer available."}
+                  : `You have been blocked by ${otherUser.displayName || 'this user'}.`}
               </p>
               {isBlocked && (
                 <Button variant="outline" className="mt-6 rounded-xl" onClick={handleBlockUser}>Unblock User</Button>

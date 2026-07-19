@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { 
-  CheckCircle, MapPin, Calendar, Star, MessageSquare, 
+  CheckCircle, MapPin, Calendar, Star, MessageSquare, Ban,
   Share2, ArrowLeft, Instagram, Twitter, Facebook, Mail, Phone,
   User, Briefcase, Ruler, Weight, UserCircle2, Clock, X, ZoomIn, Video, FileText, ExternalLink, Globe, Linkedin, Youtube
 } from 'lucide-react';
@@ -39,6 +39,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   const [isRequesting, setIsRequesting] = useState(false);
   const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'pending' | 'accepted' | 'rejected' | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedCertificate, setSelectedCertificate] = useState<ArtistCertificate | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -95,6 +96,29 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
     return () => unsubscribe();
   }, [user, artist.userId, isSelf, isMounted]);
 
+  useEffect(() => {
+    if (!user || isSelf || !isMounted) {
+      setIsBlocked(false);
+      return;
+    }
+
+    const chatSessionId = [user.uid, artist.userId].sort().join('_');
+    const docRef = doc(db, 'chats', chatSessionId);
+
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setIsBlocked(data.blockedBy && data.blockedBy.length > 0);
+      } else {
+        setIsBlocked(false);
+      }
+    }, (error) => {
+      console.warn("PublicProfileClient: Error listening to session:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user, artist.userId, isSelf, isMounted]);
+
   const portfolioImages = [
     { url: artist.faceCloseUpUrl, label: "Close Up" },
     { url: artist.midShotUrl, label: "Mid Shot" },
@@ -127,17 +151,19 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
     setIsRequesting(true);
     try {
-      await addDoc(collection(db, "connectionRequests"), {
+      const requestData: any = {
         senderId: user.uid,
         senderName: firestoreUser?.displayName || "User",
-        senderEmail: user.email || undefined,
         receiverId: artist.userId,
         receiverName: artist.fullName,
-        receiverEmail: artist.email || undefined,
         status: 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      };
+      if (user.email) requestData.senderEmail = user.email;
+      if (artist.email) requestData.receiverEmail = artist.email;
+
+      await addDoc(collection(db, "connectionRequests"), requestData);
 
       // Send in-app notification to the receiver (Artist)
       await addDoc(collection(db, "userNotifications"), {
@@ -152,17 +178,36 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
       // Trigger Email Flow
       if (appAppSettings?.smtpHost && artist.email) {
-          sendConnectionRequestEmail({
-              artistName: artist.fullName || "Artist",
-              artistEmail: artist.email,
-              senderName: firestoreUser?.displayName || "A user",
-              requestorEmail: user.email || undefined,
-              smtpHost: appAppSettings.smtpHost,
-              smtpPort: appAppSettings.smtpPort,
-              smtpUser: appAppSettings.smtpUser,
-              smtpPass: appAppSettings.smtpPass,
-              senderEmail: appAppSettings.senderEmail,
-          }).catch(err => console.error("Failed to send connection request email:", err));
+          const recipientEmail = artist.email;
+          const triggerEmail = async () => {
+              let senderAge: number | undefined = undefined;
+              let senderCategory: string | undefined = undefined;
+              try {
+                  const senderAppSnap = await getDoc(doc(db, "ArtistApplications", user.uid));
+                  if (senderAppSnap.exists()) {
+                      const appData = senderAppSnap.data();
+                      senderAge = appData.age;
+                      senderCategory = appData.workCategoryName;
+                  }
+              } catch (err) {
+                  console.error("Error fetching sender artist details:", err);
+              }
+
+              await sendConnectionRequestEmail({
+                  artistName: artist.fullName || "Artist",
+                  artistEmail: recipientEmail,
+                  senderName: firestoreUser?.displayName || "A user",
+                  senderAge,
+                  senderCategory,
+                  smtpHost: appAppSettings.smtpHost,
+                  smtpPort: appAppSettings.smtpPort,
+                  smtpUser: appAppSettings.smtpUser,
+                  smtpPass: appAppSettings.smtpPass,
+                  senderEmail: appAppSettings.senderEmail,
+              });
+          };
+
+          triggerEmail().catch(err => console.error("Failed to send connection request email:", err));
       }
 
       toast({ 
@@ -334,16 +379,25 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                 {isMounted && (
                   <>
                     <Button 
-                      className={cn("w-full h-12 rounded-2xl text-base font-black shadow-lg shadow-primary/20", isSelf && "hidden")}
-                      variant={connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'outline' : 'default'}
+                      className={cn(
+                        "w-full h-12 rounded-2xl text-base font-black shadow-lg shadow-primary/20", 
+                        isSelf && "hidden",
+                        connectionStatus === 'rejected' && "bg-destructive/10 text-destructive border-none cursor-not-allowed opacity-80",
+                        isBlocked && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-85"
+                      )}
+                      variant={isBlocked ? 'secondary' : connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'outline' : connectionStatus === 'rejected' ? 'secondary' : 'default'}
                       onClick={handleRequest}
                       isLoading={isRequesting}
-                      disabled={isSelf || connectionStatus === 'pending'}
+                      disabled={isSelf || connectionStatus === 'pending' || connectionStatus === 'rejected' || isBlocked}
                     >
-                      {connectionStatus === 'accepted' ? (
+                      {isBlocked ? (
+                        <><Ban className="w-5 h-5 mr-2" /> Blocked</>
+                      ) : connectionStatus === 'accepted' ? (
                         <><MessageSquare className="w-5 h-5 mr-2" /> Chat Now</>
                       ) : connectionStatus === 'pending' ? (
                         <><Clock className="w-5 h-5 mr-2" /> Requested</>
+                      ) : connectionStatus === 'rejected' ? (
+                        <><X className="w-5 h-5 mr-2" /> Rejected</>
                       ) : (
                         <><MessageSquare className="w-5 h-5 mr-2" /> Request Connection</>
                       )}

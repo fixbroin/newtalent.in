@@ -326,7 +326,21 @@ const Header = () => {
                 <ThemeToggle />
               </div>
 
-              
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  aria-label="Connections" 
+                  onClick={(e) => handleAuthRequiredNav(e, '/connections')} 
+                  className={cn(
+                    "rounded-full bg-muted/50 hover:bg-primary hover:text-primary-foreground shadow-none h-10 w-10 transition-all duration-300",
+                    currentPathnameFromHook === '/connections' && "bg-primary text-primary-foreground shadow-md"
+                  )}
+                  title="Connections"
+                >
+                  <Handshake className="h-5 w-5" />
+                </Button>
+              )}
 
               <Button 
                 variant="ghost" 

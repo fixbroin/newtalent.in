@@ -11,7 +11,7 @@ import { ArrowLeft, Home as HomeIconLucide, Loader2, Construction, UserPlus, Spa
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit, doc, addDoc, Timestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc, addDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
@@ -99,6 +99,36 @@ export default function CategoryPageClient({
         newMap[data.receiverId] = data.status;
       });
       setConnectionsMap(newMap);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      setBlockedUsers([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "chats"),
+      where("participants", "array-contains", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const blockedList: string[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.blockedBy && data.blockedBy.length > 0) {
+          const otherId = data.participants.find((p: string) => p !== user.uid);
+          if (otherId) {
+            blockedList.push(otherId);
+          }
+        }
+      });
+      setBlockedUsers(blockedList);
     });
 
     return () => unsubscribe();
@@ -219,32 +249,52 @@ export default function CategoryPageClient({
 
     setIsRequesting(artist.id!);
     try {
-      // Create a connection request
-      await addDoc(collection(db, "connectionRequests"), {
+      const requestData: any = {
         senderId: user.uid,
         senderName: firestoreUser?.displayName || "User",
-        senderEmail: user.email || undefined,
         receiverId: artist.userId,
         receiverName: artist.fullName,
-        receiverEmail: artist.email || undefined,
         status: 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      };
+      if (user.email) requestData.senderEmail = user.email;
+      if (artist.email) requestData.receiverEmail = artist.email;
+
+      await addDoc(collection(db, "connectionRequests"), requestData);
 
       // Trigger Email Flow
       if (appConfig?.smtpHost && artist.email) {
-          sendConnectionRequestEmail({
-              artistName: artist.fullName || "Artist",
-              artistEmail: artist.email,
-              senderName: firestoreUser?.displayName || "A user",
-              requestorEmail: user.email || undefined,
-              smtpHost: appConfig.smtpHost,
-              smtpPort: appConfig.smtpPort,
-              smtpUser: appConfig.smtpUser,
-              smtpPass: appConfig.smtpPass,
-              senderEmail: appConfig.senderEmail,
-          }).catch(err => console.error("Failed to send connection request email:", err));
+          const recipientEmail = artist.email;
+          const triggerEmail = async () => {
+              let senderAge: number | undefined = undefined;
+              let senderCategory: string | undefined = undefined;
+              try {
+                  const senderAppSnap = await getDoc(doc(db, "ArtistApplications", user.uid));
+                  if (senderAppSnap.exists()) {
+                      const appData = senderAppSnap.data();
+                      senderAge = appData.age;
+                      senderCategory = appData.workCategoryName;
+                  }
+              } catch (err) {
+                  console.error("Error fetching sender artist details:", err);
+              }
+
+              await sendConnectionRequestEmail({
+                  artistName: artist.fullName || "Artist",
+                  artistEmail: recipientEmail,
+                  senderName: firestoreUser?.displayName || "A user",
+                  senderAge,
+                  senderCategory,
+                  smtpHost: appConfig.smtpHost,
+                  smtpPort: appConfig.smtpPort,
+                  smtpUser: appConfig.smtpUser,
+                  smtpPass: appConfig.smtpPass,
+                  senderEmail: appConfig.senderEmail,
+              });
+          };
+
+          triggerEmail().catch(err => console.error("Failed to send connection request email:", err));
       }
 
       toast({ 
@@ -442,6 +492,7 @@ export default function CategoryPageClient({
               isLoading={isRequesting === artist.id}
               categorySlug={categorySlug}
               connectionStatus={connectionsMap[artist.userId] || null}
+              isBlocked={blockedUsers.includes(artist.userId)}
             />
           ))}
         </div>
