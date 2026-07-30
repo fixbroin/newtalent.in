@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CityCategorySeoSetting, AreaCategorySeoSetting, FirestoreCategory, FirestoreCity, FirestoreArea } from '@/types/firestore';
 import { db } from '@/lib/firebase';
@@ -20,6 +20,7 @@ import CityCategorySeoForm from '@/components/admin/CityCategorySeoForm';
 import AreaCategorySeoForm from '@/components/admin/AreaCategorySeoForm';
 import AreaForm from '@/components/admin/AreaForm';
 import { triggerRefresh, submitPathToGoogleIndexing } from '@/lib/revalidateUtils';
+import OsmGeneratorDialog from '@/components/admin/OsmGeneratorDialog';
 
 const generateSeoSlug = (parts: (string | undefined)[]): string => {
     return parts.filter(Boolean).map(part => part!.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).join('/');
@@ -39,6 +40,8 @@ export default function SeoOverridesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('city-homepage');
+  const [isOsmOpen, setIsOsmOpen] = useState(false);
 
   const cityCatSeoRef = collection(db, "cityCategorySeoSettings");
   const areaCatSeoRef = collection(db, "areaCategorySeoSettings");
@@ -399,7 +402,7 @@ export default function SeoOverridesPage() {
           <CardDescription>Manage specific SEO settings for City-Category and Area-Category combinations.</CardDescription>
         </CardHeader>
       </Card>
-      <Tabs defaultValue="city-homepage">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="city-homepage">City Homepages</TabsTrigger>
           <TabsTrigger value="city-category">City-Category SEO</TabsTrigger>
@@ -410,7 +413,12 @@ export default function SeoOverridesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>City-Specific Homepages</CardTitle><CardDescription>Custom SEO and H1 for /[citySlug] pages.</CardDescription></div>
-              <Button onClick={() => handleAddSetting('city')} disabled={isSubmitting}><PlusCircle className="mr-2 h-4 w-4"/>Add New City</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting}>
+                  <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
+                </Button>
+                <Button onClick={() => handleAddSetting('city')} disabled={isSubmitting}><PlusCircle className="mr-2 h-4 w-4"/>Add New City</Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -434,7 +442,12 @@ export default function SeoOverridesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>City-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/category/[categorySlug] pages.</CardDescription></div>
-              <Button onClick={() => handleAddSetting('cityCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting || categories.length === 0}>
+                  <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
+                </Button>
+                <Button onClick={() => handleAddSetting('cityCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+              </div>
             </CardHeader>
             <CardContent>
               {cityCategorySettings.length === 0 ? (
@@ -462,7 +475,12 @@ export default function SeoOverridesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>Area-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/[area]/[categorySlug] pages.</CardDescription></div>
-              <Button onClick={() => handleAddSetting('areaCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting || cities.length === 0 || categories.length === 0}>
+                  <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
+                </Button>
+                <Button onClick={() => handleAddSetting('areaCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+              </div>
             </CardHeader>
             <CardContent>
             {areaCategorySettings.length === 0 ? (
@@ -491,7 +509,12 @@ export default function SeoOverridesPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>Localities / Areas Management</CardTitle><CardDescription>Create and manage areas/localities within cities.</CardDescription></div>
-              <Button onClick={() => handleAddSetting('area')} disabled={isSubmitting || cities.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New Area</Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting || cities.length === 0}>
+                  <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
+                </Button>
+                <Button onClick={() => handleAddSetting('area')} disabled={isSubmitting || cities.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New Area</Button>
+              </div>
             </CardHeader>
             <CardContent>
               {areas.length === 0 ? (
@@ -566,6 +589,15 @@ export default function SeoOverridesPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <OsmGeneratorDialog 
+        isOpen={isOsmOpen}
+        onClose={() => setIsOsmOpen(false)}
+        activeTab={activeTab}
+        categories={categories}
+        existingCities={cities}
+        existingAreas={areas}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }
