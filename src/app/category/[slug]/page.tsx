@@ -15,6 +15,7 @@ import { unstable_cache } from 'next/cache';
 import { serializeFirestoreData } from '@/lib/serializeUtils';
 import { getCategorySeoContent } from '@/lib/categorySeoData';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = false;
 
 interface CategoryPageProps {
@@ -82,18 +83,6 @@ export async function generateMetadata(
       type: 'website',
     },
   };
-}
-
-export async function generateStaticParams() {
-  try {
-    const categoriesSnapshot = await adminDb.collection('adminCategories').where('isActive', '==', true).get();
-    return categoriesSnapshot.docs
-      .map(doc => ({ slug: (doc.data() as FirestoreCategory).slug }))
-      .filter(p => p.slug);
-  } catch (error) {
-    console.error("[CategoryPage] Error generating static params:", error);
-    return [];
-  }
 }
 
 const getOtherCategories = cache(async (currentSlug: string): Promise<FirestoreCategory[]> => {

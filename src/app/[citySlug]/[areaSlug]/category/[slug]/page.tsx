@@ -14,6 +14,7 @@ import { getGlobalSEOSettings } from '@/lib/seoServerUtils';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = false;
 
 const getCityData = cache(async (slug: string): Promise<FirestoreCity | null> => {

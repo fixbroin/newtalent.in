@@ -114,6 +114,106 @@ const AREA_CATEGORY_TEMPLATES = [
     keywords: "{categoryName} booking {areaName}, casting directory {areaName}, NewTalent profile, local booking {nearbyCities}"
   }
 ];
+// Helper to generate at least 20 rich keywords for city or category pages
+const generateKeywordsList = (cityName: string, categoryName?: string, nearbyAreas?: string): string => {
+  const parts = [];
+  
+  if (categoryName) {
+    parts.push(
+      `${cityName} ${categoryName}s`,
+      `hire ${categoryName}s in ${cityName}`,
+      `verified ${categoryName}s in ${cityName}`,
+      `book ${categoryName}s in ${cityName}`,
+      `best ${categoryName}s in ${cityName}`,
+      `casting calls for ${categoryName}s in ${cityName}`,
+      `${categoryName} auditions ${cityName}`,
+      `${cityName} creative talents`,
+      `hire local ${categoryName}s`,
+      `NewTalent ${cityName}`,
+      `casting directors looking for ${categoryName}s in ${cityName}`,
+      `professional ${categoryName} bookings ${cityName}`,
+      `entertainment jobs in ${cityName}`,
+      `${cityName} talent directory`,
+      `portfolio booking for ${categoryName}s in ${cityName}`,
+      `production crew ${cityName}`,
+      `acting and modeling in ${cityName}`,
+      `hire artists in ${cityName}`,
+      `NewTalent.in castings ${cityName}`,
+      `casting ready artists ${cityName}`
+    );
+    if (nearbyAreas) {
+      parts.push(
+        `${categoryName}s near ${nearbyAreas}`,
+        `book local talents in ${nearbyAreas}`,
+        `casting options in ${nearbyAreas}`,
+        `creative professionals near ${nearbyAreas}`
+      );
+    }
+  } else {
+    parts.push(
+      `${cityName} artists`,
+      `hire talent in ${cityName}`,
+      `actors in ${cityName}`,
+      `models in ${cityName}`,
+      `singers in ${cityName}`,
+      `verified talents in ${cityName}`,
+      `NewTalent ${cityName}`,
+      `casting directors in ${cityName}`,
+      `entertainment hub ${cityName}`,
+      `creative professionals in ${cityName}`,
+      `auditions in ${cityName}`,
+      `production crew hire ${cityName}`,
+      `artist directory ${cityName}`,
+      `photographers in ${cityName}`,
+      `event planners ${cityName}`,
+      `media jobs in ${cityName}`,
+      `hire local artists in ${cityName}`,
+      `talent casting platform ${cityName}`,
+      `NewTalent.in network ${cityName}`,
+      `casting calls in ${cityName}`
+    );
+    if (nearbyAreas) {
+      parts.push(
+        `artists near ${nearbyAreas}`,
+        `creative talent in ${nearbyAreas}`,
+        `casting calls around ${nearbyAreas}`,
+        `book local talent in ${nearbyAreas}`
+      );
+    }
+  }
+  
+  return parts.join(", ");
+};
+
+// Helper to generate at least 20 rich keywords for area category page
+const generateAreaKeywordsList = (cityName: string, areaName: string, categoryName: string, nearbyAreas: string): string => {
+  return [
+    `${areaName} ${categoryName}s`,
+    `hire ${categoryName}s in ${areaName}`,
+    `verified ${categoryName}s in ${areaName}`,
+    `book ${categoryName}s in ${areaName}`,
+    `best ${categoryName}s in ${areaName}`,
+    `casting calls for ${categoryName}s in ${areaName}`,
+    `${categoryName} auditions ${areaName}`,
+    `${areaName} creative talents`,
+    `hire local ${categoryName}s in ${areaName}`,
+    `NewTalent ${areaName}`,
+    `casting directors looking for ${categoryName}s in ${areaName}`,
+    `professional ${categoryName} bookings in ${areaName}`,
+    `entertainment jobs in ${areaName} ${cityName}`,
+    `${areaName} talent directory`,
+    `portfolio booking for ${categoryName}s in ${areaName}`,
+    `production crew in ${areaName}`,
+    `acting and modeling in ${areaName}`,
+    `hire artists in ${areaName} ${cityName}`,
+    `${categoryName}s near ${nearbyAreas}`,
+    `book local talents in ${nearbyAreas}`,
+    `casting options in ${nearbyAreas}`,
+    `creative professionals near ${nearbyAreas}`,
+    `NewTalent.in casting call ${areaName}`,
+    `verified models and actors in ${areaName}`
+  ].join(", ");
+};
 
 const COMMON_COUNTRIES = [
   { code: 'IN', name: 'India (Default)' },
@@ -448,7 +548,7 @@ export default function OsmGeneratorDialog({
           const template = CITY_TEMPLATES[templateIndex];
           const seo_title = template.title.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
           const seo_description = template.description.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
-          const seo_keywords = template.keywords.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
+          const seo_keywords = generateKeywordsList(loc.name, undefined, nearbyStr);
           const h1_title = template.h1.replace(/{cityName}/g, loc.name);
 
           const payload = {
@@ -486,7 +586,7 @@ export default function OsmGeneratorDialog({
             const cityTemplate = CITY_TEMPLATES[templateIndex];
             const seo_title = cityTemplate.title.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
             const seo_description = cityTemplate.description.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
-            const seo_keywords = cityTemplate.keywords.replace(/{cityName}/g, loc.name).replace(/{nearbyCities}/g, nearbyStr);
+            const seo_keywords = generateKeywordsList(loc.name, undefined, nearbyStr);
             const h1_title = cityTemplate.h1.replace(/{cityName}/g, loc.name);
 
             const cityPayload = {
@@ -539,10 +639,7 @@ export default function OsmGeneratorDialog({
               .replace(/{categoryName}/g, categoryName)
               .replace(/{nearbyCities}/g, nearbyStr);
 
-            const seo_keywords = template.keywords
-              .replace(/{cityName}/g, loc.name)
-              .replace(/{categoryName}/g, categoryName)
-              .replace(/{nearbyCities}/g, nearbyStr);
+            const seo_keywords = generateKeywordsList(loc.name, categoryName, nearbyStr);
 
             const h1_title = template.h1
               .replace(/{cityName}/g, loc.name)
@@ -673,11 +770,7 @@ export default function OsmGeneratorDialog({
               .replace(/{categoryName}/g, categoryName)
               .replace(/{nearbyCities}/g, nearbyStr);
 
-            const seo_keywords = template.keywords
-              .replace(/{cityName}/g, selectedParentCity.name)
-              .replace(/{areaName}/g, loc.name)
-              .replace(/{categoryName}/g, categoryName)
-              .replace(/{nearbyCities}/g, nearbyStr);
+            const seo_keywords = generateAreaKeywordsList(selectedParentCity.name, loc.name, categoryName, nearbyStr);
 
             const h1_title = template.h1
               .replace(/{cityName}/g, selectedParentCity.name)

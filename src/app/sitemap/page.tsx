@@ -1,10 +1,10 @@
 import { adminDb } from '@/lib/firebaseAdmin';
-import type { FirestoreCategory, FirestoreCity, FirestoreArea, FirestoreService, FirestoreSubCategory, FirestoreBlogPost, ContentPage, ArtistApplication } from '@/types/firestore';
+import type { FirestoreCategory, FirestoreCity, FirestoreArea, FirestoreBlogPost, ContentPage, ArtistApplication } from '@/types/firestore';
 import Link from 'next/link';
 
 import { Metadata } from 'next';
 import { getBaseUrl } from '@/lib/config';
-import { FileText, Layers, BookOpen, ChevronRight, MapPin, Users, Star } from 'lucide-react';
+import { FileText, Layers, BookOpen, ChevronRight, MapPin, Users, Star, Database } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
@@ -14,7 +14,7 @@ export const revalidate = false;
 
 export const metadata: Metadata = {
   title: 'Sitemap - Newtalent Casting & Auditions',
-  description: 'Explore all pages, cities, and categories on Newtalent. Your complete guide to Indias number one casting and audition platform.',
+  description: 'Explore all pages, cities, and categories on Newtalent. Your complete guide to India\'s number one casting and audition platform.',
   robots: {
     index: true,
     follow: true,
@@ -28,6 +28,7 @@ interface SitemapData {
   pages: Array<{ name: string; url: string }>;
   cities: FirestoreCity[];
   categories: FirestoreCategory[];
+  areas: FirestoreArea[];
   artists: ArtistApplication[];
   blogs: FirestoreBlogPost[];
 }
@@ -52,21 +53,24 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
           return { name: data.title, url: `/${data.slug}`};
       }).filter(page => !staticPages.some(p => p.url === page.url));
 
-      // Fetch all data in parallel
+      // Fetch all sitemap data in parallel
       const [
         citiesSnap,
         categoriesSnap,
+        areasSnap,
         artistsSnap,
         blogsSnap
       ] = await Promise.all([
         adminDb.collection('cities').where('isActive', '==', true).orderBy('name').get(),
         adminDb.collection('adminCategories').where('isActive', '==', true).orderBy('order').get(),
+        adminDb.collection('areas').where('isActive', '==', true).orderBy('name').get(),
         adminDb.collection('ArtistApplications').where('status', '==', 'approved').limit(100).get(),
         adminDb.collection('blogPosts').where('isPublished', '==', true).orderBy('createdAt', 'desc').get()
       ]);
 
       const cities = citiesSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreCity));
       const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreCategory));
+      const areas = areasSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreArea));
       const artists = artistsSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as ArtistApplication));
       const blogs = blogsSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreBlogPost));
 
@@ -74,6 +78,7 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
         pages: [...staticPages, ...dynamicContentPages],
         cities,
         categories,
+        areas,
         artists,
         blogs,
       };
@@ -81,7 +86,7 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
     ['visual-sitemap-data'],
     { 
       revalidate: false, 
-      tags: ['sitemap', 'cities', 'categories', 'artists', 'blog', 'global-cache'] 
+      tags: ['sitemap', 'cities', 'categories', 'areas', 'artists', 'blog', 'global-cache'] 
     }
   )();
 });
@@ -98,7 +103,7 @@ export default async function SitemapPage() {
               Website Index
             </div>
             <h1 className="text-4xl md:text-7xl font-black text-foreground mb-4 tracking-tight">Sitemap</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">Explore India\'s number one casting platform. Every city, every category, and every talent in one place.</p>
+            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">Explore India's number one casting platform. Every city, every category, and every talent in one place.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
@@ -173,6 +178,84 @@ export default async function SitemapPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Section 5: Local Directory Map */}
+        <section className="mt-16 mb-16">
+          <div className="mb-8">
+            <h2 className="text-3xl font-black tracking-tight uppercase flex items-center gap-2">
+              <MapPin className="h-7 w-7 text-primary" />
+              Local Directories (Cities & Localities)
+            </h2>
+            <p className="text-muted-foreground text-sm font-medium">
+              Explore localized casting calls, model listings, actor directories, and audition opportunities across cities and neighborhoods.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {data.cities.map(city => {
+              const cityAreas = data.areas.filter(a => a.cityId === city.id);
+              return (
+                <Card key={city.id} className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300">
+                  <CardHeader className="bg-primary/5 pb-4">
+                    <CardTitle className="text-lg font-black tracking-tight">
+                      <Link href={`/${city.slug}`} className="text-foreground hover:text-primary transition-colors uppercase">
+                        {city.name} Casting
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6 flex-grow space-y-6">
+                    {/* Category Pages for this City */}
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Category Pages</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {data.categories.map(cat => (
+                          <Link 
+                            key={cat.id} 
+                            href={`/${city.slug}/category/${cat.slug}`}
+                            className="inline-flex items-center text-[10px] font-bold bg-muted hover:bg-primary hover:text-white transition-all px-2.5 py-1 rounded-lg uppercase tracking-tighter"
+                          >
+                            {cat.name}s
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Localities / Areas for this City */}
+                    {cityAreas.length > 0 && (
+                      <div className="space-y-3 pt-4 border-t border-dashed">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Localities & Neighborhoods</h4>
+                        <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                          {cityAreas.map(area => (
+                            <div key={area.id} className="space-y-1.5 p-2.5 bg-muted/20 rounded-2xl">
+                              <Link 
+                                href={`/${city.slug}/${area.slug}`}
+                                className="text-xs font-bold text-foreground hover:text-primary transition-colors block uppercase"
+                              >
+                                • {area.name} Local
+                              </Link>
+                              {/* Category links for this Locality */}
+                              <div className="flex flex-wrap gap-1.5 pl-2">
+                                {data.categories.map(cat => (
+                                  <Link 
+                                    key={cat.id} 
+                                    href={`/${city.slug}/${area.slug}/category/${cat.slug}`}
+                                    className="text-[9px] font-semibold text-muted-foreground hover:text-primary hover:underline transition-colors uppercase tracking-tight"
+                                  >
+                                    {cat.name}s
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Big Artists Section */}
         <section className="mt-20">

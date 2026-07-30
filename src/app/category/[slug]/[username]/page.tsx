@@ -11,6 +11,7 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import JsonLdScript from '@/components/shared/JsonLdScript';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = false;
 
 interface PageProps {

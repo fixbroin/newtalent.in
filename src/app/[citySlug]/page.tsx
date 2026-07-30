@@ -11,6 +11,7 @@ import BreadcrumbSchema from '@/components/shared/BreadcrumbSchema';
 import type { Metadata, ResolvingMetadata } from 'next';
 import { cache } from 'react';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = false;
 
 const getCityData = cache(async (slug: string): Promise<FirestoreCity | null> => {
@@ -61,16 +62,6 @@ export async function generateMetadata(
             type: 'website',
         }
     };
-}
-
-export async function generateStaticParams() {
-    try {
-        const snapshot = await adminDb.collection('cities').where('isActive', '==', true).get();
-        return snapshot.docs.map(doc => ({ citySlug: (doc.data() as FirestoreCity).slug }));
-    } catch (error) {
-        console.error("Error generating static params for cities:", error);
-        return [];
-    }
 }
 
 export default async function CityHomepage({ params }: { params: Promise<{ citySlug: string }> }) {
