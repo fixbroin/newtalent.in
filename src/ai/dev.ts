@@ -22,5 +22,6 @@ import './flows/chatWithAgentFlow'; // New AI chat agent flow
 import './flows/sendUserCancellationEmailFlow'; // New User Cancellation Email flow
 import './flows/sendConnectionRequestEmailFlow';
 import './flows/sendConnectionAcceptedEmailFlow';
+import './flows/sendAccountStatusEmailFlow';
 // Future Artist notification flows will be added here
 

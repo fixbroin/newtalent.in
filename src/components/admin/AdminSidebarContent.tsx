@@ -17,7 +17,7 @@ import { useGlobalSettings } from '@/hooks/useGlobalSettings';
 import { useLoading } from '@/contexts/LoadingContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
@@ -74,7 +74,28 @@ export default function AdminSidebarContent() {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Restore scroll position on mount & path changes
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('admin-sidebar-scroll');
+    if (savedScroll && sidebarRef.current) {
+      sidebarRef.current.scrollTop = parseInt(savedScroll, 10);
+    }
+  }, [pathname]);
+
+  const saveScrollPosition = () => {
+    if (sidebarRef.current) {
+      sessionStorage.setItem('admin-sidebar-scroll', sidebarRef.current.scrollTop.toString());
+    }
+  };
+
+  const handleScroll = () => {
+    saveScrollPosition();
+  };
+
   const handleLinkClick = () => {
+    saveScrollPosition();
     showLoading();
     if (isMobile) {
       setOpenMobile(false);
@@ -148,7 +169,7 @@ export default function AdminSidebarContent() {
           href="/admin"
         />
       </SidebarHeader>
-      <SidebarContent className="pb-8">
+      <SidebarContent ref={sidebarRef} onScroll={handleScroll} className="pb-8">
         <SidebarMenu className="gap-1 px-2 pt-4">
           {navItems.map((item, index) => {
             if (item.type === 'separator') {

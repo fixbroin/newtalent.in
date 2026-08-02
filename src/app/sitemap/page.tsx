@@ -1,10 +1,13 @@
 import { adminDb } from '@/lib/firebaseAdmin';
-import type { FirestoreCategory, FirestoreCity, FirestoreArea, FirestoreBlogPost, ContentPage, ArtistApplication } from '@/types/firestore';
+import type { 
+  FirestoreCategory, FirestoreCity, FirestoreArea, FirestoreBlogPost, 
+  ContentPage, ArtistApplication, CityCategorySeoSetting, AreaCategorySeoSetting 
+} from '@/types/firestore';
 import Link from 'next/link';
 
 import { Metadata } from 'next';
 import { getBaseUrl } from '@/lib/config';
-import { FileText, Layers, BookOpen, ChevronRight, MapPin, Users, Star, Database } from 'lucide-react';
+import { FileText, Layers, BookOpen, ChevronRight, MapPin, Users, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
@@ -29,6 +32,8 @@ interface SitemapData {
   cities: FirestoreCity[];
   categories: FirestoreCategory[];
   areas: FirestoreArea[];
+  cityCategoryOverrides: CityCategorySeoSetting[];
+  areaCategoryOverrides: AreaCategorySeoSetting[];
   artists: ArtistApplication[];
   blogs: FirestoreBlogPost[];
 }
@@ -58,12 +63,16 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
         citiesSnap,
         categoriesSnap,
         areasSnap,
+        cityCatSeoSnap,
+        areaCatSeoSnap,
         artistsSnap,
         blogsSnap
       ] = await Promise.all([
         adminDb.collection('cities').where('isActive', '==', true).orderBy('name').get(),
         adminDb.collection('adminCategories').where('isActive', '==', true).orderBy('order').get(),
         adminDb.collection('areas').where('isActive', '==', true).orderBy('name').get(),
+        adminDb.collection('cityCategorySeoSettings').where('isActive', '==', true).get(),
+        adminDb.collection('areaCategorySeoSettings').where('isActive', '==', true).get(),
         adminDb.collection('ArtistApplications').where('status', '==', 'approved').limit(100).get(),
         adminDb.collection('blogPosts').where('isPublished', '==', true).orderBy('createdAt', 'desc').get()
       ]);
@@ -71,6 +80,8 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
       const cities = citiesSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreCity));
       const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreCategory));
       const areas = areasSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreArea));
+      const cityCategoryOverrides = cityCatSeoSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as CityCategorySeoSetting));
+      const areaCategoryOverrides = areaCatSeoSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as AreaCategorySeoSetting));
       const artists = artistsSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as ArtistApplication));
       const blogs = blogsSnap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreBlogPost));
 
@@ -79,6 +90,8 @@ const getSitemapData = cache(async (): Promise<SitemapData> => {
         cities,
         categories,
         areas,
+        cityCategoryOverrides,
+        areaCategoryOverrides,
         artists,
         blogs,
       };
@@ -194,6 +207,8 @@ export default async function SitemapPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {data.cities.map(city => {
               const cityAreas = data.areas.filter(a => a.cityId === city.id);
+              const cityOverrides = data.cityCategoryOverrides.filter(o => o.cityId === city.id);
+              
               return (
                 <Card key={city.id} className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300">
                   <CardHeader className="bg-primary/5 pb-4">
@@ -205,48 +220,56 @@ export default async function SitemapPage() {
                   </CardHeader>
                   <CardContent className="pt-6 flex-grow space-y-6">
                     {/* Category Pages for this City */}
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Category Pages</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {data.categories.map(cat => (
-                          <Link 
-                            key={cat.id} 
-                            href={`/${city.slug}/category/${cat.slug}`}
-                            className="inline-flex items-center text-[10px] font-bold bg-muted hover:bg-primary hover:text-white transition-all px-2.5 py-1 rounded-lg uppercase tracking-tighter"
-                          >
-                            {cat.name}s
-                          </Link>
-                        ))}
+                    {cityOverrides.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Category Pages</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {cityOverrides.map(override => (
+                            <Link 
+                              key={override.id} 
+                              href={`/${override.slug}`}
+                              className="inline-flex items-center text-[10px] font-bold bg-muted hover:bg-primary hover:text-white transition-all px-2.5 py-1 rounded-lg uppercase tracking-tighter"
+                            >
+                              {override.categoryName}s
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Localities / Areas for this City */}
                     {cityAreas.length > 0 && (
                       <div className="space-y-3 pt-4 border-t border-dashed">
                         <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Localities & Neighborhoods</h4>
                         <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                          {cityAreas.map(area => (
-                            <div key={area.id} className="space-y-1.5 p-2.5 bg-muted/20 rounded-2xl">
-                              <Link 
-                                href={`/${city.slug}/${area.slug}`}
-                                className="text-xs font-bold text-foreground hover:text-primary transition-colors block uppercase"
-                              >
-                                • {area.name} Local
-                              </Link>
-                              {/* Category links for this Locality */}
-                              <div className="flex flex-wrap gap-1.5 pl-2">
-                                {data.categories.map(cat => (
-                                  <Link 
-                                    key={cat.id} 
-                                    href={`/${city.slug}/${area.slug}/category/${cat.slug}`}
-                                    className="text-[9px] font-semibold text-muted-foreground hover:text-primary hover:underline transition-colors uppercase tracking-tight"
-                                  >
-                                    {cat.name}s
-                                  </Link>
-                                ))}
+                          {cityAreas.map(area => {
+                            const areaOverrides = data.areaCategoryOverrides.filter(o => o.areaId === area.id);
+                            
+                            return (
+                              <div key={area.id} className="space-y-1.5 p-2.5 bg-muted/20 rounded-2xl">
+                                <Link 
+                                  href={`/${city.slug}/${area.slug}`}
+                                  className="text-xs font-bold text-foreground hover:text-primary transition-colors block uppercase"
+                                >
+                                  • {area.name} Local
+                                </Link>
+                                {/* Category links for this Locality */}
+                                {areaOverrides.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 pl-2">
+                                    {areaOverrides.map(override => (
+                                      <Link 
+                                        key={override.id} 
+                                        href={`/${override.slug}`}
+                                        className="text-[9px] font-semibold text-muted-foreground hover:text-primary hover:underline transition-colors uppercase tracking-tight"
+                                      >
+                                        {override.categoryName}s
+                                      </Link>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}

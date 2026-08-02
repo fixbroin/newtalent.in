@@ -25,6 +25,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getArchivedUsers } from '@/lib/adminDashboardUtils';
 import { triggerRefresh } from '@/lib/revalidateUtils';
+import { useApplicationConfig } from '@/hooks/useApplicationConfig';
+import { sendAccountStatusEmail } from '@/ai/flows/sendAccountStatusEmailFlow';
 import { getTimestampMillis } from '@/lib/utils';
 
 const formatUserTimestamp = (timestamp?: any): string => {
@@ -62,6 +64,7 @@ const availableFields: { key: SelectableUserField; label: string }[] = [
 const PAGE_SIZE = 20;
 
 export default function AdminUsersPage() {
+  const { config: appConfig } = useApplicationConfig();
   const [users, setUsers] = useState<FirestoreUser[]>([]);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -195,9 +198,29 @@ export default function AdminUsersPage() {
     if (!userId) return;
     setIsUpdatingStatus(userId);
     try {
-      await updateDoc(doc(db, "users", userId), { isActive: !currentStatus });
+      const newStatus = !currentStatus;
+      await updateDoc(doc(db, "users", userId), { isActive: newStatus });
       await triggerRefresh('users'); // SmartSync
-      toast({ title: "Status Updated", description: `User is now ${!currentStatus ? 'Active' : 'Disabled'}.` });
+      toast({ title: "Status Updated", description: `User is now ${newStatus ? 'Active' : 'Disabled'}.` });
+
+      // Automatically send account activated or disabled status update email
+      const targetUser = users.find(u => u.id === userId);
+      if (targetUser && targetUser.email && appConfig?.smtpHost) {
+        sendAccountStatusEmail({
+          userName: targetUser.displayName || "User",
+          userEmail: targetUser.email,
+          status: newStatus ? 'activated' : 'disabled',
+          smtpHost: appConfig.smtpHost,
+          smtpPort: appConfig.smtpPort,
+          smtpUser: appConfig.smtpUser,
+          smtpPass: appConfig.smtpPass,
+          senderEmail: appConfig.senderEmail,
+          siteName: appConfig.siteName || "Newtalent",
+          logoUrl: appConfig.logoUrl,
+        }).catch(err => {
+          console.error("Failed to send status update email:", err);
+        });
+      }
     } catch (error) {
       toast({ title: "Update Failed", variant: "destructive" });
     } finally {

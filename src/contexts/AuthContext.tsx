@@ -126,17 +126,39 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
           const userDocRef = doc(db, 'users', currentUser.uid);
           const docSnap = await getDoc(userDocRef);
           
-          if (docSnap.exists() && docSnap.data()?.username) {
-            // Profile is fully complete
-            setUser(currentUser);
-            setIsCompletingProfile(false);
-            setPendingUserForProfileCompletion(null);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data?.isActive === false) {
+              await signOut(auth);
+              toast({
+                title: "Account Disabled",
+                description: "Your account has been disabled by the admin.",
+                variant: "destructive"
+              });
+              setUser(null);
+              setIsCompletingProfile(false);
+              setPendingUserForProfileCompletion(null);
+              setIsLoading(false);
+              return;
+            }
+
+            if (data?.username) {
+              // Profile is fully complete
+              setUser(currentUser);
+              setIsCompletingProfile(false);
+              setPendingUserForProfileCompletion(null);
+            } else {
+              // Profile is incomplete
+              console.log("AuthContext: Profile incomplete on auth state change for", currentUser.uid);
+              setPendingUserForProfileCompletion(currentUser);
+              setIsCompletingProfile(true);
+              setUser(null); // Keep user state null so app behaves as logged out/shows login
+            }
           } else {
-            // Profile is incomplete
-            console.log("AuthContext: Profile incomplete on auth state change for", currentUser.uid);
+            // Profile doc doesn't exist yet (new registration phase)
             setPendingUserForProfileCompletion(currentUser);
             setIsCompletingProfile(true);
-            setUser(null); // Keep user state null so app behaves as logged out/shows login
+            setUser(null);
           }
         } catch (error) {
           console.error("AuthContext: Error checking profile completeness in onAuthStateChanged:", error);
@@ -156,9 +178,19 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
   useEffect(() => {
     if (user?.uid) {
         const userDocRef = doc(db, 'users', user.uid);
-        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
                 const data = { id: docSnap.id, ...docSnap.data() } as FirestoreUser;
+                if (data.isActive === false) {
+                  await signOut(auth);
+                  toast({
+                    title: "Account Disabled",
+                    description: "Your account has been disabled by the admin.",
+                    variant: "destructive"
+                  });
+                  router.push('/auth/login');
+                  return;
+                }
                 setFirestoreUser(data);
 
                 // Subscription Expiry Check

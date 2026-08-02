@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CityCategorySeoSetting, AreaCategorySeoSetting, FirestoreCategory, FirestoreCity, FirestoreArea } from '@/types/firestore';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query, Timestamp, where } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query, Timestamp, where, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -123,17 +123,7 @@ export default function SeoOverridesPage() {
       type === 'area' ? collection(db, 'areas') : 
       citiesRef;
     try {
-      if (type === 'city') {
-          await updateDoc(doc(citiesRef, id), {
-              seo_title: null,
-              seo_description: null,
-              seo_keywords: null,
-              h1_title: null,
-              updatedAt: Timestamp.now()
-          });
-      } else {
-          await deleteDoc(doc(collectionRef, id));
-      }
+      await deleteDoc(doc(collectionRef, id));
       
       await triggerRefresh(type === 'city' ? 'cities' : 'global-cache');
       await triggerRefresh('sitemap');
@@ -142,6 +132,64 @@ export default function SeoOverridesPage() {
       fetchData(); 
     } catch (error) {
       toast({ title: "Error", description: "Could not delete.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAllSettings = async (type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
+    setIsSubmitting(true);
+    try {
+      const collectionRef = 
+        type === 'cityCategory' ? cityCatSeoRef : 
+        type === 'areaCategory' ? areaCatSeoRef : 
+        type === 'area' ? collection(db, 'areas') : 
+        citiesRef;
+
+      let targetItems: any[] = [];
+      if (type === 'city') {
+        targetItems = cities;
+      } else if (type === 'cityCategory') {
+        targetItems = cityCategorySettings;
+      } else if (type === 'areaCategory') {
+        targetItems = areaCategorySettings;
+      } else {
+        targetItems = areas;
+      }
+
+      if (targetItems.length === 0) {
+        toast({ title: "No items to delete", description: "There are no SEO settings/records to delete in this tab." });
+        setIsSubmitting(false);
+        return;
+      }
+
+      let batch = writeBatch(db);
+      let count = 0;
+
+      for (const item of targetItems) {
+        const itemDocRef = doc(collectionRef, item.id!);
+        batch.delete(itemDocRef);
+        count++;
+
+        if (count === 499) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+
+      if (count > 0) {
+        await batch.commit();
+      }
+
+      await triggerRefresh(type === 'city' ? 'cities' : 'global-cache');
+      await triggerRefresh('sitemap');
+
+      toast({ title: "Success", description: `Successfully deleted all ${type} records.` });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting all settings:", error);
+      toast({ title: "Delete All Failed", description: "Could not perform bulk deletion.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -386,6 +434,8 @@ export default function SeoOverridesPage() {
   };
 
 
+  const citiesExist = cities.length > 0;
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -405,21 +455,44 @@ export default function SeoOverridesPage() {
         </CardHeader>
       </Card>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="city-homepage">City Homepages</TabsTrigger>
-          <TabsTrigger value="city-category">City-Category SEO</TabsTrigger>
-          <TabsTrigger value="area-category">Area-Category SEO</TabsTrigger>
-          <TabsTrigger value="manage-areas">Localities / Areas</TabsTrigger>
+        <TabsList className="flex w-full overflow-x-auto justify-start gap-2 bg-transparent p-1 h-auto scrollbar-none md:grid md:grid-cols-4 md:bg-muted md:h-10 md:gap-0">
+          <TabsTrigger value="city-homepage" className="flex-shrink-0 whitespace-nowrap">City Homepages</TabsTrigger>
+          <TabsTrigger value="city-category" className="flex-shrink-0 whitespace-nowrap">City-Category SEO</TabsTrigger>
+          <TabsTrigger value="area-category" className="flex-shrink-0 whitespace-nowrap">Area-Category SEO</TabsTrigger>
+          <TabsTrigger value="manage-areas" className="flex-shrink-0 whitespace-nowrap">Localities / Areas</TabsTrigger>
         </TabsList>
         <TabsContent value="city-homepage">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>City-Specific Homepages</CardTitle><CardDescription>Custom SEO and H1 for /[citySlug] pages.</CardDescription></div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
                 <Button onClick={() => handleAddSetting('city')} disabled={isSubmitting}><PlusCircle className="mr-2 h-4 w-4"/>Add New City</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting || !citiesExist}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete All Cities
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5 animate-bounce" /> Confirm Delete All
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete ALL registered cities from the database? This will permanently remove them and all their pages.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteAllSettings('city')} className="bg-destructive hover:bg-destructive/90">
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -432,7 +505,34 @@ export default function SeoOverridesPage() {
                       <TableCell className="text-xs text-muted-foreground">/{city.slug}</TableCell>
                       <TableCell className="text-xs max-w-xs truncate" title={city.h1_title}>{city.h1_title || "Using global pattern"}</TableCell>
                       <TableCell className="text-center"><Switch checked={city.isActive} onCheckedChange={() => handleToggleActive(city, 'city')} disabled={isSubmitting}/></TableCell>
-                      <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => handleEditSetting(city, 'city')} disabled={isSubmitting}><Edit className="h-4 w-4 mr-2"/>SEO</Button></div></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEditSetting(city, 'city')} disabled={isSubmitting}>
+                            <Edit className="h-4 w-4 mr-2"/>SEO
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon" disabled={isSubmitting}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete the city "{city.name}"? This will permanently remove the city from the database.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSetting(city.id!, 'city')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -442,13 +542,36 @@ export default function SeoOverridesPage() {
         </TabsContent>
         <TabsContent value="city-category">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>City-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/category/[categorySlug] pages.</CardDescription></div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting || categories.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
                 <Button onClick={() => handleAddSetting('cityCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting || cityCategorySettings.length === 0}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5 animate-bounce" /> Confirm Delete All
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete ALL City-Category SEO Override configurations? This will permanently remove all entries.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteAllSettings('cityCategory')} className="bg-destructive hover:bg-destructive/90">
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -475,13 +598,36 @@ export default function SeoOverridesPage() {
         </TabsContent>
         <TabsContent value="area-category">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>Area-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/[area]/[categorySlug] pages.</CardDescription></div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button variant="outline" onClick={() => setIsOsmAreaOpen(true)} disabled={isSubmitting || cities.length === 0 || categories.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
                 <Button onClick={() => handleAddSetting('areaCategory')} disabled={isSubmitting || cities.length === 0 || categories.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting || areaCategorySettings.length === 0}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5 animate-bounce" /> Confirm Delete All
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete ALL Area-Category SEO Override configurations? This will permanently remove all entries.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteAllSettings('areaCategory')} className="bg-destructive hover:bg-destructive/90">
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -509,13 +655,36 @@ export default function SeoOverridesPage() {
 
         <TabsContent value="manage-areas">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>Localities / Areas Management</CardTitle><CardDescription>Create and manage areas/localities within cities.</CardDescription></div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button variant="outline" onClick={() => setIsOsmAreaOpen(true)} disabled={isSubmitting || cities.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
                 <Button onClick={() => handleAddSetting('area')} disabled={isSubmitting || cities.length === 0}><PlusCircle className="mr-2 h-4 w-4"/>Add New Area</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting || areas.length === 0}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete All Localities
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5 animate-bounce" /> Confirm Delete All
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete ALL registered Localities / Areas from the database? This will permanently delete all neighborhoods.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteAllSettings('area')} className="bg-destructive hover:bg-destructive/90">
+                        Delete All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardHeader>
             <CardContent>

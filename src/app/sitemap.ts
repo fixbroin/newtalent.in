@@ -135,58 +135,65 @@ export async function getSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const citiesSnapshot = await adminDb.collection('cities').where('isActive', '==', true).get();
-    const categoriesSnapshot = await adminDb.collection('adminCategories').where('isActive', '==', true).get();
+    const citySlugMap: Record<string, string> = {};
 
-    for (const cityDoc of citiesSnapshot.docs) {
+    citiesSnapshot.forEach(cityDoc => {
       const city = cityDoc.data() as FirestoreCity;
-      if (!city.slug) continue;
+      if (city.slug) {
+        citySlugMap[cityDoc.id] = city.slug;
+        entries.push({
+          url: `${appBaseUrl}/${city.slug}`,
+          lastModified: safeToISOString(city.updatedAt || city.createdAt, currentDate),
+          changeFrequency: 'daily',
+          priority: 0.9,
+        });
+      }
+    });
 
-      entries.push({
-        url: `${appBaseUrl}/${city.slug}`,
-        lastModified: safeToISOString(city.updatedAt || city.createdAt, currentDate),
-        changeFrequency: 'daily',
-        priority: 0.9,
-      });
+    const areasSnapshot = await adminDb.collection('areas').where('isActive', '==', true).get();
+    areasSnapshot.forEach(areaDoc => {
+      const area = areaDoc.data() as FirestoreArea;
+      const citySlug = citySlugMap[area.cityId];
+      if (area.slug && citySlug) {
+        entries.push({
+          url: `${appBaseUrl}/${citySlug}/${area.slug}`,
+          lastModified: safeToISOString(area.updatedAt || area.createdAt, currentDate),
+          changeFrequency: 'daily',
+          priority: 0.8,
+        });
+      }
+    });
 
-      categoriesSnapshot.forEach(categoryDoc => {
-        const category = categoryDoc.data() as FirestoreCategory;
-        if (category.slug) {
-          entries.push({
-            url: `${appBaseUrl}/${city.slug}/category/${category.slug}`,
-            lastModified: safeToISOString(category.createdAt, currentDate),
-            changeFrequency: 'daily',
-            priority: 0.8,
-          });
-        }
-      });
+    // 1. Fetch only saved and active cityCategorySeoSettings
+    const cityCatSeoSnapshot = await adminDb.collection('cityCategorySeoSettings').where('isActive', '==', true).get();
+    cityCatSeoSnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.slug) {
+        entries.push({
+          url: `${appBaseUrl}/${data.slug}`,
+          lastModified: safeToISOString(data.updatedAt || data.createdAt, currentDate),
+          changeFrequency: 'daily',
+          priority: 0.8,
+        });
+      }
+    });
 
-      const areasSnapshot = await adminDb.collection('areas').where('cityId', '==', cityDoc.id).where('isActive', '==', true).get();
-      areasSnapshot.forEach(areaDoc => {
-        const area = areaDoc.data() as FirestoreArea;
-        if (area.slug) {
-          entries.push({
-            url: `${appBaseUrl}/${city.slug}/${area.slug}`,
-            lastModified: safeToISOString(area.updatedAt || area.createdAt, currentDate),
-            changeFrequency: 'daily',
-            priority: 0.8,
-          });
+    // 2. Fetch only saved and active areaCategorySeoSettings
+    const areaCatSeoSnapshot = await adminDb.collection('areaCategorySeoSettings').where('isActive', '==', true).get();
+    areaCatSeoSnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.slug) {
+        entries.push({
+          url: `${appBaseUrl}/${data.slug}`,
+          lastModified: safeToISOString(data.updatedAt || data.createdAt, currentDate),
+          changeFrequency: 'daily',
+          priority: 0.7,
+        });
+      }
+    });
 
-          categoriesSnapshot.forEach(categoryDoc => {
-            const category = categoryDoc.data() as FirestoreCategory;
-            if (category.slug) {
-              entries.push({
-                url: `${appBaseUrl}/${city.slug}/${area.slug}/category/${category.slug}`,
-                lastModified: safeToISOString(category.createdAt, currentDate),
-                changeFrequency: 'daily',
-                priority: 0.7,
-              });
-            }
-          });
-        }
-      });
-    }
   } catch (e) {
-    console.error("Sitemap: Error fetching cities/areas/categories:", e);
+    console.error("Sitemap: Error fetching cities/areas/categories/overrides:", e);
   }
 
   const uniqueEntries = Array.from(new Map(entries.map(entry => [entry.url, entry])).values());

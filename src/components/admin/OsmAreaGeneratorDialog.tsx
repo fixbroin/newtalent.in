@@ -290,8 +290,16 @@ export default function OsmAreaGeneratorDialog({
 
       setOsmItems(uniqueList);
       
-      // Auto-select top 30
-      const defaultSelected = uniqueList.slice(0, 30).map(item => item.name);
+      // Auto-select top 30 active items by default (excluding already existing items)
+      const defaultSelected = uniqueList
+        .filter(item => {
+          const isDisabled = 
+            (activeTab === 'manage-areas' && existingAreas.some(a => a.cityId === selectedCityId && a.name.toLowerCase() === item.name.toLowerCase())) ||
+            ((activeTab === 'area-category' && areasSource === 'osm') && existingAreas.some(a => a.cityId === selectedCityId && a.name.toLowerCase() === item.name.toLowerCase()));
+          return !isDisabled;
+        })
+        .slice(0, 30)
+        .map(item => item.name);
       setSelectedItemNames(defaultSelected);
 
       toast({ 
@@ -329,15 +337,34 @@ export default function OsmAreaGeneratorDialog({
     return nearby.join(", ");
   };
 
+  const isItemDisabled = (itemName: string) => {
+    if (overwriteExisting) {
+      return false;
+    }
+    if (activeTab === 'manage-areas') {
+      return existingAreas.some(
+        a => a.cityId === selectedCityId && a.name.toLowerCase() === itemName.toLowerCase()
+      );
+    }
+    if (activeTab === 'area-category' && areasSource === 'osm') {
+      return existingAreas.some(
+        a => a.cityId === selectedCityId && a.name.toLowerCase() === itemName.toLowerCase()
+      );
+    }
+    return false;
+  };
+
   // Selection handlers
   const handleToggleItem = (name: string) => {
+    if (isItemDisabled(name)) return;
     setSelectedItemNames(prev => 
       prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
     );
   };
 
   const handleSelectAll = () => {
-    setSelectedItemNames(osmItems.map(item => item.name));
+    const activeItems = osmItems.filter(item => !isItemDisabled(item.name));
+    setSelectedItemNames(activeItems.map(item => item.name));
   };
 
   const handleSelectNone = () => {
@@ -721,26 +748,49 @@ export default function OsmAreaGeneratorDialog({
                   ) : (
                     filteredOsmItems.map((item, index) => {
                       const isSelected = selectedItemNames.includes(item.name);
+                      const isDisabled = isItemDisabled(item.name);
                       return (
                         <div 
                           key={index} 
-                          onClick={() => handleToggleItem(item.name)}
-                          className={`flex items-center justify-between p-3 hover:bg-muted/40 cursor-pointer transition-colors text-xs ${isSelected ? 'bg-primary/5' : ''}`}
+                          onClick={() => {
+                            if (!isDisabled) {
+                              handleToggleItem(item.name);
+                            }
+                          }}
+                          className={`flex items-center justify-between p-3 transition-colors text-xs ${
+                            isDisabled 
+                              ? 'opacity-50 cursor-not-allowed bg-muted/20' 
+                              : `hover:bg-muted/40 cursor-pointer ${isSelected ? 'bg-primary/5' : ''}`
+                          }`}
                         >
                           <div className="flex items-center gap-2">
-                            <Checkbox checked={isSelected} onCheckedChange={() => {}} />
+                            <Checkbox 
+                              checked={isSelected} 
+                              disabled={isDisabled}
+                              onCheckedChange={() => {
+                                if (!isDisabled) {
+                                  handleToggleItem(item.name);
+                                }
+                              }} 
+                            />
                             <div>
                               <p className="font-bold">{item.name}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0 rounded flex items-center gap-1">
-                              {item.isDbSource ? (
-                                <><Database className="h-2 w-2 text-primary" /> Registered</>
-                              ) : (
-                                <>{item.lat.toFixed(2)}°, {item.lon.toFixed(2)}°</>
-                              )}
-                            </Badge>
+                            {isDisabled ? (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 rounded border-amber-300 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                                Already exists
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0 rounded flex items-center gap-1">
+                                {item.isDbSource ? (
+                                  <><Database className="h-2 w-2 text-primary" /> Registered</>
+                                ) : (
+                                  <>{item.lat.toFixed(2)}°, {item.lon.toFixed(2)}°</>
+                                )}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       );
