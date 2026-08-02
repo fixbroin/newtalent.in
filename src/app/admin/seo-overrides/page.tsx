@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass, AlertTriangle } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CityCategorySeoSetting, AreaCategorySeoSetting, FirestoreCategory, FirestoreCity, FirestoreArea } from '@/types/firestore';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query, Timestamp, where, writeBatch } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query, Timestamp, where, writeBatch, limit, getCountFromServer } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,6 +45,33 @@ export default function SeoOverridesPage() {
   const [isOsmOpen, setIsOsmOpen] = useState(false);
   const [isOsmAreaOpen, setIsOsmAreaOpen] = useState(false);
 
+  const [citiesLimit, setCitiesLimit] = useState<number | null>(100);
+  const [cityCategoryLimit, setCityCategoryLimit] = useState<number | null>(100);
+  const [areaCategoryLimit, setAreaCategoryLimit] = useState<number | null>(100);
+  const [areasLimit, setAreasLimit] = useState<number | null>(100);
+
+  const [totalCities, setTotalCities] = useState(0);
+  const [totalCityCategories, setTotalCityCategories] = useState(0);
+  const [totalAreaCategories, setTotalAreaCategories] = useState(0);
+  const [totalAreas, setTotalAreas] = useState(0);
+
+  const hasMoreCities = citiesLimit !== null && totalCities > cities.length;
+  const hasMoreCityCategory = cityCategoryLimit !== null && totalCityCategories > cityCategorySettings.length;
+  const hasMoreAreaCategory = areaCategoryLimit !== null && totalAreaCategories > areaCategorySettings.length;
+  const hasMoreAreas = areasLimit !== null && totalAreas > areas.length;
+
+  const handleLoadMoreCities = () => setCitiesLimit(prev => prev ? prev + 100 : 100);
+  const handleLoadAllCities = () => setCitiesLimit(null);
+
+  const handleLoadMoreCityCategory = () => setCityCategoryLimit(prev => prev ? prev + 100 : 100);
+  const handleLoadAllCityCategory = () => setCityCategoryLimit(null);
+
+  const handleLoadMoreAreaCategory = () => setAreaCategoryLimit(prev => prev ? prev + 100 : 100);
+  const handleLoadAllAreaCategory = () => setAreaCategoryLimit(null);
+
+  const handleLoadMoreAreas = () => setAreasLimit(prev => prev ? prev + 100 : 100);
+  const handleLoadAllAreas = () => setAreasLimit(null);
+
   const cityCatSeoRef = collection(db, "cityCategorySeoSettings");
   const areaCatSeoRef = collection(db, "areaCategorySeoSettings");
   const citiesRef = collection(db, "cities");
@@ -52,13 +79,30 @@ export default function SeoOverridesPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [catSnap, citySnap, areaSnap, cityCatSeoSnap, areaCatSeoSnap] = await Promise.all([
+      const citiesQuery = citiesLimit ? query(citiesRef, limit(citiesLimit)) : citiesRef;
+      const areasQuery = areasLimit ? query(collection(db, "areas"), limit(areasLimit)) : collection(db, "areas");
+      const cityCategoryQuery = cityCategoryLimit ? query(cityCatSeoRef, limit(cityCategoryLimit)) : cityCatSeoRef;
+      const areaCategoryQuery = areaCategoryLimit ? query(areaCatSeoRef, limit(areaCategoryLimit)) : areaCatSeoRef;
+
+      const [
+        catSnap, citySnap, areaSnap, cityCatSeoSnap, areaCatSeoSnap,
+        cityCountSnap, areaCountSnap, cityCatCountSnap, areaCatCountSnap
+      ] = await Promise.all([
         getDocs(collection(db, "adminCategories")),
-        getDocs(citiesRef),
-        getDocs(collection(db, "areas")),
-        getDocs(cityCatSeoRef),
-        getDocs(areaCatSeoRef),
+        getDocs(citiesQuery),
+        getDocs(areasQuery),
+        getDocs(cityCategoryQuery),
+        getDocs(areaCategoryQuery),
+        getCountFromServer(citiesRef),
+        getCountFromServer(collection(db, "areas")),
+        getCountFromServer(cityCatSeoRef),
+        getCountFromServer(areaCatSeoRef),
       ]);
+
+      setTotalCities(cityCountSnap.data().count);
+      setTotalAreas(areaCountSnap.data().count);
+      setTotalCityCategories(cityCatCountSnap.data().count);
+      setTotalAreaCategories(areaCatCountSnap.data().count);
 
       const fetchedCategories = catSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCategory));
       fetchedCategories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -101,7 +145,7 @@ export default function SeoOverridesPage() {
   useEffect(() => {
     fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [citiesLimit, cityCategoryLimit, areaCategoryLimit, areasLimit]);
 
   const handleAddSetting = (type: 'cityCategory' | 'areaCategory' | 'city' | 'area') => {
     setEditingSetting(null);
@@ -146,18 +190,11 @@ export default function SeoOverridesPage() {
         type === 'area' ? collection(db, 'areas') : 
         citiesRef;
 
-      let targetItems: any[] = [];
-      if (type === 'city') {
-        targetItems = cities;
-      } else if (type === 'cityCategory') {
-        targetItems = cityCategorySettings;
-      } else if (type === 'areaCategory') {
-        targetItems = areaCategorySettings;
-      } else {
-        targetItems = areas;
-      }
+      // Query all documents in the collection to ensure we delete all records, not just the loaded limited page
+      const snap = await getDocs(collectionRef);
+      const allDocs = snap.docs;
 
-      if (targetItems.length === 0) {
+      if (allDocs.length === 0) {
         toast({ title: "No items to delete", description: "There are no SEO settings/records to delete in this tab." });
         setIsSubmitting(false);
         return;
@@ -166,13 +203,13 @@ export default function SeoOverridesPage() {
       let batch = writeBatch(db);
       let count = 0;
 
-      for (const item of targetItems) {
-        const itemDocRef = doc(collectionRef, item.id!);
-        batch.delete(itemDocRef);
+      for (const d of allDocs) {
+        batch.delete(d.ref);
         count++;
 
-        if (count === 499) {
+        if (count >= 500) {
           await batch.commit();
+          await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
           batch = writeBatch(db);
           count = 0;
         }
@@ -185,7 +222,22 @@ export default function SeoOverridesPage() {
       await triggerRefresh(type === 'city' ? 'cities' : 'global-cache');
       await triggerRefresh('sitemap');
 
-      toast({ title: "Success", description: `Successfully deleted all ${type} records.` });
+      const typeLabel = 
+        type === 'city' ? 'city homepage' : 
+        type === 'area' ? 'locality' : 
+        type === 'cityCategory' ? 'city-category SEO' : 'area-category SEO';
+
+      toast({ 
+        title: "Success", 
+        description: `Successfully deleted all ${allDocs.length} ${typeLabel} records.` 
+      });
+
+      // Reset limits to default
+      if (type === 'city') setCitiesLimit(100);
+      else if (type === 'cityCategory') setCityCategoryLimit(100);
+      else if (type === 'areaCategory') setAreaCategoryLimit(100);
+      else if (type === 'area') setAreasLimit(100);
+
       fetchData();
     } catch (error) {
       console.error("Error deleting all settings:", error);
@@ -448,6 +500,12 @@ export default function SeoOverridesPage() {
 
   return (
     <div className="space-y-6">
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-sm font-bold text-muted-foreground animate-pulse">Processing request, please wait...</p>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" />Advanced SEO Overrides</CardTitle>
@@ -502,7 +560,32 @@ export default function SeoOverridesPage() {
                   {cities.map(city => (
                     <TableRow key={city.id}>
                       <TableCell className="font-bold">{city.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">/{city.slug}</TableCell>
+                      <TableCell className="text-xs">
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <a 
+                            href={`/${city.slug}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:underline text-primary flex items-center gap-1 font-semibold"
+                            title="Open page in new tab"
+                          >
+                            /{city.slug}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/${city.slug}`);
+                              toast({ title: "Copied", description: "URL copied to clipboard." });
+                            }}
+                            title="Copy full URL"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs max-w-xs truncate" title={city.h1_title}>{city.h1_title || "Using global pattern"}</TableCell>
                       <TableCell className="text-center"><Switch checked={city.isActive} onCheckedChange={() => handleToggleActive(city, 'city')} disabled={isSubmitting}/></TableCell>
                       <TableCell className="text-right">
@@ -537,6 +620,25 @@ export default function SeoOverridesPage() {
                   ))}
                 </TableBody>
               </Table>
+              {totalCities > 0 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2 p-3 bg-muted/20 border rounded-2xl">
+                  {hasMoreCities ? (
+                    <Button variant="outline" size="sm" onClick={handleLoadMoreCities} className="font-semibold rounded-xl">
+                      Load More (+100 Cities)
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                  <span className="text-xs text-muted-foreground font-medium">Currently showing {cities.length} of {totalCities} cities</span>
+                  {hasMoreCities ? (
+                    <Button variant="ghost" size="sm" onClick={handleLoadAllCities} className="text-primary hover:text-primary/95 hover:bg-primary/5 font-bold rounded-xl">
+                      Load All Cities
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -584,7 +686,33 @@ export default function SeoOverridesPage() {
                     {cityCategorySettings.map(setting => (
                       <TableRow key={setting.id}>
                         <TableCell>{setting.cityName}</TableCell><TableCell>{setting.categoryName}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{setting.slug}</TableCell>
+                        <TableCell className="text-xs">
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <a 
+                            href={setting.slug.startsWith('/') ? setting.slug : `/${setting.slug}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:underline text-primary flex items-center gap-1 font-semibold"
+                            title="Open page in new tab"
+                          >
+                            /{setting.slug.startsWith('/') ? setting.slug.slice(1) : setting.slug}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={() => {
+                              const path = setting.slug.startsWith('/') ? setting.slug : `/${setting.slug}`;
+                              navigator.clipboard.writeText(`${window.location.origin}${path}`);
+                              toast({ title: "Copied", description: "URL copied to clipboard." });
+                            }}
+                            title="Copy full URL"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                         <TableCell className="text-xs max-w-xs truncate" title={setting.h1_title}>{setting.h1_title || "Not set"}</TableCell>
                         <TableCell className="text-center"><Switch checked={setting.isActive} onCheckedChange={() => handleToggleActive(setting, 'cityCategory')} disabled={isSubmitting}/></TableCell>
                         <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'cityCategory')} disabled={isSubmitting}><Edit className="h-4 w-4"/></Button> <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete SEO override for {setting.cityName} - {setting.categoryName}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'cityCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
@@ -592,6 +720,25 @@ export default function SeoOverridesPage() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+              {totalCityCategories > 0 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2 p-3 bg-muted/20 border rounded-2xl">
+                  {hasMoreCityCategory ? (
+                    <Button variant="outline" size="sm" onClick={handleLoadMoreCityCategory} className="font-semibold rounded-xl">
+                      Load More (+100 Settings)
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                  <span className="text-xs text-muted-foreground font-medium">Currently showing {cityCategorySettings.length} of {totalCityCategories} overrides</span>
+                  {hasMoreCityCategory ? (
+                    <Button variant="ghost" size="sm" onClick={handleLoadAllCityCategory} className="text-primary hover:text-primary/95 hover:bg-primary/5 font-bold rounded-xl">
+                      Load All Settings
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -640,7 +787,33 @@ export default function SeoOverridesPage() {
                     {areaCategorySettings.map(setting => (
                         <TableRow key={setting.id}>
                         <TableCell>{setting.cityName}</TableCell><TableCell>{setting.areaName}</TableCell><TableCell>{setting.categoryName}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{setting.slug}</TableCell>
+                        <TableCell className="text-xs">
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <a 
+                            href={setting.slug.startsWith('/') ? setting.slug : `/${setting.slug}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:underline text-primary flex items-center gap-1 font-semibold"
+                            title="Open page in new tab"
+                          >
+                            /{setting.slug.startsWith('/') ? setting.slug.slice(1) : setting.slug}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={() => {
+                              const path = setting.slug.startsWith('/') ? setting.slug : `/${setting.slug}`;
+                              navigator.clipboard.writeText(`${window.location.origin}${path}`);
+                              toast({ title: "Copied", description: "URL copied to clipboard." });
+                            }}
+                            title="Copy full URL"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
                         <TableCell className="text-xs max-w-xs truncate" title={setting.h1_title}>{setting.h1_title || "Not set"}</TableCell>
                         <TableCell className="text-center"><Switch checked={setting.isActive} onCheckedChange={() => handleToggleActive(setting, 'areaCategory')} disabled={isSubmitting}/></TableCell>
                         <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'areaCategory')} disabled={isSubmitting}><Edit className="h-4 w-4"/></Button> <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete SEO override for {setting.areaName} - {setting.categoryName}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'areaCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
@@ -648,8 +821,27 @@ export default function SeoOverridesPage() {
                     ))}
                     </TableBody>
                 </Table>
-            )}
-            </CardContent>
+             )}
+             {totalAreaCategories > 0 && (
+               <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2 p-3 bg-muted/20 border rounded-2xl">
+                 {hasMoreAreaCategory ? (
+                   <Button variant="outline" size="sm" onClick={handleLoadMoreAreaCategory} className="font-semibold rounded-xl">
+                     Load More (+100 Settings)
+                   </Button>
+                 ) : (
+                   <div className="w-[120px] hidden sm:block" />
+                 )}
+                 <span className="text-xs text-muted-foreground font-medium">Currently showing {areaCategorySettings.length} of {totalAreaCategories} overrides</span>
+                 {hasMoreAreaCategory ? (
+                   <Button variant="ghost" size="sm" onClick={handleLoadAllAreaCategory} className="text-primary hover:text-primary/95 hover:bg-primary/5 font-bold rounded-xl">
+                     Load All Settings
+                   </Button>
+                 ) : (
+                   <div className="w-[120px] hidden sm:block" />
+                 )}
+               </div>
+             )}
+             </CardContent>
           </Card>
         </TabsContent>
 
@@ -698,13 +890,63 @@ export default function SeoOverridesPage() {
                       <TableRow key={area.id}>
                         <TableCell className="font-bold">{area.name}</TableCell>
                         <TableCell>{area.cityName || cities.find(c => c.id === area.cityId)?.name || 'Unknown'}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">/{area.slug}</TableCell>
+                        <TableCell className="text-xs">
+                          {(() => {
+                            const parentCitySlug = cities.find(c => c.id === area.cityId)?.slug || '';
+                            const finalPath = parentCitySlug ? `/${parentCitySlug}/${area.slug}` : `/${area.slug}`;
+                            return (
+                              <div className="flex items-center gap-1.5 font-mono">
+                                <a 
+                                  href={finalPath} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="hover:underline text-primary flex items-center gap-1 font-semibold"
+                                  title="Open page in new tab"
+                                >
+                                  {finalPath}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}${finalPath}`);
+                                    toast({ title: "Copied", description: "URL copied to clipboard." });
+                                  }}
+                                  title="Copy full URL"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell className="text-center"><Switch checked={area.isActive} onCheckedChange={() => handleToggleActive(area, 'area')} disabled={isSubmitting}/></TableCell>
                         <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => handleEditSetting(area, 'area')} disabled={isSubmitting}><Edit className="h-4 w-4 mr-2"/>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete locality {area.name}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(area.id!, 'area')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+              )}
+              {totalAreas > 0 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2 p-3 bg-muted/20 border rounded-2xl">
+                  {hasMoreAreas ? (
+                    <Button variant="outline" size="sm" onClick={handleLoadMoreAreas} className="font-semibold rounded-xl">
+                      Load More (+100 Areas)
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                  <span className="text-xs text-muted-foreground font-medium">Currently showing {areas.length} of {totalAreas} areas</span>
+                  {hasMoreAreas ? (
+                    <Button variant="ghost" size="sm" onClick={handleLoadAllAreas} className="text-primary hover:text-primary/95 hover:bg-primary/5 font-bold rounded-xl">
+                      Load All Areas
+                    </Button>
+                  ) : (
+                    <div className="w-[120px] hidden sm:block" />
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -767,6 +1009,8 @@ export default function SeoOverridesPage() {
         categories={categories}
         existingCities={cities}
         existingAreas={areas}
+        existingCityCategorySettings={cityCategorySettings}
+        existingAreaCategorySettings={areaCategorySettings}
         onSuccess={fetchData}
       />
       <OsmAreaGeneratorDialog 
@@ -776,6 +1020,7 @@ export default function SeoOverridesPage() {
         categories={categories}
         existingCities={cities}
         existingAreas={areas}
+        existingAreaCategorySettings={areaCategorySettings}
         onSuccess={fetchData}
       />
     </div>

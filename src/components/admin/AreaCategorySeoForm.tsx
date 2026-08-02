@@ -9,7 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Wand2, Save, X, Check, ChevronsUpDown, Search, AlertCircle } from "lucide-react";
+import { Loader2, Wand2, Save, X, Check, ChevronsUpDown, Search, AlertCircle, ExternalLink, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateAreaCategorySeo } from "@/ai/flows/generateAreaCategorySeoFlow";
 import type { FirestoreCity, FirestoreArea, FirestoreCategory, AreaCategorySeoSetting } from "@/types/firestore";
@@ -147,6 +147,19 @@ export default function AreaCategorySeoForm({ initialData, cities, areas, catego
   const watchedCityId = form.watch("cityId");
   const watchedAreaId = form.watch("areaId");
   const watchedCategoryId = form.watch("categoryId");
+  const watchedSlug = form.watch("slug");
+
+  const city = useMemo(() => cities.find(c => c.id === watchedCityId), [cities, watchedCityId]);
+  const area = useMemo(() => areas.find(a => a.id === watchedAreaId), [areas, watchedAreaId]);
+  const category = useMemo(() => categories.find(c => c.id === watchedCategoryId), [categories, watchedCategoryId]);
+
+  const activeSlug = useMemo(() => {
+    if (watchedSlug) return watchedSlug;
+    if (city && area && category) {
+      return `${city.slug}/${area.slug}/category/${category.slug}`;
+    }
+    return "";
+  }, [watchedSlug, city, area, category]);
 
   // Dynamically filter areas to only show those belonging to the selected city
   const filteredAreas = useMemo(() => {
@@ -266,8 +279,52 @@ export default function AreaCategorySeoForm({ initialData, cities, areas, catego
         <FormField control={form.control} name="slug" render={({ field }) => (
           <FormItem>
             <FormLabel>Custom Slug (Optional)</FormLabel>
-            <FormControl><Input placeholder="e.g., bangalore/whitefield/male-actor (will autogenerate if empty)" {...field} value={field.value || ""} disabled={isSubmitting}/></FormControl>
-            <FormDescription>Leave blank to auto-generate slug segments based on URLs.</FormDescription>
+            <div className="flex gap-2">
+              <FormControl>
+                <Input 
+                  placeholder="e.g., bangalore/whitefield/male-actor (will autogenerate if empty)" 
+                  {...field} 
+                  value={field.value || ""} 
+                  disabled={isSubmitting}
+                  className="flex-grow font-mono text-sm"
+                />
+              </FormControl>
+              {activeSlug && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      window.open(activeSlug.startsWith('/') ? activeSlug : `/${activeSlug}`, '_blank');
+                    }}
+                    title="Open page in new tab"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const path = activeSlug.startsWith('/') ? activeSlug : `/${activeSlug}`;
+                      navigator.clipboard.writeText(`${window.location.origin}${path}`);
+                      toast({ title: "Copied", description: "URL copied to clipboard." });
+                    }}
+                    title="Copy full URL"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <FormDescription>
+              {activeSlug ? (
+                <span>Active URL: <span className="font-mono font-bold text-foreground">/{activeSlug.startsWith('/') ? activeSlug.slice(1) : activeSlug}</span></span>
+              ) : (
+                "Leave blank to auto-generate slug segments based on URLs."
+              )}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )} />

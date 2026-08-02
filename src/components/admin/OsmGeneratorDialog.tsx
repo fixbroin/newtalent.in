@@ -14,11 +14,12 @@ import {
 } from "lucide-react";
 import { db } from '@/lib/firebase';
 import { 
-  collection, getDocs, addDoc, updateDoc, doc, Timestamp, query, where 
+  collection, getDocs, addDoc, updateDoc, doc, Timestamp, query, where, writeBatch 
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { triggerRefresh } from '@/lib/revalidateUtils';
-import type { FirestoreCategory, FirestoreCity, FirestoreArea } from '@/types/firestore';
+import { Progress } from "@/components/ui/progress";
+import type { FirestoreCategory, FirestoreCity, FirestoreArea, CityCategorySeoSetting, AreaCategorySeoSetting } from '@/types/firestore';
 
 interface OsmGeneratorDialogProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ interface OsmGeneratorDialogProps {
   categories: FirestoreCategory[];
   existingCities: FirestoreCity[];
   existingAreas: FirestoreArea[];
+  existingCityCategorySettings?: CityCategorySeoSetting[];
+  existingAreaCategorySettings?: AreaCategorySeoSetting[];
   onSuccess: () => void;
 }
 
@@ -228,10 +231,41 @@ export default function OsmGeneratorDialog({
   onClose,
   activeTab,
   categories,
-  existingCities,
-  existingAreas,
+  existingCities: propsExistingCities,
+  existingAreas: propsExistingAreas,
+  existingCityCategorySettings = [],
+  existingAreaCategorySettings = [],
   onSuccess,
 }: OsmGeneratorDialogProps) {
+  const [fullCities, setFullCities] = useState<FirestoreCity[]>([]);
+  const [fullAreas, setFullAreas] = useState<FirestoreArea[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchFullDbData = async () => {
+        try {
+          const [citiesSnap, areasSnap] = await Promise.all([
+            getDocs(collection(db, "cities")),
+            getDocs(collection(db, "areas"))
+          ]);
+          const loadedCities = citiesSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreCity));
+          loadedCities.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          setFullCities(loadedCities);
+
+          const loadedAreas = areasSnap.docs.map(d => ({ ...d.data(), id: d.id } as FirestoreArea));
+          loadedAreas.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          setFullAreas(loadedAreas);
+        } catch (err) {
+          console.error("Error fetching full cities/areas for checklist generator:", err);
+        }
+      };
+      fetchFullDbData();
+    }
+  }, [isOpen]);
+
+  const existingCities = fullCities.length > 0 ? fullCities : propsExistingCities;
+  const existingAreas = fullAreas.length > 0 ? fullAreas : propsExistingAreas;
+
   const { toast } = useToast();
   const [countryCode, setCountryCode] = useState('IN');
   const [selectedCityId, setSelectedCityId] = useState('');
@@ -249,6 +283,8 @@ export default function OsmGeneratorDialog({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItemNames, setSelectedItemNames] = useState<string[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const [totalProgress, setTotalProgress] = useState(0);
 
   // Reset local state when dialog is closed/opened
   useEffect(() => {
@@ -275,7 +311,7 @@ export default function OsmGeneratorDialog({
             id: c.id
           }));
           setOsmItems(dbCitiesMapped);
-          setSelectedItemNames(dbCitiesMapped.map(c => c.name));
+          setSelectedItemNames(dbCitiesMapped.filter(c => !isItemDisabled(c.name)).map(c => c.name));
         }
       } else if (activeTab === 'area-category') {
         setAreasSource('db');
@@ -301,7 +337,7 @@ export default function OsmGeneratorDialog({
           id: c.id
         }));
         setOsmItems(dbCitiesMapped);
-        setSelectedItemNames(dbCitiesMapped.map(c => c.name));
+        setSelectedItemNames(dbCitiesMapped.filter(c => !isItemDisabled(c.name)).map(c => c.name));
       } else {
         setOsmItems([]);
         setSelectedItemNames([]);
@@ -325,13 +361,20 @@ export default function OsmGeneratorDialog({
             id: a.id
           }));
         setOsmItems(filteredAreas);
-        setSelectedItemNames(filteredAreas.map(a => a.name));
+        setSelectedItemNames(filteredAreas.filter(a => !isItemDisabled(a.name)).map(a => a.name));
       } else {
         setOsmItems([]);
         setSelectedItemNames([]);
       }
     }
   }, [areasSource, selectedCityId, existingAreas, activeTab, isOpen]);
+
+  // Deselect disabled items dynamically if overwriteExisting toggle is turned off
+  useEffect(() => {
+    if (!overwriteExisting && isOpen) {
+      setSelectedItemNames(prev => prev.filter(name => !isItemDisabled(name)));
+    }
+  }, [overwriteExisting, isOpen]);
 
   // Handle selected city change in Area tabs
   const selectedParentCity = useMemo(() => {
@@ -494,8 +537,34 @@ export default function OsmGeneratorDialog({
     if (activeTab === 'city-homepage') {
       return existingCities.some(c => c.name.toLowerCase() === itemName.toLowerCase());
     }
-    if (activeTab === 'city-category' && citiesSource === 'osm') {
-      return existingCities.some(c => c.name.toLowerCase() === itemName.toLowerCase());
+    if (activeTab === 'city-category') {
+      if (citiesSource === 'osm') {
+        const cityExists = existingCities.some(c => c.name.toLowerCase() === itemName.toLowerCase());
+        if (cityExists) return true;
+      }
+      const cityHasSeo = existingCityCategorySettings.some(s => s.cityName.toLowerCase() === itemName.toLowerCase());
+      if (cityHasSeo) return true;
+    }
+    if (activeTab === 'manage-areas') {
+      return existingAreas.some(
+        a => a.cityId === selectedCityId && a.name.toLowerCase() === itemName.toLowerCase()
+      );
+    }
+    if (activeTab === 'area-category') {
+      if (areasSource === 'osm') {
+        const areaExists = existingAreas.some(
+          a => a.cityId === selectedCityId && a.name.toLowerCase() === itemName.toLowerCase()
+        );
+        if (areaExists) return true;
+      }
+      const parentCity = existingCities.find(c => c.id === selectedCityId);
+      if (parentCity) {
+        const areaHasSeo = existingAreaCategorySettings.some(s => 
+          s.cityName.toLowerCase() === parentCity.name.toLowerCase() &&
+          s.areaName.toLowerCase() === itemName.toLowerCase()
+        );
+        if (areaHasSeo) return true;
+      }
     }
     return false;
   };
@@ -550,6 +619,41 @@ export default function OsmGeneratorDialog({
 
     try {
       const selectedLocations = osmItems.filter(item => selectedItemNames.includes(item.name));
+      const total = selectedLocations.length * ((activeTab === 'city-category' || activeTab === 'area-category') ? selectedCategoryIds.length : 1);
+      setTotalProgress(total);
+      setCurrentProgress(0);
+      let progressCounter = 0;
+
+      // Single-query pre-fetching maps to bypass querying within the loop
+      const existingSettingsMap = new Map<string, string>(); // key: cityName_categoryId -> doc.id
+      if (activeTab === 'city-category') {
+        const snap = await getDocs(collection(db, "cityCategorySeoSettings"));
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.cityName && data.categoryId) {
+            existingSettingsMap.set(`${data.cityName.toLowerCase()}_${data.categoryId}`, doc.id);
+          }
+        });
+      }
+
+      const existingAreaSettingsMap = new Map<string, string>(); // key: cityName_areaName_categoryId -> doc.id
+      if (activeTab === 'area-category') {
+        const snap = await getDocs(collection(db, "areaCategorySeoSettings"));
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.cityName && data.areaName && data.categoryId) {
+            existingAreaSettingsMap.set(`${data.cityName.toLowerCase()}_${data.areaName.toLowerCase()}_${data.categoryId}`, doc.id);
+          }
+        });
+      }
+
+      // Local state mapping to prevent duplicate parent creation in the same batch
+      const locallyCreatedCities = new Map<string, string>(); // slug -> cityDocId
+      const locallyCreatedAreas = new Map<string, string>(); // cityId_areaSlug -> areaDocId
+
+      // Firestore Write Batch setup
+      let batch = writeBatch(db);
+      let batchCount = 0;
 
       for (let i = 0; i < selectedLocations.length; i++) {
         const loc = selectedLocations[i];
@@ -565,6 +669,8 @@ export default function OsmGeneratorDialog({
           
           if (existing?.id && !overwriteExisting) {
             skippedCount++;
+            progressCounter++;
+            setCurrentProgress(progressCounter);
             continue;
           }
 
@@ -586,15 +692,28 @@ export default function OsmGeneratorDialog({
           };
 
           if (existing?.id) {
-            await updateDoc(doc(db, "cities", existing.id), payload);
+            const existingRef = doc(db, "cities", existing.id);
+            batch.update(existingRef, payload);
             updatedCount++;
           } else {
-            await addDoc(collection(db, "cities"), {
+            const newRef = doc(collection(db, "cities"));
+            batch.set(newRef, {
               ...payload,
               createdAt: Timestamp.now()
             });
             createdCount++;
           }
+          
+          batchCount++;
+          if (batchCount >= 500) {
+            await batch.commit();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+            batch = writeBatch(db);
+            batchCount = 0;
+          }
+
+          progressCounter++;
+          setCurrentProgress(progressCounter);
         } 
         
         else if (activeTab === 'city-category') {
@@ -604,6 +723,8 @@ export default function OsmGeneratorDialog({
           
           if (existingCity?.id) {
             parentCityDocId = existingCity.id;
+          } else if (locallyCreatedCities.has(slug)) {
+            parentCityDocId = locallyCreatedCities.get(slug)!;
           } else {
             // Create the parent city
             const cityTemplate = CITY_TEMPLATES[templateIndex];
@@ -624,8 +745,18 @@ export default function OsmGeneratorDialog({
               updatedAt: Timestamp.now()
             };
 
-            const newCityDoc = await addDoc(collection(db, "cities"), cityPayload);
-            parentCityDocId = newCityDoc.id;
+            const newCityDocRef = doc(collection(db, "cities"));
+            batch.set(newCityDocRef, cityPayload);
+            parentCityDocId = newCityDocRef.id;
+            locallyCreatedCities.set(slug, parentCityDocId);
+            batchCount++;
+            
+            if (batchCount >= 500) {
+              await batch.commit();
+              await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+              batch = writeBatch(db);
+              batchCount = 0;
+            }
           }
 
           // Generate City-Category SEO Combinations
@@ -633,22 +764,23 @@ export default function OsmGeneratorDialog({
           
           for (const catId of selectedCategoryIds) {
             const category = categories.find(c => c.id === catId);
-            if (!category) continue;
+            if (!category) {
+              progressCounter++;
+              setCurrentProgress(progressCounter);
+              continue;
+            }
 
             const categoryName = category.name;
             const categorySlug = category.slug || categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             const combinationSlug = `${slug}/category/${categorySlug}`;
 
-            // Check if combination already exists
-            const q = query(
-              collection(db, "cityCategorySeoSettings"), 
-              where("cityName", "==", loc.name), 
-              where("categoryId", "==", catId)
-            );
-            const snap = await getDocs(q);
+            // Check if combination already exists from memory
+            const existingDocId = existingSettingsMap.get(`${loc.name.toLowerCase()}_${catId}`);
 
-            if (!snap.empty && !overwriteExisting) {
+            if (existingDocId && !overwriteExisting) {
               skippedCount++;
+              progressCounter++;
+              setCurrentProgress(progressCounter);
               continue;
             }
 
@@ -683,21 +815,38 @@ export default function OsmGeneratorDialog({
               updatedAt: Timestamp.now()
             };
 
-            if (!snap.empty) {
-              await updateDoc(doc(db, "cityCategorySeoSettings", snap.docs[0].id), payload);
+            if (existingDocId) {
+              const docRef = doc(db, "cityCategorySeoSettings", existingDocId);
+              batch.update(docRef, payload);
               updatedCount++;
             } else {
-              await addDoc(collection(db, "cityCategorySeoSettings"), {
+              const newRef = doc(collection(db, "cityCategorySeoSettings"));
+              batch.set(newRef, {
                 ...payload,
                 createdAt: Timestamp.now()
               });
               createdCount++;
             }
+
+            batchCount++;
+            if (batchCount >= 500) {
+              await batch.commit();
+              await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+              batch = writeBatch(db);
+              batchCount = 0;
+            }
+
+            progressCounter++;
+            setCurrentProgress(progressCounter);
           }
         } 
         
         else if (activeTab === 'manage-areas') {
-          if (!selectedParentCity) continue;
+          if (!selectedParentCity) {
+            progressCounter++;
+            setCurrentProgress(progressCounter);
+            continue;
+          }
           
           const existingArea = existingAreas.find(a => 
             a.cityId === selectedParentCity.id && 
@@ -706,6 +855,8 @@ export default function OsmGeneratorDialog({
 
           if (existingArea?.id && !overwriteExisting) {
             skippedCount++;
+            progressCounter++;
+            setCurrentProgress(progressCounter);
             continue;
           }
 
@@ -719,19 +870,36 @@ export default function OsmGeneratorDialog({
           };
 
           if (existingArea?.id) {
-            await updateDoc(doc(db, "areas", existingArea.id), payload);
+            const existingRef = doc(db, "areas", existingArea.id);
+            batch.update(existingRef, payload);
             updatedCount++;
           } else {
-            await addDoc(collection(db, "areas"), {
+            const newRef = doc(collection(db, "areas"));
+            batch.set(newRef, {
               ...payload,
               createdAt: Timestamp.now()
             });
             createdCount++;
           }
+
+          batchCount++;
+          if (batchCount >= 500) {
+            await batch.commit();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+            batch = writeBatch(db);
+            batchCount = 0;
+          }
+
+          progressCounter++;
+          setCurrentProgress(progressCounter);
         } 
         
         else if (activeTab === 'area-category') {
-          if (!selectedParentCity) continue;
+          if (!selectedParentCity) {
+            progressCounter += selectedCategoryIds.length;
+            setCurrentProgress(progressCounter);
+            continue;
+          }
 
           // Find/create parent Area first to ensure areaId key integrity
           let parentAreaDocId = "";
@@ -740,8 +908,11 @@ export default function OsmGeneratorDialog({
             (a.slug === slug || a.name.toLowerCase() === loc.name.toLowerCase())
           );
 
+          const areaKey = `${selectedParentCity.id}_${slug}`;
           if (existingArea?.id) {
             parentAreaDocId = existingArea.id;
+          } else if (locallyCreatedAreas.has(areaKey)) {
+            parentAreaDocId = locallyCreatedAreas.get(areaKey)!;
           } else {
             // Create Area doc
             const areaPayload = {
@@ -753,31 +924,41 @@ export default function OsmGeneratorDialog({
               createdAt: Timestamp.now(),
               updatedAt: Timestamp.now()
             };
-            const newAreaDoc = await addDoc(collection(db, "areas"), areaPayload);
-            parentAreaDocId = newAreaDoc.id;
+            const newAreaDocRef = doc(collection(db, "areas"));
+            batch.set(newAreaDocRef, areaPayload);
+            parentAreaDocId = newAreaDocRef.id;
+            locallyCreatedAreas.set(areaKey, parentAreaDocId);
+            batchCount++;
+
+            if (batchCount >= 500) {
+              await batch.commit();
+              await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+              batch = writeBatch(db);
+              batchCount = 0;
+            }
           }
 
           const template = AREA_CATEGORY_TEMPLATES[templateIndex];
 
           for (const catId of selectedCategoryIds) {
             const category = categories.find(c => c.id === catId);
-            if (!category) continue;
+            if (!category) {
+              progressCounter++;
+              setCurrentProgress(progressCounter);
+              continue;
+            }
 
             const categoryName = category.name;
             const categorySlug = category.slug || categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             const combinationSlug = `${selectedParentCity.slug}/${slug}/category/${categorySlug}`;
 
-            // Check if combination already exists
-            const q = query(
-              collection(db, "areaCategorySeoSettings"),
-              where("cityName", "==", selectedParentCity.name),
-              where("areaName", "==", loc.name),
-              where("categoryId", "==", catId)
-            );
-            const snap = await getDocs(q);
+            // Check if combination already exists from memory
+            const existingDocId = existingAreaSettingsMap.get(`${selectedParentCity.name.toLowerCase()}_${loc.name.toLowerCase()}_${catId}`);
 
-            if (!snap.empty && !overwriteExisting) {
+            if (existingDocId && !overwriteExisting) {
               skippedCount++;
+              progressCounter++;
+              setCurrentProgress(progressCounter);
               continue;
             }
 
@@ -817,18 +998,36 @@ export default function OsmGeneratorDialog({
               updatedAt: Timestamp.now()
             };
 
-            if (!snap.empty) {
-              await updateDoc(doc(db, "areaCategorySeoSettings", snap.docs[0].id), payload);
+            if (existingDocId) {
+              const docRef = doc(db, "areaCategorySeoSettings", existingDocId);
+              batch.update(docRef, payload);
               updatedCount++;
             } else {
-              await addDoc(collection(db, "areaCategorySeoSettings"), {
+              const newRef = doc(collection(db, "areaCategorySeoSettings"));
+              batch.set(newRef, {
                 ...payload,
                 createdAt: Timestamp.now()
               });
               createdCount++;
             }
+
+            batchCount++;
+            if (batchCount >= 500) {
+              await batch.commit();
+              await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit buffer to prevent Firestore stream exhaustion
+              batch = writeBatch(db);
+              batchCount = 0;
+            }
+
+            progressCounter++;
+            setCurrentProgress(progressCounter);
           }
         }
+      }
+
+      // Commit remaining batch items
+      if (batchCount > 0) {
+        await batch.commit();
       }
 
       // Revalidate cache files
@@ -1194,17 +1393,27 @@ export default function OsmGeneratorDialog({
           )}
         </div>
 
-        <DialogFooter className="pt-4 border-t flex flex-row items-center justify-between gap-4">
-          <div className="text-xs text-muted-foreground text-left max-w-[60%]">
-            {selectedItemNames.length > 0 && (
-              <p>
-                Will generate <strong className="text-foreground">
-                  {selectedItemNames.length * ((activeTab === 'city-category' || activeTab === 'area-category') ? selectedCategoryIds.length : 1)}
-                </strong> database records.
-              </p>
+        <DialogFooter className="pt-4 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="text-xs text-muted-foreground text-left flex-grow">
+            {isGenerating ? (
+              <div className="space-y-1.5 w-full">
+                <div className="flex justify-between text-xs text-muted-foreground font-bold">
+                  <span>Generating: {currentProgress} / {totalProgress} records</span>
+                  <span>{totalProgress > 0 ? Math.round((currentProgress / totalProgress) * 100) : 0}%</span>
+                </div>
+                <Progress value={totalProgress > 0 ? (currentProgress / totalProgress) * 100 : 0} className="h-2 w-full rounded-full animate-pulse" />
+              </div>
+            ) : (
+              selectedItemNames.length > 0 && (
+                <p>
+                  Will generate <strong className="text-foreground">
+                    {selectedItemNames.length * ((activeTab === 'city-category' || activeTab === 'area-category') ? selectedCategoryIds.length : 1)}
+                  </strong> database records.
+                </p>
+              )
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={onClose} disabled={isGenerating} className="rounded-xl">
               Cancel
             </Button>

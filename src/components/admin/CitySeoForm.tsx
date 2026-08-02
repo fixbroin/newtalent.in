@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -10,7 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Wand2, Save, X } from "lucide-react";
+import { Loader2, Wand2, Save, X, ExternalLink, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateCitySeo } from "@/ai/flows/generateCitySeoFlow";
 import type { FirestoreCity } from "@/types/firestore";
@@ -53,6 +52,10 @@ export default function CitySeoForm({ initialData, onSubmit, onCancel, isSubmitt
 
   const watchedName = form.watch("name");
 
+  const activeSlug = useMemo(() => {
+    return initialData?.slug || (watchedName ? watchedName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : "");
+  }, [watchedName, initialData]);
+
   const handleGenerateAI = async () => {
     if (!watchedName) {
       toast({ title: "Name Required", description: "Please enter the city name first.", variant: "destructive" });
@@ -87,7 +90,43 @@ export default function CitySeoForm({ initialData, onSubmit, onCancel, isSubmitt
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
             <FormLabel>City Name</FormLabel>
-            <FormControl><Input placeholder="e.g., Bangalore" {...field} disabled={isSubmitting || !!initialData}/></FormControl>
+            <div className="flex gap-2">
+              <FormControl>
+                <Input placeholder="e.g., Bangalore" {...field} disabled={isSubmitting || !!initialData} className="flex-grow font-mono text-sm" />
+              </FormControl>
+              {activeSlug && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      window.open(`/${activeSlug}`, '_blank');
+                    }}
+                    title="Open page in new tab"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/${activeSlug}`);
+                      toast({ title: "Copied", description: "URL copied to clipboard." });
+                    }}
+                    title="Copy full URL"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            {activeSlug && (
+              <FormDescription>
+                Active URL: <span className="font-mono font-bold text-foreground">/{activeSlug}</span>
+              </FormDescription>
+            )}
             <FormMessage />
           </FormItem>
         )} />
