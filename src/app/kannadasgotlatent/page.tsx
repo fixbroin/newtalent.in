@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -61,7 +62,24 @@ export default function KannadasGotLatentPage() {
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [talentVideoUrl, setTalentVideoUrl] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
-  const [bannerUrl, setBannerUrl] = useState<string>('/kannadasgotlatent.png');
+  const [bannerUrl, setBannerUrl] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('kannadasgotlatent_banner_cache') || '/kannadasgotlatent.png';
+    }
+    return '/kannadasgotlatent.png';
+  });
+  const [bannerLoaded, setBannerLoaded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('kannadasgotlatent_banner_cache');
+    }
+    return false;
+  });
+  const [prevBannerUrl, setPrevBannerUrl] = useState(bannerUrl);
+
+  if (bannerUrl !== prevBannerUrl) {
+    setPrevBannerUrl(bannerUrl);
+    setBannerLoaded(false);
+  }
 
   const [instagram, setInstagram] = useState('');
   const [youtube, setYoutube] = useState('');
@@ -111,6 +129,7 @@ export default function KannadasGotLatentPage() {
         const data = docSnap.data();
         if (data.bannerUrl) {
           setBannerUrl(data.bannerUrl);
+          localStorage.setItem('kannadasgotlatent_banner_cache', data.bannerUrl);
         }
       }
     });
@@ -592,11 +611,18 @@ export default function KannadasGotLatentPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
         <Card className="border-t-4 border-primary rounded-2xl shadow-xl overflow-hidden bg-card/60 backdrop-blur-md">
-          <div className="w-full border-b">
+          <div className="w-full border-b relative min-h-[100px] bg-muted overflow-hidden">
+            {!bannerLoaded && (
+              <div className="absolute inset-0 bg-muted-foreground/10 animate-pulse" />
+            )}
             <img 
               src={bannerUrl} 
               alt="Kannada's Got Latent Banner" 
-              className="w-full h-auto object-contain"
+              onLoad={() => setBannerLoaded(true)}
+              className={cn(
+                "w-full h-auto object-contain transition-opacity duration-300",
+                bannerLoaded ? "opacity-100" : "opacity-0"
+              )}
             />
           </div>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center px-6 space-y-6">
@@ -699,11 +725,18 @@ export default function KannadasGotLatentPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Banner */}
-      <div className="w-full rounded-2xl overflow-hidden shadow-lg border">
+      <div className="w-full rounded-2xl overflow-hidden shadow-lg border relative min-h-[150px] sm:min-h-[220px] bg-muted">
+        {!bannerLoaded && (
+          <div className="absolute inset-0 bg-muted-foreground/10 animate-pulse" />
+        )}
         <img 
           src={bannerUrl} 
           alt="Kannada's Got Latent Banner" 
-          className="w-full h-auto object-contain"
+          onLoad={() => setBannerLoaded(true)}
+          className={cn(
+            "w-full h-auto object-contain transition-opacity duration-300",
+            bannerLoaded ? "opacity-100" : "opacity-0"
+          )}
         />
       </div>
 
