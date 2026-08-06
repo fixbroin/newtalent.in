@@ -56,6 +56,8 @@ const navItems = [
   { href: '/admin/marketing-automation', label: 'Marketing Automation', icon: Megaphone },
   { href: '/admin/newsletter-popups', label: 'Newsletter Popups', icon: Megaphone },
   { href: '/admin/promo-codes', label: 'Promo Codes', icon: Percent },
+  { type: 'separator', label: 'Campaigns' },
+  { href: '/admin/kannadasgotlatent', label: "Kannada's Got Latent", icon: Tv },
   { type: 'separator', label: 'System Settings' },
   { href: '/admin/theme-settings', label: 'Theme Settings', icon: Palette },
   { href: '/admin/settings', label: 'App Settings', icon: Settings },
@@ -157,6 +159,7 @@ export default function AdminSidebarContent() {
     '/admin/reviews',
     '/admin/subscriptions',
     '/admin/google-indexing',
+    '/admin/kannadasgotlatent',
   ];
 
 

@@ -222,7 +222,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
       const isCityAreaCategoryPage = pathSegments.length === 3 && pathSegments[0] !== 'category' && pathSegments[0] !== 'service';
       const isCityCategoryPage = pathSegments.length === 3 && pathSegments[1] === 'category';
 
-      const hideFooterPaths: string[] = [];
+      const hideFooterPaths: string[] = ['/kannadasgotlatent'];
       const hideFooterPrefixes = [
         '/category/', 
         '/service/',  
@@ -309,6 +309,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
     '/artist/profile',
     '/script-writing/',
     '/script/',
+    '/kannadasgotlatent',
   ];
   
   const isHideFooterPath = hideFooterPrefixes.some(prefix => pathname.startsWith(prefix));
