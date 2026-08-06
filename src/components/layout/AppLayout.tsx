@@ -301,7 +301,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
   const shouldShowHeader = isClientMounted && !pathname.startsWith('/admin') && !pathname.startsWith('/artist') && !pathname.startsWith('/auth/') && !isScriptEditor;
   const shouldShowNewsletterPopupManager = isClientMounted && !pathname.startsWith('/admin') && !pathname.startsWith('/artist') && !isScriptEditor;
   const shouldShowGlobalAdminPopup = isClientMounted && !pathname.startsWith('/admin') && !pathname.startsWith('/artist') && !isScriptEditor;
-  const shouldShowPwaInstallButton = isClientMounted && !pathname.startsWith('/category/') && !pathname.includes('/category/') && !isScriptEditor;
+  const shouldShowPwaInstallButton = isClientMounted && !pathname.startsWith('/category/') && !pathname.includes('/category/') && !pathname.startsWith('/kannadasgotlatent') && !isScriptEditor;
 
   const hideFooterPrefixes = [
     '/admin',
