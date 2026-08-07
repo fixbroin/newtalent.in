@@ -6,7 +6,13 @@ import { headers } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      // Handle empty/malformed request bodies gracefully
+    }
+    
     const { pathname, userAgent } = body;
 
     if (!pathname || !userAgent) {
