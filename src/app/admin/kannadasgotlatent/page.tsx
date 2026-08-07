@@ -116,12 +116,14 @@ export default function AdminKannadasGotLatentDashboard() {
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const file = files[0];
+    const rawFile = files[0];
 
     setBannerUploading(true);
     setBannerProgress(0);
 
     try {
+      const { compressImage } = await import('@/lib/imageCompression');
+      const file = await compressImage(rawFile);
       const token = await auth.currentUser?.getIdToken();
       const formData = new FormData();
       formData.append('file', file);

@@ -25,6 +25,7 @@ const navItems = [
   { href: '/admin/profile', label: 'Admin Profile', icon: UserProfileIcon },
   { href: '/admin/notifications', label: 'Admin Notifications', icon: Bell },
   { href: '/admin/activity-feed', label: 'Activity Feed', icon: Activity },
+  { href: '/admin/visitor-info', label: 'Visitor Info', icon: Globe2 },
   { type: 'separator', label: 'Artist Management' },
   { href: '/admin/artist-applications', label: 'Artist Applications', icon: Users2 },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
@@ -49,7 +50,6 @@ const navItems = [
   { type: 'separator', label: 'Operations & Finance' },
   { href: '/admin/referral-settings', label: 'Referral System', icon: Handshake },
   
-  { href: '/admin/visitor-info', label: 'Visitor Info', icon: Globe2 },
   { type: 'separator', label: 'Homepage & Marketing' },
   { href: '/admin/features', label: 'Homepage Features', icon: Tv },
   { href: '/admin/marketing-settings', label: 'Marketing IDs', icon: Megaphone },

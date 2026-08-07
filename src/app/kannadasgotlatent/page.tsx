@@ -47,6 +47,7 @@ export default function KannadasGotLatentPage() {
   const [stageName, setStageName] = useState('');
   const [gender, setGender] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dateOfBirthDisplay, setDateOfBirthDisplay] = useState('');
   const [age, setAge] = useState<number | null>(null);
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -99,6 +100,7 @@ export default function KannadasGotLatentPage() {
   const [ownContent, setOwnContent] = useState(false);
   const [allowPublish, setAllowPublish] = useState(false);
   const [understandNotGuaranteed, setUnderstandNotGuaranteed] = useState(false);
+  const [isOver18, setIsOver18] = useState(false);
 
   // Upload progress states
   const [introProgress, setIntroProgress] = useState<number | null>(null);
@@ -119,6 +121,37 @@ export default function KannadasGotLatentPage() {
     setter(value);
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const handleDobChange = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    let formatted = clean;
+    if (clean.length > 2) {
+      formatted = `${clean.slice(0, 2)}/${clean.slice(2)}`;
+    }
+    if (clean.length > 4) {
+      formatted = `${clean.slice(0, 2)}/${clean.slice(2, 4)}/${clean.slice(4, 8)}`;
+    }
+    setDateOfBirthDisplay(formatted);
+
+    if (clean.length === 8) {
+      const day = parseInt(clean.slice(0, 2), 10);
+      const month = parseInt(clean.slice(2, 4), 10);
+      const year = parseInt(clean.slice(4, 8), 10);
+      const isValidDate = day > 0 && day <= 31 && month > 0 && month <= 12 && year >= 1900 && year <= new Date().getFullYear();
+      if (isValidDate) {
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        setDateOfBirth(`${year}-${pad(month)}-${pad(day)}`);
+      } else {
+        setDateOfBirth('');
+      }
+    } else {
+      setDateOfBirth('');
+    }
+
+    if (errors.dateOfBirth) {
+      setErrors(prev => ({ ...prev, dateOfBirth: false }));
     }
   };
 
@@ -155,7 +188,13 @@ export default function KannadasGotLatentPage() {
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.stageName) setStageName(draft.stageName);
         if (draft.gender) setGender(draft.gender);
-        if (draft.dateOfBirth) setDateOfBirth(draft.dateOfBirth);
+        if (draft.dateOfBirth) {
+          setDateOfBirth(draft.dateOfBirth);
+          const parts = draft.dateOfBirth.split('-');
+          if (parts.length === 3) {
+            setDateOfBirthDisplay(`${parts[2]}/${parts[1]}/${parts[0]}`);
+          }
+        }
         if (draft.mobileNumber) setMobileNumber(draft.mobileNumber);
         if (draft.email) setEmail(draft.email);
         if (draft.city) setCity(draft.city);
@@ -267,6 +306,41 @@ export default function KannadasGotLatentPage() {
     localStorage.removeItem('kannadasgotlatent_submitted_id');
     setSubmittedId(null);
     setFetchedStatus(null);
+    setFullName('');
+    setStageName('');
+    setGender('');
+    setDateOfBirth('');
+    setDateOfBirthDisplay('');
+    setAge(null);
+    setMobileNumber('');
+    setEmail('');
+    setCity('');
+    setState('Karnataka');
+    setPinCode('');
+    setSelectedCategories([]);
+    setTalentTitle('');
+    setTalentDescription('');
+    setPerformedOnStageBefore('no');
+    setIntroVideoUrl('');
+    setTalentVideoUrl('');
+    setPhotos([]);
+    setInstagram('');
+    setYoutube('');
+    setFacebook('');
+    setOtherSocial('');
+    setCanTravel('yes');
+    setLanguages(['Kannada']);
+    setAvailableWeekends(true);
+    setAvailableWeekdays(false);
+    setEmergencyName('');
+    setEmergencyRelationship('');
+    setEmergencyMobile('');
+    setConfirmCorrect(false);
+    setOwnContent(false);
+    setAllowPublish(false);
+    setUnderstandNotGuaranteed(false);
+    setIsOver18(false);
+    setErrors({});
   };
 
   // Auto-calculate age on Date of Birth change
@@ -388,9 +462,11 @@ export default function KannadasGotLatentPage() {
 
       setPhotosProgress(0);
       try {
+        const { compressImage } = await import('@/lib/imageCompression');
         const uploadedUrls: string[] = [];
         let completed = 0;
-        for (const file of newFiles) {
+        for (const rawFile of newFiles) {
+          const file = await compressImage(rawFile);
           const url = await uploadFile(file, (pct) => {
             const batchPct = Math.round(((completed + pct / 100) / newFiles.length) * 100);
             setPhotosProgress(batchPct);
@@ -405,7 +481,7 @@ export default function KannadasGotLatentPage() {
           }
           return next;
         });
-        toast({ title: 'Success', description: `${newFiles.length} profile images uploaded.` });
+        toast({ title: 'Success', description: `${newFiles.length} profile images compressed and uploaded.` });
       } catch (err: any) {
         toast({ title: 'Upload Failed', description: err.message, variant: 'destructive' });
       } finally {
@@ -455,6 +531,7 @@ export default function KannadasGotLatentPage() {
     if (!ownContent) newErrors.ownContent = true;
     if (!allowPublish) newErrors.allowPublish = true;
     if (!understandNotGuaranteed) newErrors.understandNotGuaranteed = true;
+    if (!isOver18) newErrors.isOver18 = true;
 
     setErrors(newErrors);
     const hasErrors = Object.keys(newErrors).length > 0;
@@ -526,6 +603,7 @@ export default function KannadasGotLatentPage() {
         ownContent,
         allowPublish,
         understandNotGuaranteed,
+        isOver18,
       };
 
       const res = await fetch('/api/kannadasgotlatent/apply', {
@@ -796,7 +874,16 @@ export default function KannadasGotLatentPage() {
 
             <div className="space-y-1">
               <Label htmlFor="dob">Date of Birth <span className="text-destructive">*</span></Label>
-              <Input id="dob" type="date" value={dateOfBirth} onChange={e => handleFieldChange('dateOfBirth', e.target.value, setDateOfBirth)} className={getErrorClass('dateOfBirth')} required />
+              <Input 
+                id="dob" 
+                type="text" 
+                inputMode="numeric" 
+                placeholder="DD/MM/YYYY" 
+                value={dateOfBirthDisplay} 
+                onChange={e => handleDobChange(e.target.value)} 
+                className={getErrorClass('dateOfBirth')} 
+                required 
+              />
             </div>
 
             <div className="space-y-1">
@@ -964,61 +1051,34 @@ export default function KannadasGotLatentPage() {
               <Label className="flex items-center gap-1.5">
                 <Film className="h-4 w-4 text-primary" /> 2. Performance Video Link / YouTube or Instagram URL
               </Label>
-              <div className="flex gap-2">
-                <div className="relative flex-grow">
-                  <Input 
-                    placeholder="Paste YouTube, Instagram reel URL, or upload file" 
-                    value={talentVideoUrl} 
-                    onChange={e => {
-                      setTalentVideoUrl(e.target.value);
+              <div className="relative">
+                <Input 
+                  placeholder="Paste YouTube, Instagram reel, or performance link" 
+                  value={talentVideoUrl} 
+                  onChange={e => {
+                    setTalentVideoUrl(e.target.value);
+                    if (errors.videos) setErrors(prev => ({ ...prev, videos: false }));
+                  }}
+                  className={`font-mono text-xs pr-10 ${errors.videos ? 'border-red-500 border-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
+                />
+                {talentVideoUrl && (
+                  <button 
+                    type="button"
+                    className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      setTalentVideoUrl('');
                       if (errors.videos) setErrors(prev => ({ ...prev, videos: false }));
                     }}
-                    className={`font-mono text-xs pr-10 ${errors.videos ? 'border-red-500 border-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
-                  />
-                  {talentVideoUrl && (
-                    <button 
-                      type="button"
-                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-destructive"
-                      onClick={() => {
-                        setTalentVideoUrl('');
-                        if (errors.videos) setErrors(prev => ({ ...prev, videos: false }));
-                      }}
-                      title="Clear URL"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="relative shrink-0">
-                  <Button type="button" variant="secondary" className={`rounded-xl flex items-center gap-1 ${errors.videos ? 'border-red-500 border-2' : ''}`} disabled={talentProgress !== null}>
-                    {talentProgress !== null ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> {talentProgress}%
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4" /> Upload
-                      </>
-                    )}
-                  </Button>
-                  <Input 
-                    type="file" 
-                    accept="video/*" 
-                    onChange={e => handleFileChange(e, 'talent')}
-                    disabled={talentProgress !== null}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </div>
+                    title="Clear URL"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
-              {talentProgress !== null && (
-                <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden mt-1">
-                  <div className="bg-primary h-full transition-all duration-300" style={{ width: `${talentProgress}%` }} />
-                </div>
-              )}
               {errors.videos && (
                 <p className="text-xs text-red-500 font-bold mt-1">⚠️ Performance requires providing at least one video or external link.</p>
               )}
-              <p className="text-[10px] text-muted-foreground">Upload a 2-minute talent video directly, or paste a link to your performance reel.</p>
+              <p className="text-[10px] text-muted-foreground">Paste a link to your performance reel, YouTube video, or Instagram reel.</p>
             </div>
 
             {/* Photos */}
@@ -1205,7 +1265,7 @@ export default function KannadasGotLatentPage() {
             <div className={`flex items-start gap-2.5 p-3 rounded-lg border transition-colors ${errors.confirmCorrect ? 'border-red-500 bg-red-50/5 border-2' : 'border-transparent'}`}>
               <Checkbox id="dec1" checked={confirmCorrect} onCheckedChange={(val) => handleFieldChange('confirmCorrect', !!val, setConfirmCorrect)} className="mt-1" />
               <Label htmlFor="dec1" className="text-xs leading-normal cursor-pointer">
-                I confirm all information provided in this application form is correct and truthful.
+                I confirm all information provided in this registration form is correct and truthful.
               </Label>
             </div>
 
@@ -1227,6 +1287,13 @@ export default function KannadasGotLatentPage() {
               <Checkbox id="dec4" checked={understandNotGuaranteed} onCheckedChange={(val) => handleFieldChange('understandNotGuaranteed', !!val, setUnderstandNotGuaranteed)} className="mt-1" />
               <Label htmlFor="dec4" className="text-xs leading-normal cursor-pointer">
                 I understand that submitting this registration form does not guarantee selection for the stage show.
+              </Label>
+            </div>
+
+            <div className={`flex items-start gap-2.5 p-3 rounded-lg border transition-colors ${errors.isOver18 ? 'border-red-500 bg-red-50/5 border-2' : 'border-transparent'}`}>
+              <Checkbox id="dec5" checked={isOver18} onCheckedChange={(val) => handleFieldChange('isOver18', !!val, setIsOver18)} className="mt-1" />
+              <Label htmlFor="dec5" className="text-xs leading-normal cursor-pointer font-bold text-destructive">
+                I confirm that I am 18 years of age or older (18+).
               </Label>
             </div>
           </CardContent>
