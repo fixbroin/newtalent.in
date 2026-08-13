@@ -36,6 +36,8 @@ import { LazySection } from '@/components/shared/LazySection';
 import CategoryCard from './CategoryCard';
 import ArtistCard from '../category/ArtistCard';
 import SubscriptionPlansDialog from '../category/SubscriptionPlansDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { CheckCircle2 } from "lucide-react";
 import { useFeaturesConfig as useFeaturesHook } from '@/hooks/useFeaturesConfig';
 import { ADMIN_EMAIL } from '@/contexts/AuthContext';
 
@@ -226,6 +228,103 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
   const [isLoadingFeaturesConfig, setIsLoadingFeaturesConfig] = useState(() => !initialData && !getCache('featuresConfig', true));
   const [isLoadingPopular, setIsLoadingPopular] = useState(() => !initialData && !getCache('popularArtists', true));
   const [isLoadingRecent, setIsLoadingRecent] = useState(() => !initialData && !getCache('recentArtists', true));
+
+  const [artistApp, setArtistApp] = useState<ArtistApplication | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  // Check if current user has the artist role or app
+  const isArtist = firestoreUser?.roles?.includes('artist') || (artistApp && artistApp.status === 'approved');
+
+  // Deriving videos & certificates from firestoreUser (which is fetched by useAuth)
+  const videos = firestoreUser?.videos || [];
+  const certificates = firestoreUser?.certificates || [];
+  const hasSocialLinks = !!firestoreUser?.socialMediaLinks && Object.values(firestoreUser.socialMediaLinks).some(link => !!link);
+  const hasVisibilitySettings = firestoreUser?.showMobileOnPublicProfile !== undefined || firestoreUser?.showEmailOnPublicProfile !== undefined;
+
+  const checklistItems = [
+    {
+      id: 'photo_bio',
+      label: 'Upload Profile Photo & Write Bio',
+      isCompleted: !!artistApp?.profilePhotoUrl && !!artistApp?.bio,
+      percentage: 20,
+      description: 'Add a professional headshot and brief description of your talent.'
+    },
+    {
+      id: 'videos',
+      label: 'Add Audition or Work Videos',
+      isCompleted: videos.length > 0,
+      percentage: 20,
+      description: 'Add links to your best performances or video work samples.'
+    },
+    {
+      id: 'certificates',
+      label: 'Add Course Certificates',
+      isCompleted: certificates.length > 0,
+      percentage: 20,
+      description: 'Showcase your training, diplomas, or professional certifications.'
+    },
+    {
+      id: 'social',
+      label: 'Link Social Media Profiles',
+      isCompleted: hasSocialLinks,
+      percentage: 20,
+      description: 'Link your Instagram, YouTube, or LinkedIn accounts so clients can research you.'
+    },
+    {
+      id: 'visibility',
+      label: 'Configure Mobile & Email Visibility',
+      isCompleted: hasVisibilitySettings,
+      percentage: 20,
+      description: 'Set whether casting directors can see your contact numbers/emails.'
+    }
+  ];
+
+  const profileStrength = checklistItems.reduce((sum, item) => sum + (item.isCompleted ? item.percentage : 0), 0);
+
+  // Listen to ArtistApplications to check bio, profilePhotoUrl, status
+  useEffect(() => {
+    if (!user) {
+      setArtistApp(null);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(doc(db, "ArtistApplications", user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setArtistApp(docSnap.data() as ArtistApplication);
+      } else {
+        setArtistApp(null);
+      }
+    }, (error) => {
+      console.error("Error listening to artist application on homepage:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Onboarding welcome checklist trigger
+  useEffect(() => {
+    if (isArtist && user?.uid && profileStrength < 100) {
+      const hasSeenModal = localStorage.getItem(`seen_welcome_checklist_${user.uid}`);
+      if (!hasSeenModal) {
+        setShowWelcomeModal(true);
+      }
+    }
+  }, [isArtist, user?.uid, profileStrength]);
+
+  const startTour = () => {
+    setShowWelcomeModal(false);
+    if (user?.uid) {
+      localStorage.setItem(`seen_welcome_checklist_${user.uid}`, 'true');
+    }
+    router.push('/profile?startTour=true');
+  };
+
+  const skipWelcomeModal = () => {
+    setShowWelcomeModal(false);
+    if (user?.uid) {
+      localStorage.setItem(`seen_welcome_checklist_${user.uid}`, 'true');
+    }
+  };
   const [citiesWithAreas, setCitiesWithAreas] = useState<FirestoreCity[]>(() => initialData?.citiesWithAreas || getCache<FirestoreCity[]>('citiesWithAreas', true) || []);
   const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
   const [isRequesting, setIsRequesting] = useState<string | null>(null);
@@ -939,6 +1038,55 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
             </div>
           </div>
         </section>
+
+        {/* Onboarding Welcome Checklist Modal (Option 1) */}
+        <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+          <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[480px] max-h-[calc(100vh-4rem)] p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col">
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 pb-4 border-b border-primary/5 shrink-0">
+              <DialogHeader>
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-md">Welcome</span>
+                  <span className="text-xs font-bold text-muted-foreground">• Artist Onboarding</span>
+                </div>
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
+                  Welcome, {firestoreUser?.displayName || "Talent"}! 🎉
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm pt-1">
+                  Your artist profile is set up. Let's make sure casting directors can find and contact you!
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 text-foreground">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Setup Checklist:</p>
+              <div className="space-y-2.5">
+                {checklistItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/20 border border-primary/5">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
+                      {idx + 1}
+                    </div>
+                    <div className="space-y-0.5 text-left">
+                      <p className="text-xs font-bold leading-normal">{item.label}</p>
+                      <p className="text-[10px] text-muted-foreground leading-normal">{item.description}</p>
+                    </div>
+                    <div className="ml-auto text-[10px] font-bold text-primary/80">
+                      +{item.percentage}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 bg-secondary/10 border-t border-primary/5 flex flex-col sm:flex-row gap-2 shrink-0">
+              <Button variant="outline" className="w-full sm:w-auto rounded-xl font-bold border-primary/10 text-muted-foreground" onClick={skipWelcomeModal}>
+                Skip Setup
+              </Button>
+              <Button className="w-full sm:w-auto rounded-xl font-bold bg-primary text-white hover:bg-primary/90 flex-1" onClick={startTour}>
+                Start Setup Tour 🚀
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

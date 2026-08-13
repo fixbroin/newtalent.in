@@ -71,15 +71,49 @@ export default function ApplicationStatusDisplay({ status, message }: Applicatio
             <p className="whitespace-pre-wrap">{message}</p>
           </div>
         )}
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col gap-3">
           {status === 'approved' && (
-            <Link href="/profile"> 
-              <Button size="lg">Go to Profile</Button>
-            </Link>
+            <>
+              <div className="my-3 p-4 rounded-2xl bg-green-500/5 border border-green-500/10 text-left space-y-1.5">
+                <h4 className="text-[11px] font-black uppercase text-green-600 tracking-widest">
+                  🚀 Complete Your Artist Profile
+                </h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  To get maximum exposure to casting directors and producers, go to your profile settings to link your social media handles, add work certificates, and configure visibility preferences!
+                </p>
+              </div>
+              <Link href="/profile" className="w-full"> 
+                <Button size="lg" className="w-full font-bold rounded-xl bg-green-600 text-white hover:bg-green-700">Go to Profile</Button>
+              </Link>
+            </>
           )}
-          {status !== 'approved' && (
-            <Link href="/">
-              <Button variant="outline" size="lg" className="w-full">
+          {status === 'pending_review' && (
+            <>
+              <div className="my-3 p-4 rounded-2xl bg-primary/5 border border-primary/10 text-left space-y-1.5">
+                <h4 className="text-[11px] font-black uppercase text-primary tracking-widest">
+                  💡 Complete Your Profile Setup
+                </h4>
+                <p className="text-xs text-muted-foreground leading-normal">
+                  While our admins review your registration, you can already link your social media profiles, upload course certificates, and configure mobile/email privacy settings!
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/profile" className="flex-1">
+                  <Button size="lg" className="w-full font-bold rounded-xl bg-primary text-white hover:bg-primary/90">
+                    Set Up Profile Settings
+                  </Button>
+                </Link>
+                <Link href="/" className="flex-1">
+                  <Button variant="outline" size="lg" className="w-full font-bold rounded-xl">
+                    <Home className="mr-2 h-5 w-5" /> Back to Home
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
+          {status !== 'approved' && status !== 'pending_review' && (
+            <Link href="/" className="w-full">
+              <Button variant="outline" size="lg" className="w-full font-bold rounded-xl">
                 <Home className="mr-2 h-5 w-5" /> Back to Home
               </Button>
             </Link>

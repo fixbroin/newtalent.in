@@ -129,9 +129,37 @@ const ArtistApplicationStatusEmailFlow = ai.defineFlow(
           emailBodyContent = `
             <p>Dear ${ArtistName},</p>
             <p>Congratulations! We are pleased to inform you that your Artist application with ${siteName} has been approved.</p>
-            <p>You can now access your Artist dashboard and start managing your services and jobs.</p>
-            <p><a href="${applicationUrl.replace('artist-registration', 'Artist')}" class="button">Access Dashboard</a></p>
-            <p>Welcome aboard!</p>
+            <p>Your profile is now live on our directory! To maximize your casting opportunities and help casting directors find you, please log in to complete your profile setup:</p>
+            
+            <div style="background-color: #f6fdfa; border: 1px solid #d1fae5; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left;">
+              <h3 style="color: #065f46; font-size: 15px; font-weight: bold; margin-top: 0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🚀 Profile Completeness Checklist</h3>
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 13px; color: #374151; line-height: 1.5;">
+                <tr>
+                  <td style="padding: 6px 0; font-weight: bold; width: 25px; color: #059669; vertical-align: top;">1.</td>
+                  <td style="padding: 6px 0; vertical-align: top;"><strong>Upload Profile Photo & Write Bio</strong><br><span style="color: #6b7280; font-size: 11px;">Add a professional headshot and brief description of your talent.</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: bold; width: 25px; color: #059669; vertical-align: top;">2.</td>
+                  <td style="padding: 6px 0; vertical-align: top;"><strong>Add Audition or Work Videos</strong><br><span style="color: #6b7280; font-size: 11px;">Link your best performance reels or work samples.</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: bold; width: 25px; color: #059669; vertical-align: top;">3.</td>
+                  <td style="padding: 6px 0; vertical-align: top;"><strong>Add Course Certificates</strong><br><span style="color: #6b7280; font-size: 11px;">Showcase your training, acting workshops, or creative degrees.</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: bold; width: 25px; color: #059669; vertical-align: top;">4.</td>
+                  <td style="padding: 6px 0; vertical-align: top;"><strong>Link Social Media Profiles</strong><br><span style="color: #6b7280; font-size: 11px;">Connect Instagram, YouTube, or LinkedIn for casting background checks.</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: bold; width: 25px; color: #059669; vertical-align: top;">5.</td>
+                  <td style="padding: 6px 0; vertical-align: top;"><strong>Configure Mobile & Email Visibility</strong><br><span style="color: #6b7280; font-size: 11px;">Control which contact details are visible to casting directors.</span></td>
+                </tr>
+              </table>
+            </div>
+
+            <p>You can manage all of these setup tasks directly from your profile settings. We've set up an interactive setup walkthrough on your dashboard to guide you through each card!</p>
+            <p style="text-align: center;"><a href="${applicationUrl.replace('artist-registration', 'profile')}" class="button" style="background-color: #059669; color: #ffffff !important; display: inline-block; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 10px;">Complete Profile Setup</a></p>
+            <p>Welcome aboard,</p>
             <p>The ${siteName} Team</p>
           `;
           break;

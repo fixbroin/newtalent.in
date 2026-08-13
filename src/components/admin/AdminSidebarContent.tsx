@@ -12,7 +12,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import Logo from '@/components/shared/Logo';
-import { LayoutGrid, List, Layers, Settings, Users, ShoppingBag, Tag, BarChart3, PlaySquare, Settings2, HelpCircle, MessageSquare, ListChecks, Percent, UserCircle as UserProfileIcon, Target, Map, HandCoins, Megaphone, Bell, Activity, Palette, MessageCircle as ChatIcon, Mail, Zap, Receipt, Tv, Users2, MapPin, Cookie, Globe2, KeyRound, Database, FileText, Construction, Handshake, Banknote, ChevronRight, RefreshCw, CreditCard } from 'lucide-react';
+import { LayoutGrid, List, Layers, Settings, Users, ShoppingBag, Tag, BarChart3, PlaySquare, Settings2, HelpCircle, MessageSquare, ListChecks, Percent, UserCircle as UserProfileIcon, Target, Map, HandCoins, Megaphone, Bell, Activity, Palette, MessageCircle as ChatIcon, Mail, Zap, Receipt, Tv, Users2, MapPin, Cookie, Globe2, KeyRound, Database, FileText, Construction, Handshake, Banknote, ChevronRight, RefreshCw, CreditCard, Trash2 } from 'lucide-react';
 import { useGlobalSettings } from '@/hooks/useGlobalSettings';
 import { useLoading } from '@/contexts/LoadingContext';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ const navItems = [
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
   { href: '/admin/artist-withdrawals', label: 'Artist Withdrawals', icon: Banknote },
   { href: '/admin/artist-controls', label: 'Artist Controls', icon: Settings },
+  { href: '/admin/delete-requests', label: 'Delete Requests', icon: Trash2 },
   { type: 'separator', label: 'Core Management' },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
@@ -160,6 +161,7 @@ export default function AdminSidebarContent() {
     '/admin/subscriptions',
     '/admin/google-indexing',
     '/admin/kannadasgotlatent',
+    '/admin/delete-requests',
   ];
 
 

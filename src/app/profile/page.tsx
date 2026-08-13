@@ -9,8 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, ShieldAlert, KeyRound, Trash2, Loader2, Phone, ShieldCheck, MapPin, Edit3, Save, User as UserIcon, AtSign, CheckCircle2, XCircle, Plus, Video, FileText, ExternalLink, Upload, Globe, Image as ImageIcon, Facebook, Instagram, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Mail, ShieldAlert, KeyRound, Trash2, Loader2, Phone, ShieldCheck, MapPin, Edit3, Save, User as UserIcon, AtSign, CheckCircle2, XCircle, Plus, Video, FileText, ExternalLink, Upload, Globe, Image as ImageIcon, Facebook, Instagram, Twitter, Linkedin, Youtube, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { nanoid } from "nanoid";
@@ -67,6 +68,62 @@ const otpSchema = z.object({
 });
 type OtpFormData = z.infer<typeof otpSchema>;
 
+interface TourTooltipProps {
+  title: string;
+  description: string;
+  onNext: () => void;
+  onSkip: () => void;
+  step: number;
+}
+
+const TourTooltip = ({ title, description, onNext, onSkip, step }: TourTooltipProps) => {
+  let positionClass = "";
+  let arrowClass = "";
+
+  if (step === 0) {
+    positionClass = "left-0 translate-x-0 sm:left-1/2 sm:-translate-x-1/2";
+    arrowClass = "left-10 sm:left-1/2 sm:-translate-x-1/2";
+  } else if (step === 1) {
+    positionClass = "left-1/2 -translate-x-[35%] sm:left-1/2 sm:-translate-x-1/2";
+    arrowClass = "left-[35%] sm:left-1/2 sm:-translate-x-1/2";
+  } else if (step === 2) {
+    positionClass = "left-1/2 -translate-x-[65%] sm:left-1/2 sm:-translate-x-1/2";
+    arrowClass = "left-[65%] sm:left-1/2 sm:-translate-x-1/2";
+  } else {
+    positionClass = "right-0 left-auto translate-x-0 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto";
+    arrowClass = "right-10 left-auto sm:left-1/2 sm:-translate-x-1/2 sm:right-auto";
+  }
+
+  return (
+    <span 
+      className={`absolute top-full mt-3 w-72 max-w-[calc(100vw-2rem)] bg-gradient-to-br from-primary to-primary/95 text-primary-foreground p-5 rounded-2xl shadow-2xl z-[100] text-left cursor-default border border-white/10 block font-normal normal-case whitespace-normal animate-in fade-in slide-in-from-top-2 duration-300 ${positionClass}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Little arrow pointing up */}
+      <span className={`absolute bottom-full border-[8px] border-transparent border-b-primary block h-0 w-0 ${arrowClass}`} />
+      
+      <span className="space-y-3 block">
+        <span className="flex justify-between items-center block">
+          <span className="font-black text-[9px] uppercase tracking-[0.15em] bg-white/20 px-2 py-0.5 rounded-full inline-block">Step {step + 1} of 4</span>
+          <span onClick={onSkip} className="text-xs font-bold hover:underline opacity-80 hover:opacity-100 transition-opacity cursor-pointer inline-block">Skip</span>
+        </span>
+        <span className="space-y-1 block">
+          <span className="font-black text-sm tracking-tight block">{title}</span>
+          <span className="text-xs leading-relaxed opacity-90 block">{description}</span>
+        </span>
+        <span className="flex justify-end pt-1 block">
+          <span 
+            className="h-8 text-xs px-4 rounded-xl font-bold bg-white text-primary hover:bg-gray-100 active:scale-95 transition-all shadow-md inline-flex items-center justify-center cursor-pointer"
+            onClick={onNext}
+          >
+            {step === 3 ? "Finish" : "Next"}
+          </span>
+        </span>
+      </span>
+    </span>
+  );
+};
+
 export default function ProfilePage() {
   const { user, firestoreUser, isLoading: authIsLoading, setUser, logOut, checkUsernameAvailability, generateUsernameSuggestions } = useAuth();
   const { toast } = useToast();
@@ -89,6 +146,13 @@ export default function ProfilePage() {
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deletionRequest, setDeletionRequest] = useState<any>(null);
+  const [isLoadingDeletionRequest, setIsLoadingDeletionRequest] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [isSubmittingDeletionRequest, setIsSubmittingDeletionRequest] = useState(false);
+  const [isCancelingDeletion, setIsCancelingDeletion] = useState(false);
   const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -114,6 +178,111 @@ export default function ProfilePage() {
   });
   const [showSocialMedia, setShowSocialMedia] = useState(false);
   const [isSavingSocial, setIsSavingSocial] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<string>("account");
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+
+  // Check if current user has the artist role or app
+  const isArtist = firestoreUser?.roles?.includes('artist') || (artistApp && artistApp.status === 'approved');
+
+  // Onboarding items details
+  const hasSocialLinks = !!firestoreUser?.socialMediaLinks && Object.values(firestoreUser.socialMediaLinks).some(link => !!link);
+  const hasVisibilitySettings = firestoreUser?.showMobileOnPublicProfile !== undefined || firestoreUser?.showEmailOnPublicProfile !== undefined;
+
+  const checklistItems = [
+    {
+      id: 'photo_bio',
+      label: 'Upload Profile Photo & Write Bio',
+      tab: 'account',
+      isCompleted: !!artistApp?.profilePhotoUrl && !!artistApp?.bio,
+      percentage: 20,
+      description: 'Add a professional headshot and brief description of your talent.'
+    },
+    {
+      id: 'videos',
+      label: 'Add Audition or Work Videos',
+      tab: 'portfolio',
+      isCompleted: videos.length > 0,
+      percentage: 20,
+      description: 'Add links to your best performances or video work samples.'
+    },
+    {
+      id: 'certificates',
+      label: 'Add Course Certificates',
+      tab: 'portfolio',
+      isCompleted: certificates.length > 0,
+      percentage: 20,
+      description: 'Showcase your training, diplomas, or professional certifications.'
+    },
+    {
+      id: 'social',
+      label: 'Link Social Media Profiles',
+      tab: 'social',
+      isCompleted: hasSocialLinks,
+      percentage: 20,
+      description: 'Link your Instagram, YouTube, or LinkedIn accounts so clients can research you.'
+    },
+    {
+      id: 'visibility',
+      label: 'Configure Mobile & Email Visibility',
+      tab: 'security',
+      isCompleted: hasVisibilitySettings,
+      percentage: 20,
+      description: 'Set whether casting directors can see your contact numbers/emails.'
+    }
+  ];
+
+  const profileStrength = checklistItems.reduce((sum, item) => sum + (item.isCompleted ? item.percentage : 0), 0);
+  const isProfileComplete = profileStrength === 100;
+
+  useEffect(() => {
+    if (isArtist && user?.uid) {
+      const hasSeenModal = localStorage.getItem(`seen_welcome_checklist_${user.uid}`);
+      if (!hasSeenModal) {
+        setShowWelcomeModal(true);
+      }
+      const isDismissed = localStorage.getItem(`dismiss_profile_alert_${user.uid}`) === 'true';
+      setIsAlertDismissed(isDismissed);
+    }
+  }, [isArtist, user?.uid]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('startTour') === 'true') {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setActiveTab("account");
+        setTourStep(0);
+      }
+    }
+  }, []);
+
+  const startTour = () => {
+    setShowWelcomeModal(false);
+    if (user?.uid) {
+      localStorage.setItem(`seen_welcome_checklist_${user.uid}`, 'true');
+    }
+    setActiveTab("account");
+    setTourStep(0);
+  };
+
+  const skipWelcomeModal = () => {
+    setShowWelcomeModal(false);
+    if (user?.uid) {
+      localStorage.setItem(`seen_welcome_checklist_${user.uid}`, 'true');
+    }
+  };
+
+  const endTour = () => {
+    setTourStep(null);
+    if (user?.uid) {
+      localStorage.setItem(`seen_profile_tour_${user.uid}`, 'true');
+    }
+    setActiveTab("account");
+  };
 
   useEffect(() => {
     if (firestoreUser) {
@@ -332,6 +501,27 @@ export default function ProfilePage() {
     } else {
       setArtistApp(null);
       setIsLoadingArtistApp(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      const deletionDocRef = doc(db, "accountDeletionRequests", user.uid);
+      const unsubscribe = onSnapshot(deletionDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setDeletionRequest(docSnap.data());
+        } else {
+          setDeletionRequest(null);
+        }
+        setIsLoadingDeletionRequest(false);
+      }, (error) => {
+        console.error("Error loading deletion request in profile dashboard:", error);
+        setIsLoadingDeletionRequest(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setDeletionRequest(null);
+      setIsLoadingDeletionRequest(false);
     }
   }, [user]);
 
@@ -564,42 +754,57 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-  if (!user || !auth.currentUser) return;
-
-  setIsDeletingAccount(true);
-
-  try {
-    await deleteUser(auth.currentUser);
-
-    await deleteDoc(doc(db, "users", user.uid));
-
-    toast({
-      title: "Account Deleted",
-      description: "Your account has been successfully deleted."
-    });
-
-    router.push("/");
-  } catch (error: any) {
-    if (error.code === "auth/requires-recent-login") {
+  const handleCancelDeletionRequest = async () => {
+    if (!user) return;
+    setIsCancelingDeletion(true);
+    try {
+      await deleteDoc(doc(db, "accountDeletionRequests", user.uid));
       toast({
-        title: "Please login again",
-        description: "For security, logout and login again before deleting account.",
-        variant: "destructive"
+        title: "Deletion Request Cancelled",
+        description: "Your deletion request has been cancelled successfully."
       });
-
-      await logOut();
-    } else {
+    } catch (error: any) {
       toast({
-        title: "Delete failed",
+        title: "Cancellation failed",
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setIsCancelingDeletion(false);
     }
-  } finally {
-    setIsDeletingAccount(false);
-  }
-};
+  };
+
+  const handleDeleteRequestSubmit = async () => {
+    if (!user) return;
+    setIsSubmittingDeletionRequest(true);
+
+    try {
+      await setDoc(doc(db, "accountDeletionRequests", user.uid), {
+        userId: user.uid,
+        userEmail: user.email || firestoreUser?.email || "",
+        displayName: firestoreUser?.displayName || "Talent",
+        reason: deletionReason,
+        status: 'pending',
+        requestedAt: Timestamp.now()
+      });
+
+      toast({
+        title: "Deletion Request Submitted",
+        description: "Your account will be deleted permanently in 3 working days."
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setIsSuccessDialogOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Submission failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingDeletionRequest(false);
+    }
+  };
 
   const renderArtistStatus = () => {
     if (isLoadingArtistApp) {
@@ -765,24 +970,191 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <Tabs defaultValue="account" className="w-full">
+        {isArtist && (
+          <div className="space-y-4 mb-6">
+            {/* Option 2: Profile Strength Progress Card */}
+            <Card className="border-primary/10 shadow-md bg-card/65 backdrop-blur-sm overflow-hidden rounded-3xl">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-md">Artist Profile</span>
+                      {profileStrength === 100 ? (
+                        <span className="text-xs font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> All-Star Profile
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">
+                          Incomplete Profile ({profileStrength}% Done)
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-black tracking-tight mt-1">Profile Strength</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsChecklistOpen(!isChecklistOpen)}
+                      className="rounded-xl border-primary/20 text-xs font-bold text-primary hover:bg-primary/5"
+                    >
+                      {isChecklistOpen ? "Hide Details" : "Show Checklist"}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setActiveTab("account");
+                        setTourStep(0);
+                      }}
+                      className="text-xs font-bold text-muted-foreground hover:text-primary"
+                    >
+                      Restart Tour
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-muted-foreground">
+                    <span>{profileStrength === 100 ? "Ready for castings!" : "Complete your profile to unlock 5x more jobs"}</span>
+                    <span>{profileStrength}%</span>
+                  </div>
+                  <Progress value={profileStrength} className="h-2.5 bg-secondary rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary/75" />
+                </div>
+
+                {isChecklistOpen && (
+                  <div className="pt-4 border-t border-primary/5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Follow these steps to build a premium verified profile:</p>
+                    <div className="grid gap-3 sm:grid-cols-1">
+                      {checklistItems.map((item) => (
+                        <div 
+                          key={item.id}
+                          onClick={() => {
+                            setActiveTab(item.tab);
+                            // Scroll to corresponding trigger
+                            const element = document.getElementById(`tab-trigger-${item.tab}`);
+                            if (element) {
+                              element.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }}
+                          className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                            item.isCompleted 
+                              ? "bg-green-500/5 border-green-500/10 text-green-900 dark:text-green-100" 
+                              : "bg-secondary/20 border-primary/5 hover:border-primary/20 text-foreground"
+                          }`}
+                        >
+                          <div className="mt-0.5 shrink-0">
+                            {item.isCompleted ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                                •
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-bold leading-none">{item.label}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium">{item.description}</p>
+                          </div>
+                          <span className="text-[10px] font-bold ml-auto opacity-70">+{item.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Option 3: Sleek Banner Alert */}
+            {!isProfileComplete && !isAlertDismissed && (
+              <div className="relative bg-gradient-to-r from-yellow-500/15 via-orange-500/10 to-yellow-500/5 border border-yellow-500/25 p-4 rounded-3xl flex items-start gap-3 text-sm animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
+                <span className="text-lg mt-0.5">💡</span>
+                <div className="space-y-1 pr-6">
+                  <p className="font-bold text-yellow-800 dark:text-yellow-300">Boost your casting visibility!</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Verified profiles with audition videos, social handles, and visible contact details get highlighted first. 
+                    Click <span className="font-bold cursor-pointer underline text-primary" onClick={() => setIsChecklistOpen(true)}>Show Checklist</span> above to finish your setup.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsAlertDismissed(true);
+                    if (user?.uid) {
+                      localStorage.setItem(`dismiss_profile_alert_${user.uid}`, 'true');
+                    }
+                  }}
+                  className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-xs p-1"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="account" className="flex items-center justify-center gap-1.5">
+            <TabsTrigger id="tab-trigger-account" value="account" className="flex items-center justify-center gap-1.5 relative">
               <UserIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Profile Setting</span>
               <span className="sm:hidden">Profile</span>
+              {tourStep === 0 && (
+                <TourTooltip 
+                  title="Profile Setting"
+                  description="Register as an artist and manage your basic details, name, username, bio, and work category."
+                  onNext={() => {
+                    setActiveTab("portfolio");
+                    setTourStep(1);
+                  }}
+                  onSkip={endTour}
+                  step={0}
+                />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="portfolio" className="flex items-center justify-center gap-1.5">
+            <TabsTrigger id="tab-trigger-portfolio" value="portfolio" className="flex items-center justify-center gap-1.5 relative">
               <Briefcase className="h-4 w-4" />
               <span>Portfolio</span>
+              {tourStep === 1 && (
+                <TourTooltip 
+                  title="Your Portfolio"
+                  description="Add links to your best audition/work videos and course certificates to stand out to scouts."
+                  onNext={() => {
+                    setActiveTab("social");
+                    setTourStep(2);
+                  }}
+                  onSkip={endTour}
+                  step={1}
+                />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="social" className="flex items-center justify-center gap-1.5">
+            <TabsTrigger id="tab-trigger-social" value="social" className="flex items-center justify-center gap-1.5 relative">
               <Share2 className="h-4 w-4" />
               <span>Social</span>
+              {tourStep === 2 && (
+                <TourTooltip 
+                  title="Social Profiles"
+                  description="Link your Instagram, YouTube, Facebook, and LinkedIn profiles for clients to research you."
+                  onNext={() => {
+                    setActiveTab("security");
+                    setTourStep(3);
+                  }}
+                  onSkip={endTour}
+                  step={2}
+                />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center justify-center gap-1.5">
+            <TabsTrigger id="tab-trigger-security" value="security" className="flex items-center justify-center gap-1.5 relative">
               <ShieldAlert className="h-4 w-4" />
               <span>Security</span>
+              {tourStep === 3 && (
+                <TourTooltip 
+                  title="Visibility & Security"
+                  description="Choose whether casting directors can directly view your mobile number and email."
+                  onNext={endTour}
+                  onSkip={endTour}
+                  step={3}
+                />
+              )}
             </TabsTrigger>
           </TabsList>
           
@@ -1029,19 +1401,109 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="text-xl">Account Security</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={handleChangePassword} disabled={isSendingResetEmail}>
+              <CardContent className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <Button variant="outline" onClick={handleChangePassword} disabled={isSendingResetEmail}>
                     {isSendingResetEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
                     Change Password
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="destructive" className="sm:ml-auto" disabled={isDeletingAccount}>{isDeletingAccount ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}Delete Account</Button></AlertDialogTrigger>
-                    <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescriptionComponent>This will permanently delete your account and remove your data from our servers.</AlertDialogDescriptionComponent></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={isDeletingAccount}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteAccount} disabled={isDeletingAccount} className="bg-destructive hover:bg-destructive/90">{isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Yes, delete account</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                  </AlertDialog>
+
+                  {!deletionRequest && (
+                    <Button 
+                      variant="destructive" 
+                      className="sm:ml-auto" 
+                      onClick={() => {
+                        setDeletionReason("");
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Account
+                    </Button>
+                  )}
+                </div>
+
+                {deletionRequest && (
+                  <div className="p-5 rounded-2xl bg-destructive/10 border border-destructive/20 text-foreground flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center text-destructive shrink-0">
+                      <Trash2 className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1 text-left">
+                      <h4 className="font-bold text-sm text-destructive leading-normal">Account Deletion Requested</h4>
+                      <p className="text-xs text-muted-foreground leading-normal">
+                        Your account is scheduled for deletion. It will be deleted permanently in 3 working days.
+                      </p>
+                      {deletionRequest.reason && (
+                        <p className="text-[11px] text-muted-foreground italic leading-normal pt-1">
+                          Reason: "{deletionRequest.reason}"
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleCancelDeletionRequest} 
+                      disabled={isCancelingDeletion}
+                      className="rounded-xl border-primary/10 hover:bg-primary/5 text-xs font-bold shrink-0 self-end sm:self-center bg-background"
+                    >
+                      {isCancelingDeletion && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                      Cancel Request
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Onboarding Welcome Checklist Modal (Option 1) */}
+        <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+          <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[480px] max-h-[calc(100vh-4rem)] p-0 overflow-hidden border-none rounded-3xl shadow-2xl flex flex-col">
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 pb-4 border-b border-primary/5 shrink-0">
+              <DialogHeader>
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-md">Welcome</span>
+                  <span className="text-xs font-bold text-muted-foreground">• Artist Onboarding</span>
+                </div>
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
+                  Welcome, {firestoreUser?.displayName || "Talent"}! 🎉
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm pt-1">
+                  Your artist profile is set up. Let's make sure casting directors can find and contact you!
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Setup Checklist:</p>
+              <div className="space-y-2.5">
+                {checklistItems.map((item, idx) => (
+                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/20 border border-primary/5">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
+                      {idx + 1}
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold">{item.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.description}</p>
+                    </div>
+                    <div className="ml-auto text-[10px] font-bold text-primary/80">
+                      +{item.percentage}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 bg-secondary/10 border-t border-primary/5 flex flex-col sm:flex-row gap-2 shrink-0">
+              <Button variant="outline" className="w-full sm:w-auto rounded-xl font-bold border-primary/10 text-muted-foreground" onClick={skipWelcomeModal}>
+                Skip Setup
+              </Button>
+              <Button className="w-full sm:w-auto rounded-xl font-bold bg-primary text-white hover:bg-primary/90 flex-1" onClick={startTour}>
+                Start Setup Tour 🚀
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}>
@@ -1300,6 +1762,69 @@ export default function ProfilePage() {
                {(isSavingPortfolio || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save & Add
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[480px] p-6 rounded-3xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Delete Account Request
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm pt-2">
+              Please enter the reason for deleting your profile. Once submitted, your deletion request will be processed by administrators, and your account will be permanently deleted in <strong>3 working days</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <label htmlFor="deletion-reason" className="text-xs font-black text-foreground uppercase tracking-wider block mb-2">Reason for leaving</label>
+            <textarea
+              id="deletion-reason"
+              className="w-full min-h-[100px] p-4 rounded-2xl bg-secondary/30 border border-primary/10 focus:border-primary/30 outline-none text-sm leading-relaxed text-foreground resize-none"
+              placeholder="Please tell us why you wish to delete your account..."
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="w-full sm:w-auto rounded-xl font-bold border-primary/10 text-muted-foreground" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              className="w-full sm:w-auto rounded-xl font-bold flex-1" 
+              onClick={handleDeleteRequestSubmit}
+              disabled={isSubmittingDeletionRequest || !deletionReason.trim()}
+            >
+              {isSubmittingDeletionRequest && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Delete Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deletion Request Success Confirmation Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[440px] p-6 rounded-3xl shadow-2xl text-center flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <CheckCircle2 className="h-6 w-6" />
+          </div>
+          <div className="space-y-2">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-black text-center text-foreground">
+                Request Pending
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-sm text-center pt-1">
+                Your deletion request has been submitted. Your account will be deleted permanently in <strong>3 working days</strong>.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <Button className="w-full rounded-xl font-bold bg-primary text-white hover:bg-primary/90 mt-2" onClick={() => setIsSuccessDialogOpen(false)}>
+            Understood
+          </Button>
         </DialogContent>
       </Dialog>
     </ProtectedRoute>
