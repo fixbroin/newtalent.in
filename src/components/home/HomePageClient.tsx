@@ -191,6 +191,11 @@ const ArtistCarousel: React.FC<{
   );
 };
 
+const formatCategoryTitle = (name: string) => {
+  if (name.toLowerCase().endsWith('s')) return name;
+  return `${name}s`;
+};
+
 import { sendConnectionRequestEmail } from '@/ai/flows/sendConnectionRequestEmailFlow';
 
 export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, initialData, initialH1Title }: HomePageClientProps) {
@@ -210,6 +215,8 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfiguration>(() => initialData?.featuresConfig || getCache<FeaturesConfiguration>('featuresConfig', true) || defaultFeaturesConfig);
   const [popularArtists, setPopularArtists] = useState<ArtistApplication[]>(() => initialData?.popularArtists || getCache<ArtistApplication[]>('popularArtists', true) || []);
   const [recentArtists, setRecentArtists] = useState<ArtistApplication[]>(() => initialData?.recentArtists || getCache<ArtistApplication[]>('recentArtists', true) || []);
+  const [allCategories, setAllCategories] = useState<FirestoreCategory[]>(() => initialData?.allCategories || getCache<FirestoreCategory[]>('allCategories', true) || []);
+  const [categoryArtists, setCategoryArtists] = useState<Array<{ categoryId: string, categoryName: string, categorySlug: string, artists: ArtistApplication[] }>>(() => initialData?.categoriesWithArtists || getCache<any>('categoriesWithArtists', true) || []);
   const [connectionsMap, setConnectionsMap] = useState<Record<string, 'pending' | 'accepted' | 'rejected' | null>>({});
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   
@@ -424,6 +431,42 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
           ldData.sameAs = sameAsUrls;
         }
       }
+      // Client-side fetch fallback for Categories and Category-wise Approved Artists
+      if (!initialData) {
+        let currentCategories = allCategories;
+        if (currentCategories.length === 0) {
+          const catsQuery = query(collection(db, 'adminCategories'), where('isActive', '==', true), orderBy('order', 'asc'));
+          const catsSnap = await getDocs(catsQuery);
+          currentCategories = catsSnap.docs.map(d => ({ id: d.id, ...d.data() } as FirestoreCategory));
+          setAllCategories(currentCategories);
+          setCache('allCategories', currentCategories, true);
+        }
+
+        if (currentCategories.length > 0) {
+          const fetchedCatsWithArtists = await Promise.all(
+            currentCategories.map(async (cat) => {
+              const artistQuery = query(
+                collection(db, "ArtistApplications"),
+                where("status", "==", "approved"),
+                where("workCategoryId", "==", cat.id),
+                limit(20)
+              );
+              const snap = await getDocs(artistQuery);
+              const artists = snap.docs.map(d => ({ id: d.id, ...d.data() } as ArtistApplication));
+              return {
+                categoryId: cat.id,
+                categoryName: cat.name,
+                categorySlug: cat.slug,
+                artists
+              };
+            })
+          );
+          const filtered = fetchedCatsWithArtists.filter(c => c.artists.length > 0);
+          setCategoryArtists(filtered);
+          setCache('categoriesWithArtists', filtered, true);
+        }
+      }
+
       setStructuredData(ldData);
       setCache('structuredData', ldData);
       setIsLoadingPageData(false);
@@ -452,7 +495,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
       }
     }, (error) => console.error("Error listening to features config:", error));
 
-    const popularQuery = query(collection(db, "ArtistApplications"), where("status", "==", "approved"), limit(10));
+    const popularQuery = query(collection(db, "ArtistApplications"), where("status", "==", "approved"), limit(20));
     const unsubscribePopular = onSnapshot(popularQuery, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ArtistApplication));
       setPopularArtists(data);
@@ -460,7 +503,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
       setIsLoadingPopular(false);
     }, (error) => console.error("Error listening to popular artists:", error));
 
-    const recentQuery = query(collection(db, "ArtistApplications"), where("status", "==", "approved"), orderBy("updatedAt", "desc"), limit(10));
+    const recentQuery = query(collection(db, "ArtistApplications"), where("status", "==", "approved"), orderBy("updatedAt", "desc"), limit(20));
     const unsubscribeRecent = onSnapshot(recentQuery, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ArtistApplication));
       setRecentArtists(data);
@@ -483,6 +526,8 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
       setCache('recentArtists', initialData.recentArtists, true);
       setCache('seoSettings', initialData.seoSettings, true);
       setCache('citiesWithAreas', initialData.citiesWithAreas, true);
+      setCache('allCategories', initialData.allCategories, true);
+      setCache('categoriesWithArtists', initialData.categoriesWithArtists, true);
     }
     
     fetchPageSpecificData();
@@ -729,6 +774,20 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
             {renderArtistSection("Featured Artists", popularArtists, <Sparkles className="h-6 w-6 text-yellow-500" />, isLoadingPopular, 'AFTER_POPULAR_SERVICES')}
           </LazySection>
         )}
+
+        {featuresConfig.showCategoryWiseServices && categoryArtists
+          .filter(group => featuresConfig.homepageCategoryVisibility?.[group.categoryId] !== false)
+          .map((group) => (
+            <LazySection key={group.categoryId}>
+              {renderArtistSection(
+                formatCategoryTitle(group.categoryName), 
+                group.artists, 
+                <Users className="h-6 w-6 text-primary" />, 
+                false
+              )}
+            </LazySection>
+          ))
+        }
 
         <LazySection>
           <section className="py-8 md:py-10">

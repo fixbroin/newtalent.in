@@ -154,8 +154,8 @@ export default function SectionsControlTab() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500"/>Most Popular Services</FormLabel>
-                    <FormDescription>Showcase your most booked services.</FormDescription>
+                    <FormLabel className="text-base flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500"/>Featured Artists</FormLabel>
+                    <FormDescription>Showcase your featured and popular artists.</FormDescription>
                   </div>
                   <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSaving} /></FormControl>
                 </FormItem>
@@ -167,8 +167,8 @@ export default function SectionsControlTab() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base flex items-center"><Clock className="mr-2 h-4 w-4 text-blue-500"/>Recently Added Services</FormLabel>
-                    <FormDescription>Display newly listed services.</FormDescription>
+                    <FormLabel className="text-base flex items-center"><Clock className="mr-2 h-4 w-4 text-blue-500"/>Recently Added Artists</FormLabel>
+                    <FormDescription>Display newly approved artists.</FormDescription>
                   </div>
                   <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSaving} /></FormControl>
                 </FormItem>
@@ -180,8 +180,8 @@ export default function SectionsControlTab() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base flex items-center"><ListChecks className="mr-2 h-4 w-4 text-green-500"/>Category-wise Services</FormLabel>
-                    <FormDescription>Show services grouped by each enabled category.</FormDescription>
+                    <FormLabel className="text-base flex items-center"><ListChecks className="mr-2 h-4 w-4 text-green-500"/>Category-wise Artists</FormLabel>
+                    <FormDescription>Show approved artists grouped by each enabled category.</FormDescription>
                   </div>
                   <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={isSaving} /></FormControl>
                 </FormItem>

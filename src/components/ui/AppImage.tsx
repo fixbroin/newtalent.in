@@ -4,8 +4,28 @@ import Image from "next/image"
 import { useState, useEffect, useRef, useLayoutEffect } from "react"
 import { cn } from "@/lib/utils"
 
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+// Helper to manage session cache safely
+const getSessionSeenImages = (): Set<string> => {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const cached = sessionStorage.getItem('seen_images_cache');
+    return new Set(cached ? JSON.parse(cached) : []);
+  } catch (e) {
+    return new Set();
+  }
+};
+
+const saveSessionSeenImages = (set: Set<string>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem('seen_images_cache', JSON.stringify(Array.from(set)));
+  } catch (e) {}
+};
+
 // Global session-level cache to track URLs that have been successfully loaded
-const globalSeenImages = new Set<string>();
+const globalSeenImages = typeof window !== 'undefined' ? getSessionSeenImages() : new Set<string>();
 
 interface AppImageProps {
   src?: string | null
@@ -49,20 +69,29 @@ export default function AppImage({
 
   const imgRef = useRef<HTMLImageElement>(null)
   
-  // 1. Memory Check: Have we seen this URL in this session?
-  const isSeenBefore = !!src && globalSeenImages.has(src);
-  
-  // 2. Initialize 'loaded' based on session memory. 
-  // If we've seen it, start as TRUE to skip the placeholder/pulse immediately.
-  const [loaded, setLoaded] = useState(isSeenBefore)
+  // Initialize states to match server rendering.
+  // This prevents hydration mismatch because both Server and Client start with identical values.
+  const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+  const [isPriorityActive, setIsPriorityActive] = useState(priority)
 
   const isDefaultImage = !src || error
   const imageSrc = isDefaultImage ? (fallbackSrc || "/default-image.png") : src
 
+  // Check if seen client-side and sync state synchronously before paint.
+  useIsomorphicLayoutEffect(() => {
+    if (src && globalSeenImages.has(src)) {
+      setLoaded(true);
+      setIsPriorityActive(true);
+    }
+  }, [src]);
+
   // Success Handler
   const handleLoad = (e?: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    if (src) globalSeenImages.add(src);
+    if (src) {
+      globalSeenImages.add(src);
+      saveSessionSeenImages(globalSeenImages);
+    }
     setLoaded(true);
     if (onLoad && e) onLoad(e);
   };
@@ -72,15 +101,18 @@ export default function AppImage({
     if (onError) onError(e);
   };
 
-  // 3. Sync state with src changes (important for carousel/lists)
+  // Sync state with src changes (important for carousel/lists)
   useEffect(() => {
     const seenBefore = !!src && globalSeenImages.has(src);
-    setLoaded(seenBefore);
+    if (!seenBefore) {
+      setLoaded(false);
+      setIsPriorityActive(priority);
+    }
     setError(false);
-  }, [src]);
+  }, [src, priority]);
 
-  // 4. Synchronous Cache Check: If browser has it, show it INSTANTLY before paint.
-  useLayoutEffect(() => {
+  // Synchronous Cache Check: If browser has it, show it INSTANTLY before paint.
+  useIsomorphicLayoutEffect(() => {
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
         handleLoad();
     }
@@ -91,8 +123,8 @@ export default function AppImage({
 
       {/* 
           SMOOTH PLACEHOLDER (Logo + Pulse):
-          Only pulses if NEVER seen before. 
-          If seen before, it stays static (no flickering) until the image is painted.
+          Only pulses if NEVER seen before (represented by loaded state). 
+          If seen before, it gets hidden immediately before the browser paints.
       */}
       <div 
         className={cn(
@@ -105,7 +137,7 @@ export default function AppImage({
             alt="loading..."
             className={cn(
                 "w-full h-full object-contain p-4",
-                !isSeenBefore && "animate-pulse"
+                !loaded && "animate-pulse"
             )}
           />
       </div>
@@ -124,9 +156,8 @@ export default function AppImage({
             ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             : undefined)
         }
-        // Use priority for images we've seen before or critical images
-        priority={priority || isSeenBefore}
-        loading={(priority || isSeenBefore) ? undefined : (loading || "lazy")}
+        priority={isPriorityActive}
+        loading={isPriorityActive ? undefined : (loading || "lazy")}
         onLoad={handleLoad}
         onError={handleOnError}
         data-ai-hint={aiHint || aiHintData}

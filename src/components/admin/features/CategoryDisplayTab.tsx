@@ -90,7 +90,7 @@ export default function CategoryDisplayTab() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><CardTitle className="flex items-center"><ListChecks className="mr-2 h-5 w-5"/>Homepage Category Display</CardTitle><CardDescription>Control which categories appear in the "Category-wise Services" section on the homepage.</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="flex items-center"><ListChecks className="mr-2 h-5 w-5"/>Homepage Category Display</CardTitle><CardDescription>Control which categories appear in the "Category-wise Artists" section on the homepage.</CardDescription></CardHeader>
         <CardContent className="space-y-4 p-2"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /></CardContent>
       </Card>
     );
@@ -100,7 +100,7 @@ export default function CategoryDisplayTab() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center"><ListChecks className="mr-2 h-5 w-5"/>Homepage Category Display</CardTitle>
-        <CardDescription>Control which categories appear in the "Category-wise Services" section on the homepage.</CardDescription>
+        <CardDescription>Control which categories appear in the "Category-wise Artists" section on the homepage.</CardDescription>
       </CardHeader>
       <CardContent>
         {allCategories.length === 0 ? (

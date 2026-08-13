@@ -21,6 +21,12 @@ export interface HomepageData {
     featuresConfig: FeaturesConfiguration;
     popularArtists: ArtistApplication[];
     recentArtists: ArtistApplication[];
+    categoriesWithArtists: Array<{
+        categoryId: string;
+        categoryName: string;
+        categorySlug: string;
+        artists: ArtistApplication[];
+    }>;
     seoSettings: FirestoreSEOSettings;
     webSettings: GlobalWebSettings | null;
     citiesWithAreas: Array<FirestoreCity & { areas: FirestoreArea[] }>;
@@ -28,8 +34,7 @@ export interface HomepageData {
 }
 
 export const getHomepageData = cache(async (): Promise<HomepageData> => {
-    return unstable_cache(
-        async () => {
+    const fetchFunc = async () => {
             try {
                 // Fetch Features Configuration, Global Settings, Cities, and ALL Categories in parallel
                 const [featuresConfigDoc, seoSettingsDoc, webSettingsDoc, citiesSnapshot, allCatsSnapshot] = await Promise.all([
@@ -114,7 +119,7 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                             .get()
                             .then(snap => {
                                 const artists = snap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as ArtistApplication));
-                                return processArtists(artists).slice(0, 10);
+                                return processArtists(artists).slice(0, 20);
                             })
                     );
                 } else {
@@ -129,22 +134,51 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                             .get()
                             .then(snap => {
                                 const artists = snap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as ArtistApplication));
-                                return processArtists(artists).slice(0, 10);
+                                return processArtists(artists).slice(0, 20);
                             })
                     );
                 } else {
                     promises.push(Promise.resolve([]));
                 }
 
-                const [popularArtists, recentArtists, citiesWithAreas] = await Promise.all([
+                // 3. Category-wise Artists
+                const categoriesWithArtistsPromise = (() => {
+                    if (!featuresConfig.showCategoryWiseServices) {
+                        return Promise.resolve([]);
+                    }
+                    const categoryArtistsPromises = allCategories
+                        .filter(category => featuresConfig.homepageCategoryVisibility?.[category.id] !== false)
+                        .map(async (category) => {
+                            const snap = await adminDb.collection('ArtistApplications')
+                                .where('status', '==', 'approved')
+                                .where('workCategoryId', '==', category.id)
+                                .limit(20)
+                                .get();
+                            const artists = snap.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as ArtistApplication));
+                            return {
+                                categoryId: category.id,
+                                categoryName: category.name,
+                                categorySlug: category.slug,
+                                artists: processArtists(artists)
+                            };
+                        });
+
+                    return Promise.all(categoryArtistsPromises).then(results => 
+                        results.filter(res => res.artists.length > 0)
+                    );
+                })();
+
+                const [popularArtists, recentArtists, citiesWithAreas, categoriesWithArtists] = await Promise.all([
                     ...promises,
-                    citiesWithAreasPromise
+                    citiesWithAreasPromise,
+                    categoriesWithArtistsPromise
                 ]);
 
                 return {
                     featuresConfig,
                     popularArtists,
                     recentArtists,
+                    categoriesWithArtists,
                     seoSettings,
                     webSettings,
                     citiesWithAreas,
@@ -155,10 +189,17 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                 console.error("Error in getHomepageData:", error);
                 throw error;
             }
-        },
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+        return fetchFunc();
+    }
+
+    return unstable_cache(
+        fetchFunc,
         ['homepage-data'],
         { revalidate: false,
- tags: ['global', 'cities', 'categories', 'artists', 'global-cache'] }
+          tags: ['global', 'cities', 'categories', 'artists', 'global-cache'] }
     )();
 });
 
@@ -170,8 +211,7 @@ export interface FullCategoryData {
 }
 
 export const getCategoryFullData = cache(async (categorySlug: string): Promise<FullCategoryData | null> => {
-    return unstable_cache(
-        async () => {
+    const fetchFunc = async () => {
             try {
                 const [categorySnapshot, seoSettingsDoc] = await Promise.all([
                     adminDb.collection('adminCategories')
@@ -245,10 +285,17 @@ export const getCategoryFullData = cache(async (categorySlug: string): Promise<F
                 console.error(`Error in getCategoryFullData for slug ${categorySlug}:`, error);
                 return null;
             }
-        },
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+        return fetchFunc();
+    }
+
+    return unstable_cache(
+        fetchFunc,
         [`category-data-${categorySlug}`],
         { revalidate: false,
- tags: ['categories', 'services', 'artists', `category-${categorySlug}`, 'global-cache'] }
+          tags: ['categories', 'services', 'artists', `category-${categorySlug}`, 'global-cache'] }
     )();
 });
 
