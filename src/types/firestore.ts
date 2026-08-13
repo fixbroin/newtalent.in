@@ -460,6 +460,9 @@ export interface GlobalWebSettings {
   isCookieConsentEnabled?: boolean; 
   cookieConsentMessage?: string; 
   cookiePolicyContent?: string; 
+  showContactMobile?: boolean;
+  showContactEmail?: boolean;
+  showContactAddress?: boolean;
   updatedAt?: Timestamp;
 }
 

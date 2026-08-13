@@ -11,11 +11,11 @@ import ContactUsForm from "@/components/forms/ContactUsForm";
 import AppImage from '@/components/ui/AppImage';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import { Card, CardContent } from "@/components/ui/card";
-import { getContentPageData } from '@/lib/webServerUtils';
+import { getContentPageData, getGlobalWebSettings } from '@/lib/webServerUtils';
 import JsonLdScript from '@/components/shared/JsonLdScript';
 import type { BreadcrumbItem } from '@/types/ui';
 
-export const revalidate = false;
+export const dynamic = 'force-dynamic';
 
 const PAGE_SLUG = "contact-us";
 
@@ -47,6 +47,7 @@ export async function generateMetadata(
 
 export default async function ContactUsPage() {
   const pageData = await getContentPageData(PAGE_SLUG);
+  const webSettings = await getGlobalWebSettings();
 
   if (!pageData) {
     return (
@@ -76,23 +77,25 @@ export default async function ContactUsPage() {
   const contactSchema = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": "Contact Newtalent",
-    "description": "Contact Newtalent for professional home services in Bangalore. Reach us via phone, email, or visit our office.",
+    "name": `Contact ${webSettings.websiteName || 'Newtalent'}`,
+    "description": `Contact ${webSettings.websiteName || 'Newtalent'} for professional artist services. Reach us via phone, email, or visit our office.`,
     "url": `${appBaseUrl}/contact-us`,
     "mainEntity": {
       "@type": "LocalBusiness",
-      "name": "Newtalent",
+      "name": webSettings.websiteName || "Newtalent",
       "image": `${appBaseUrl}/android-chrome-512x512.png`,
-      "telephone": "+91-7353113455",
-      "email": "support@newtalent.in",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "#44, G S Palya Road, Konappana Agrahara, Electronic City Phase 2",
-        "addressLocality": "Bangalore",
-        "addressRegion": "KA",
-        "postalCode": "560100",
-        "addressCountry": "IN"
-      },
+      ...(webSettings.showContactMobile ?? true ? { "telephone": webSettings.contactMobile || "+91-7353113455" } : {}),
+      ...(webSettings.showContactEmail ?? true ? { "email": webSettings.contactEmail || "sup@newtalent.in" } : {}),
+      ...(webSettings.showContactAddress ?? true ? { 
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": webSettings.address || "#44, G S Palya Road, Konappana Agrahara, Electronic City Phase 2",
+          "addressLocality": "Bangalore",
+          "addressRegion": "KA",
+          "postalCode": "560100",
+          "addressCountry": "IN"
+        }
+      } : {}),
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
@@ -106,10 +109,10 @@ export default async function ContactUsPage() {
     <div className="min-h-screen bg-background pb-20">
       <JsonLdScript data={contactSchema} idSuffix="contact-page-schema" />
       {/* Header Section */}
-      <div className="bg-primary/5 py-20 md:py-32">
+      <div className="bg-primary/5 py-14 md:py-12">
         <div className="container mx-auto px-4">
           <Breadcrumbs items={breadcrumbItems} />
-          <div className="max-w-4xl mx-auto text-center mt-12">
+          <div className="max-w-4xl mx-auto text-center mt-4">
             <h1 className="text-5xl md:text-7xl font-headline font-bold text-foreground mb-8">
               {pageData.title}
             </h1>
@@ -135,37 +138,47 @@ export default async function ContactUsPage() {
                   </div>
                   
                   <div className="space-y-8">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-                        <Phone className="h-6 w-6" />
+                    {(webSettings.showContactMobile ?? true) && webSettings.contactMobile && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                          <Phone className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Call Us</p>
+                          <a href={`tel:${webSettings.contactMobile}`} className="text-xl font-bold hover:underline transition-all">
+                            {webSettings.contactMobile}
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Call Us</p>
-                        <p className="text-xl font-bold">+91-7353113455</p>
-                      </div>
-                    </div>
+                    )}
 
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-                        <Mail className="h-6 w-6" />
+                    {(webSettings.showContactEmail ?? true) && webSettings.contactEmail && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                          <Mail className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Email Us</p>
+                          <a href={`mailto:${webSettings.contactEmail}`} className="text-xl font-bold hover:underline transition-all break-all">
+                            {webSettings.contactEmail}
+                          </a>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Email Us</p>
-                        <p className="text-xl font-bold">sup@newtalent.in</p>
-                      </div>
-                    </div>
+                    )}
 
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-                        <MapPin className="h-6 w-6" />
+                    {(webSettings.showContactAddress ?? true) && webSettings.address && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                          <MapPin className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Visit Us</p>
+                          <p className="text-lg font-bold leading-relaxed">
+                            {webSettings.address}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-widest opacity-60 mb-1">Visit Us</p>
-                        <p className="text-lg font-bold leading-relaxed">
-                          #44 G S Palya Road, Konappana Agrahara, Electronic City Phase 2, Bangalore - 560100
-                        </p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

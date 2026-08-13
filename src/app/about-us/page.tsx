@@ -98,10 +98,10 @@ export default async function AboutUsPage() {
     <div className="min-h-screen bg-background pb-20">
       <JsonLdScript data={organizationSchema} idSuffix="about-org" />
       {/* Hero Section */}
-      <div className="bg-primary/5 py-20 md:py-32">
+      <div className="bg-primary/5 py-14 md:py-12">
         <div className="container mx-auto px-4">
           <Breadcrumbs items={breadcrumbItems} />
-          <div className="max-w-4xl mx-auto text-center mt-12">
+          <div className="max-w-4xl mx-auto text-center mt-4">
             <h1 className="text-5xl md:text-7xl font-headline font-bold text-foreground mb-8">
               {pageData.title}
             </h1>

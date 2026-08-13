@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea"; 
 import { Label } from "@/components/ui/label";
 import { Settings2, Save, Loader2, AlertTriangle, Building, Image as ImageIcon, FileText, ExternalLink, Trash2, Facebook, Instagram, Linkedin, Youtube, TwitterIcon, Heading1, Heading2, Bold, List, Link as LinkIcon, Type, ImagePlus, Copy, Check, Pilcrow } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp, collection, query, orderBy, onSnapshot } from "firebase/firestore";
@@ -46,6 +47,9 @@ const generalInfoSchema = z.object({
   address: z.string().max(200, "Address is too long.").optional().or(z.literal('')),
   logoImageHint: z.string().max(50, { message: "Hint should be max 50 characters."}).optional().or(z.literal('')),
   websiteIconImageHint: z.string().max(50, { message: "Hint should be max 50 characters."}).optional().or(z.literal('')),
+  showContactMobile: z.boolean().optional(),
+  showContactEmail: z.boolean().optional(),
+  showContactAddress: z.boolean().optional(),
 });
 type GeneralInfoFormData = z.infer<typeof generalInfoSchema>;
 
@@ -126,6 +130,9 @@ export default function WebSettingsPage() {
       address: "",
       logoImageHint: "",
       websiteIconImageHint: "",
+      showContactMobile: true,
+      showContactEmail: true,
+      showContactAddress: true,
     },
   });
 
@@ -161,6 +168,9 @@ export default function WebSettingsPage() {
           address: data.address || "",
           logoImageHint: data.logoImageHint || "",
           websiteIconImageHint: data.websiteIconImageHint || "",
+          showContactMobile: data.showContactMobile ?? true,
+          showContactEmail: data.showContactEmail ?? true,
+          showContactAddress: data.showContactAddress ?? true,
         });
         socialMediaForm.reset({
             facebook: data.socialMediaLinks?.facebook || "",
@@ -173,7 +183,17 @@ export default function WebSettingsPage() {
         setFaviconPreview(data.faviconUrl || null);
         setWebsiteIconPreview(data.websiteIconUrl || null);
       } else {
-        generalInfoForm.reset({ websiteName: "", contactEmail: "", contactMobile: "", address: "", logoImageHint: "", websiteIconImageHint: "" });
+        generalInfoForm.reset({ 
+          websiteName: "", 
+          contactEmail: "", 
+          contactMobile: "", 
+          address: "", 
+          logoImageHint: "", 
+          websiteIconImageHint: "",
+          showContactMobile: true,
+          showContactEmail: true,
+          showContactAddress: true
+        });
         socialMediaForm.reset({ facebook: "", instagram: "", twitter: "", linkedin: "", youtube: "" });
         setLogoPreview(null); setFaviconPreview(null); setWebsiteIconPreview(null);
         setOriginalGlobalSettings({});
@@ -262,6 +282,9 @@ export default function WebSettingsPage() {
         address: data.address,
         logoImageHint: data.logoImageHint || "",
         websiteIconImageHint: data.websiteIconImageHint || "",
+        showContactMobile: data.showContactMobile ?? true,
+        showContactEmail: data.showContactEmail ?? true,
+        showContactAddress: data.showContactAddress ?? true,
         updatedAt: Timestamp.now(),
       };
       await setDoc(settingsDocRef, updateData, { merge: true });
@@ -617,7 +640,7 @@ export default function WebSettingsPage() {
     currentPreview: string | null,
     fileInputAccept: string,
     currentFile: File | null,
-    hintFieldName?: keyof GeneralInfoFormData
+    hintFieldName?: 'logoImageHint' | 'websiteIconImageHint'
   ) => (
     <div className="space-y-4 p-4 border rounded-md shadow-sm">
       <h3 className="text-lg font-semibold">{label}</h3>
@@ -726,6 +749,72 @@ export default function WebSettingsPage() {
                   <FormField control={generalInfoForm.control} name="contactEmail" render={({ field }) => (<FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input type="email" placeholder="e.g., support@newtalent.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={generalInfoForm.control} name="contactMobile" render={({ field }) => (<FormItem><FormLabel>Contact Mobile</FormLabel><FormControl><Input type="tel" placeholder="e.g., +919876543210" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={generalInfoForm.control} name="address" render={({ field }) => (<FormItem><FormLabel>Company Address</FormLabel><FormControl><Textarea placeholder="123 Main St, Anytown, ST 12345" {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
+
+                  <div className="pt-6 border-t border-border space-y-4">
+                    <div className="space-y-0.5">
+                      <h3 className="text-md font-bold">Contact Page Visibility Settings</h3>
+                      <p className="text-xs text-muted-foreground">Control which contact details are visible to public visitors on the Contact Us page.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField 
+                        control={generalInfoForm.control} 
+                        name="showContactMobile" 
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-2xl border p-4 space-y-0">
+                            <div className="space-y-0.5 pr-2">
+                              <FormLabel className="text-sm font-bold">Show Phone</FormLabel>
+                              <FormDescription className="text-[10px]">Display phone number on website.</FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange} 
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )} 
+                      />
+
+                      <FormField 
+                        control={generalInfoForm.control} 
+                        name="showContactEmail" 
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-2xl border p-4 space-y-0">
+                            <div className="space-y-0.5 pr-2">
+                              <FormLabel className="text-sm font-bold">Show Email</FormLabel>
+                              <FormDescription className="text-[10px]">Display email address on website.</FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange} 
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )} 
+                      />
+
+                      <FormField 
+                        control={generalInfoForm.control} 
+                        name="showContactAddress" 
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-2xl border p-4 space-y-0">
+                            <div className="space-y-0.5 pr-2">
+                              <FormLabel className="text-sm font-bold">Show Address</FormLabel>
+                              <FormDescription className="text-[10px]">Display office address on website.</FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange} 
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )} 
+                      />
+                    </div>
+                  </div>
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" disabled={isSaving}>
