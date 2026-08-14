@@ -70,8 +70,12 @@ export default function Step1CategorySkills({
     },
   });
 
+  const isEditMode = typeof window !== 'undefined' && 
+    (window.location.search.includes('editApplicationId=') || window.location.search.includes('edit='));
+
   // Restore from localStorage on mount
   useEffect(() => {
+    if (isEditMode) return;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -81,13 +85,14 @@ export default function Step1CategorySkills({
         console.error("Step1: Error parsing saved data", e);
       }
     }
-  }, [form]);
+  }, [form, isEditMode]);
 
   // Auto-save to localStorage on change
   const watchedFields = form.watch();
   useEffect(() => {
+    if (isEditMode) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(watchedFields));
-  }, [watchedFields]);
+  }, [watchedFields, isEditMode]);
 
   const handleSubmit = (data: Step1FormData) => {
     const category = controlOptions?.categories.find(c => c.id === data.workCategoryId);

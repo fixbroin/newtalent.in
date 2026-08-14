@@ -316,9 +316,12 @@ export default function Step2PersonalInfo({
     setIsMounted(true);
   }, []);
 
+  const isEditMode = typeof window !== 'undefined' && 
+    (window.location.search.includes('editApplicationId=') || window.location.search.includes('edit='));
+
   // Load from Local Storage on mount
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || isEditMode) return;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -331,15 +334,16 @@ export default function Step2PersonalInfo({
         console.error("Error restoring Step 2 from storage:", e);
       }
     }
-  }, [isMounted, form]);
+  }, [isMounted, form, isEditMode]);
 
   // Auto-save to Local Storage on change
   useEffect(() => {
+    if (isEditMode) return;
     const subscription = form.watch((value) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, isEditMode]);
   
   // Sync with initialData and firestoreUser for auto-fill
   useEffect(() => {

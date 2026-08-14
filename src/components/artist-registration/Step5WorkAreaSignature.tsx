@@ -127,7 +127,11 @@ export default function Step5WorkAreaSignature({
     */
   }, []);
 
+  const isEditMode = typeof window !== 'undefined' && 
+    (window.location.search.includes('editApplicationId=') || window.location.search.includes('edit='));
+
   useEffect(() => {
+    if (isEditMode) return;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -137,14 +141,15 @@ export default function Step5WorkAreaSignature({
         console.error("Error restoring Step 5 from storage:", e);
       }
     }
-  }, [initialData, form]);
+  }, [initialData, form, isEditMode]);
 
   useEffect(() => {
+    if (isEditMode) return;
     const subscription = form.watch((value) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, isEditMode]);
 
   useEffect(() => {
     form.reset({

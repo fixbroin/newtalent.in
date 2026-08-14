@@ -74,8 +74,12 @@ export default function Step4KycDocuments({
     return controlOptions?.additionalDocTypes?.filter(opt => opt.isActive) || [];
   }, [controlOptions]);
 
+  const isEditMode = typeof window !== 'undefined' && 
+    (window.location.search.includes('editApplicationId=') || window.location.search.includes('edit='));
+
   // Load from Local Storage on mount
   useEffect(() => {
+    if (isEditMode) return;
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -85,15 +89,16 @@ export default function Step4KycDocuments({
         console.error("Error restoring Step 4 from storage:", e);
       }
     }
-  }, [form]);
+  }, [form, isEditMode]);
 
   // Auto-save to Local Storage on change
   useEffect(() => {
+    if (isEditMode) return;
     const subscription = form.watch((value) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, isEditMode]);
 
   useEffect(() => {
     const initialAddDocs: typeof additionalDocsData = {};
