@@ -8,7 +8,7 @@ import type { ArtistApplication, KycDocument, BankDetails, ArtistApplicationStat
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, Briefcase, FileText, Banknote, MapPin, Image as ImageIcon, ShieldCheck, CheckCircle, AlertTriangle, XCircle, Loader2, Download, Edit as EditIcon, ExternalLink } from "lucide-react";
+import { UserCircle, Briefcase, FileText, Banknote, MapPin, Image as ImageIcon, ShieldCheck, CheckCircle, AlertTriangle, XCircle, Loader2, Download, Edit as EditIcon, ExternalLink, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef } from "react";
 import NextImage from 'next/image';
@@ -134,10 +134,30 @@ const BankDetailsDisplay: React.FC<{
 };
 
 
-const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+const DetailRow: React.FC<{ 
+  label: string; 
+  value: React.ReactNode; 
+  copyValue?: string; 
+  onCopy?: (text: string) => void;
+  isCopied?: boolean;
+}> = ({ label, value, copyValue, onCopy, isCopied }) => (
   <div className="flex flex-col sm:flex-row py-1.5 border-b border-border/40 gap-1 sm:gap-4 sm:items-start">
     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground w-full sm:w-56 shrink-0">{label}</span>
-    <span className="text-sm font-medium text-foreground break-all text-left">{value ?? 'N/A'}</span>
+    <div className="flex items-center gap-1.5 text-sm font-medium text-foreground break-all text-left">
+      <span>{value ?? 'N/A'}</span>
+      {copyValue && value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          onClick={() => onCopy?.(copyValue)}
+          title={`Copy ${label}`}
+        >
+          {isCopied ? <CheckCircle className="h-3 w-3 text-green-500 animate-in fade-in zoom-in-50" /> : <Copy className="h-3 w-3" />}
+        </Button>
+      )}
+    </div>
   </div>
 );
 
@@ -154,6 +174,16 @@ export default function ArtistApplicationDetailsModal({
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [verifyingDocType, setVerifyingDocType] = useState<string | null>(null);
   const [tabsListEl, setTabsListEl] = useState<HTMLDivElement | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => {
+      setCopiedField(null);
+    }, 2000);
+  };
 
   useEffect(() => {
     if (application) {
@@ -302,7 +332,21 @@ export default function ArtistApplicationDetailsModal({
             </Avatar>
             <div className="min-w-0">
               <DialogTitle className="text-xl sm:text-2xl break-words max-w-full">{application.fullName || "Artist Application"}</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm break-words max-w-full">ID: {application.id}</DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm break-words max-w-full flex items-center gap-1.5 mt-0.5">
+                <span>ID: {application.id}</span>
+                {application.id && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-4 w-4 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleCopy(application.id!, 'appId')}
+                    title="Copy Application ID"
+                  >
+                    {copiedField === 'appId' ? <CheckCircle className="h-2.5 w-2.5 text-green-500" /> : <Copy className="h-2.5 w-2.5" />}
+                  </Button>
+                )}
+              </DialogDescription>
               <Badge variant="outline" className="mt-1 text-xs capitalize">{application.status.replace(/_/g, ' ')}</Badge>
             </div>
           </div>
@@ -355,12 +399,42 @@ export default function ArtistApplicationDetailsModal({
                         </a>
                       </div>
                     )}
-                    <DetailRow label="Full Name" value={application.fullName} />
-                    <DetailRow label="Email" value={application.email} />
-                    <DetailRow label="Mobile Number" value={application.mobileNumber} />
+                    <DetailRow 
+                      label="Full Name" 
+                      value={application.fullName} 
+                      copyValue={application.fullName} 
+                      onCopy={(txt) => handleCopy(txt, 'fullName')} 
+                      isCopied={copiedField === 'fullName'} 
+                    />
+                    <DetailRow 
+                      label="Email" 
+                      value={application.email} 
+                      copyValue={application.email} 
+                      onCopy={(txt) => handleCopy(txt, 'email')} 
+                      isCopied={copiedField === 'email'} 
+                    />
+                    <DetailRow 
+                      label="Mobile Number" 
+                      value={application.mobileNumber} 
+                      copyValue={application.mobileNumber} 
+                      onCopy={(txt) => handleCopy(txt, 'mobile')} 
+                      isCopied={copiedField === 'mobile'} 
+                    />
                     <DetailRow label="Alternate Mobile" value={application.alternateMobile || 'N/A'} />
-                    <DetailRow label="Pin Code" value={application.pinCode} />
-                    <DetailRow label="City" value={application.city} />
+                    <DetailRow 
+                      label="Pin Code" 
+                      value={application.pinCode} 
+                      copyValue={application.pinCode} 
+                      onCopy={(txt) => handleCopy(txt, 'pinCode')} 
+                      isCopied={copiedField === 'pinCode'} 
+                    />
+                    <DetailRow 
+                      label="City" 
+                      value={application.city} 
+                      copyValue={application.city} 
+                      onCopy={(txt) => handleCopy(txt, 'city')} 
+                      isCopied={copiedField === 'city'} 
+                    />
                     <DetailRow label="Area" value={application.area} />
                     <DetailRow label="Height" value={application.height} />
                     <DetailRow label="Weight" value={application.weight} />

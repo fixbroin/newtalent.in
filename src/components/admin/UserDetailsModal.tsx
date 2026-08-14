@@ -12,7 +12,7 @@ import { DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { UserCircle, Mail, Phone, CalendarDays, CheckCircle, XCircle, Loader2, Edit3, Save, MapPin, AtSign, CheckCircle2 } from 'lucide-react';
+import { UserCircle, Mail, Phone, CalendarDays, CheckCircle, XCircle, Loader2, Edit3, Save, MapPin, AtSign, CheckCircle2, Copy } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import AppImage from '@/components/ui/AppImage';
 import { getTimestampMillis } from '@/lib/utils';
@@ -47,6 +47,16 @@ export default function UserDetailsModal({ user, onClose, onUpdateUser }: UserDe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => {
+      setCopiedField(null);
+    }, 2000);
+  };
 
   const form = useForm<UserEditFormData>({
     resolver: zodResolver(userEditSchema),
@@ -245,19 +255,73 @@ export default function UserDetailsModal({ user, onClose, onUpdateUser }: UserDe
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <div><strong>Display Name:</strong> {user.displayName || "N/A"}</div>
-                  <div><strong>Username:</strong> {user.username ? `@${user.username}` : "N/A"}</div>
-                  <div><strong>Email:</strong> {user.email || "N/A"}</div>
-                  <div className="flex items-center gap-2">
-                    <strong>Mobile:</strong> {user.mobileNumber || "N/A"}
-                    {user.mobileNumber && (
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleWhatsAppClick(e, user.mobileNumber)} title="Chat on WhatsApp">
-                           <AppImage src="/whatsapp.png" alt="WhatsApp Icon" width={24} height={24} />
-                           <span className="sr-only">Chat on WhatsApp</span>
-                        </Button>
+                  <div className="flex items-center gap-1">
+                    <strong>Display Name:</strong> {user.displayName || "N/A"}
+                    {user.displayName && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        onClick={() => handleCopy(user.displayName!, 'name')}
+                        title="Copy Display Name"
+                      >
+                        {copiedField === 'name' ? <CheckCircle2 className="h-3 w-3 text-green-500 animate-in fade-in zoom-in-50" /> : <Copy className="h-3 w-3" />}
+                      </Button>
                     )}
                   </div>
-                  <div><strong>User ID (UID):</strong> <span className="text-xs">{user.uid}</span></div>
+                  <div><strong>Username:</strong> {user.username ? `@${user.username}` : "N/A"}</div>
+                  <div className="flex items-center gap-1">
+                    <strong>Email:</strong> {user.email || "N/A"}
+                    {user.email && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        onClick={() => handleCopy(user.email!, 'email')}
+                        title="Copy Email Address"
+                      >
+                        {copiedField === 'email' ? <CheckCircle2 className="h-3 w-3 text-green-500 animate-in fade-in zoom-in-50" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <strong>Mobile:</strong> {user.mobileNumber || "N/A"}
+                    {user.mobileNumber && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          onClick={() => handleCopy(user.mobileNumber!, 'mobile')}
+                          title="Copy Mobile Number"
+                        >
+                          {copiedField === 'mobile' ? <CheckCircle2 className="h-3 w-3 text-green-500 animate-in fade-in zoom-in-50" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => handleWhatsAppClick(e, user.mobileNumber)} title="Chat on WhatsApp">
+                           <AppImage src="/whatsapp.png" alt="WhatsApp Icon" width={18} height={18} />
+                           <span className="sr-only">Chat on WhatsApp</span>
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <strong>User ID (UID):</strong> <span className="text-xs">{user.uid}</span>
+                    {user.uid && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        onClick={() => handleCopy(user.uid, 'uid')}
+                        title="Copy User ID (UID)"
+                      >
+                        {copiedField === 'uid' ? <CheckCircle2 className="h-3 w-3 text-green-500 animate-in fade-in zoom-in-50" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    )}
+                  </div>
                   <div><strong>Created At:</strong> {formatTimestampForIndia(user.createdAt)}</div>
                   <div><strong>Last Login:</strong> {formatTimestampForIndia(user.lastLoginAt)}</div>
                   <div>
