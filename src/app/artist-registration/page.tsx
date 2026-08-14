@@ -169,6 +169,8 @@ export default function ArtistRegistrationPage() {
       setIsLoadingPage(false);
       return;
     }
+    setApplicationData({});
+    setApplicationStatus(null);
     setIsLoadingPage(true);
     try {
       const userDocRef = doc(db, "users", targetUserId);
@@ -488,7 +490,7 @@ export default function ArtistRegistrationPage() {
               isPortfolioEnabled={isPortfolioStepActive} 
             />
           )}
-          <div className="mt-6">
+          <div className="mt-6" key={editingApplicationIdForAdmin || user?.uid || 'guest'}>
             {renderStepContent()}
           </div>
         </CardContent>

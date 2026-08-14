@@ -140,6 +140,26 @@ export default function AdminArtistApplicationsPage() {
             updatePayload.workCategorySlug = appToUpdate.workCategorySlug;
           }
         }
+      } else {
+        // If status changes away from approved, remove the artist role from the user
+        try {
+          const userDocRef = doc(db, 'users', appToUpdate.userId);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            const currentRoles = userData.roles || ['customer'];
+            if (currentRoles.includes('artist')) {
+              const updatedRoles = currentRoles.filter((r: string) => r !== 'artist');
+              const finalRoles = updatedRoles.length > 0 ? updatedRoles : ['customer'];
+              await updateDoc(userDocRef, {
+                roles: finalRoles,
+                updatedAt: Timestamp.now()
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Error removing artist role on status change:", e);
+        }
       }
 
       if (notes && (newStatus === 'rejected' || newStatus === 'needs_update')) {
@@ -297,6 +317,28 @@ export default function AdminArtistApplicationsPage() {
 
             // Delete all collected files in parallel, allowing successful deletions to continue if individual files are missing.
             await Promise.allSettled(urlsToDelete.map(deleteStorageFile));
+        }
+
+        // Clean up user roles to remove 'artist'
+        if (appToDelete) {
+          try {
+            const userDocRef = doc(db, 'users', appToDelete.userId);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+              const userData = userDocSnap.data();
+              const currentRoles = userData.roles || ['customer'];
+              if (currentRoles.includes('artist')) {
+                const updatedRoles = currentRoles.filter((r: string) => r !== 'artist');
+                const finalRoles = updatedRoles.length > 0 ? updatedRoles : ['customer'];
+                await updateDoc(userDocRef, {
+                  roles: finalRoles,
+                  updatedAt: Timestamp.now()
+                });
+              }
+            }
+          } catch (userErr) {
+            console.error("Failed to clean up user role on application delete:", userErr);
+          }
         }
 
         await deleteDoc(doc(db, Artist_APPLICATION_COLLECTION, applicationId));
