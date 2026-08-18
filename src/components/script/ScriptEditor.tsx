@@ -121,23 +121,38 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [activeElementId, setActiveElementId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [colorPickerElementId, setColorPickerElementId] = useState<string | null>(null);
+  const [fontSizePickerElementId, setFontSizePickerElementId] = useState<string | null>(null);
+  const [mobileFullscreenElementId, setMobileFullscreenElementId] = useState<string | null>(null);
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const editorRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
+  const recalculateHeights = useCallback(() => {
+    setTimeout(() => {
+      Object.values(editorRefs.current).forEach(textarea => {
+        if (textarea) {
+          textarea.style.height = 'auto';
+          textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+      });
+    }, 50);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (script && !loading) {
-      const timer = setTimeout(() => {
-        Object.values(editorRefs.current).forEach(textarea => {
-          if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
-          }
-        });
-      }, 100);
-      return () => clearTimeout(timer);
+      recalculateHeights();
     }
-  }, [loading, script?.id, script?.content.length]);
+  }, [loading, script?.id, script?.content.length, recalculateHeights]);
 
   useEffect(() => {
     if (id) {
@@ -221,6 +236,9 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     setScript({ ...script, content: newContent });
     debouncedSave(newContent);
     setMobileMenuOpen(false);
+    if (updates.fontSize) {
+      recalculateHeights();
+    }
   };
 
   const updateSettings = (updates: Partial<ScriptSettings>) => {
@@ -537,55 +555,87 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                         <Bold className={`h-3 w-3 ${element.fontWeight === 'bold' ? 'text-primary' : ''}`} />
                       </Button>
                       
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 hover:text-primary">
-                            <Palette className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel className="text-xs">Text Color</DropdownMenuLabel>
-                          <div className="grid grid-cols-3 gap-1 p-2">
-                            {COLORS.map(c => (
-                              <button 
-                                key={c.value} 
-                                className="h-6 w-6 rounded border border-border flex items-center justify-center"
-                                style={{ backgroundColor: c.value || 'white' }}
-                                onClick={() => handleElementChange(element.id, { color: c.value })}
-                              >
-                                {element.color === c.value && <Check className="h-3 w-3 text-black bg-white/50 rounded-full" />}
-                              </button>
-                            ))}
-                          </div>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuLabel className="text-xs">Highlight</DropdownMenuLabel>
-                          <div className="grid grid-cols-3 gap-1 p-2">
-                            {HIGHLIGHTS.map(h => (
-                              <button 
-                                key={h.value} 
-                                className="h-6 w-6 rounded border border-border flex items-center justify-center"
-                                style={{ backgroundColor: h.value || 'transparent' }}
-                                onClick={() => handleElementChange(element.id, { highlight: h.value })}
-                              >
-                                {element.highlight === h.value && <Check className="h-3 w-3 text-black" />}
-                              </button>
-                            ))}
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isMobile ? (
+                        <Button 
+                          variant="ghost" size="icon" className="h-5 w-5 hover:text-primary"
+                          onClick={() => setColorPickerElementId(element.id)}
+                        >
+                          <Palette className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 hover:text-primary">
+                              <Palette className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel className="text-xs">Text Color</DropdownMenuLabel>
+                            <div className="grid grid-cols-3 gap-1 p-2">
+                              {COLORS.map(c => (
+                                <button 
+                                  key={c.value} 
+                                  className="h-6 w-6 rounded border border-border flex items-center justify-center"
+                                  style={{ backgroundColor: c.value || 'white' }}
+                                  onClick={() => handleElementChange(element.id, { color: c.value })}
+                                >
+                                  {element.color === c.value && <Check className="h-3 w-3 text-black bg-white/50 rounded-full" />}
+                                </button>
+                              ))}
+                            </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="text-xs">Highlight</DropdownMenuLabel>
+                            <div className="grid grid-cols-3 gap-1 p-2">
+                              {HIGHLIGHTS.map(h => (
+                                <button 
+                                  key={h.value} 
+                                  className="h-6 w-6 rounded border border-border flex items-center justify-center"
+                                  style={{ backgroundColor: h.value || 'transparent' }}
+                                  onClick={() => handleElementChange(element.id, { highlight: h.value })}
+                                >
+                                  {element.highlight === h.value && <Check className="h-3 w-3 text-black" />}
+                                </button>
+                              ))}
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 hover:text-primary">
-                            <Type className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'small' })}>Small</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'medium' })}>Medium</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'large' })}>Large</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isMobile ? (
+                        <Button 
+                          variant="ghost" size="icon" className="h-5 w-5 hover:text-primary"
+                          onClick={() => setFontSizePickerElementId(element.id)}
+                        >
+                          <Type className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 hover:text-primary">
+                              <Type className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'small' })}>Small</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'medium' })}>Medium</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleElementChange(element.id, { fontSize: 'large' })}>Large</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+
+                      {script.content.length > 1 && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5 hover:text-destructive text-muted-foreground/60" 
+                          onClick={() => {
+                            setActiveElementId(element.id);
+                            handleRemoveElement();
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -596,7 +646,12 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                     onKeyDown={(e) => handleKeyDown(e, index, element)}
                     onFocus={() => {
                       setActiveElementId(element.id);
-                      handleMobileKeyboardScroll(element.id);
+                      if (isMobile) {
+                        setMobileFullscreenElementId(element.id);
+                        editorRefs.current[element.id]?.blur();
+                      } else {
+                        handleMobileKeyboardScroll(element.id);
+                      }
                     }}
                     placeholder={ELEMENT_LABELS[element.type]}
                     className={styles.className}
@@ -739,6 +794,162 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Color Picker Dialog */}
+      <Dialog open={!!colorPickerElementId} onOpenChange={(open) => !open && setColorPickerElementId(null)}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md rounded-[2rem] p-6 border border-border shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold uppercase tracking-wider text-center">Text Styling</DialogTitle>
+          </DialogHeader>
+          {colorPickerElementId && (() => {
+            const el = script.content.find(e => e.id === colorPickerElementId);
+            return (
+              <div className="grid gap-6 mt-4">
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase text-center">Text Color</p>
+                  <div className="grid grid-cols-6 gap-2 justify-items-center">
+                    {COLORS.map(c => (
+                      <button 
+                        key={c.value} 
+                        className="h-8 w-8 rounded-full border border-border flex items-center justify-center shadow-sm relative"
+                        style={{ backgroundColor: c.value || 'white' }}
+                        onClick={() => {
+                          handleElementChange(colorPickerElementId, { color: c.value });
+                          setColorPickerElementId(null);
+                        }}
+                      >
+                        {el?.color === c.value && <Check className="h-4 w-4 text-black bg-white/50 rounded-full" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="h-px bg-border my-2"></div>
+                
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase text-center">Highlight</p>
+                  <div className="grid grid-cols-6 gap-2 justify-items-center">
+                    {HIGHLIGHTS.map(h => (
+                      <button 
+                        key={h.value} 
+                        className="h-8 w-8 rounded-full border border-border flex items-center justify-center shadow-sm relative"
+                        style={{ backgroundColor: h.value || 'transparent' }}
+                        onClick={() => {
+                          handleElementChange(colorPickerElementId, { highlight: h.value });
+                          setColorPickerElementId(null);
+                        }}
+                      >
+                        {el?.highlight === h.value && <Check className="h-4 w-4 text-black" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Font Size Dialog */}
+      <Dialog open={!!fontSizePickerElementId} onOpenChange={(open) => !open && setFontSizePickerElementId(null)}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md rounded-[2rem] p-6 border border-border shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary text-lg font-bold uppercase tracking-wider text-center">Font Size</DialogTitle>
+          </DialogHeader>
+          {fontSizePickerElementId && (() => {
+            const el = script.content.find(e => e.id === fontSizePickerElementId);
+            return (
+              <div className="grid gap-3 mt-4">
+                {(['small', 'medium', 'large'] as const).map((size) => (
+                  <Button
+                    key={size}
+                    variant={el?.fontSize === size ? "default" : "outline"}
+                    className="h-12 text-sm font-bold rounded-xl capitalize"
+                    onClick={() => {
+                      handleElementChange(fontSizePickerElementId, { fontSize: size });
+                      setFontSizePickerElementId(null);
+                    }}
+                  >
+                    {size}
+                  </Button>
+                ))}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Fullscreen Editor Overlay */}
+      {isMobile && mobileFullscreenElementId && (() => {
+        const element = script.content.find(el => el.id === mobileFullscreenElementId);
+        if (!element) return null;
+        return (
+          <div className="fixed inset-0 bg-background z-[100] flex flex-col animate-in slide-in-from-bottom duration-200">
+            <header className="border-b bg-background/95 backdrop-blur px-4 py-3 flex items-center justify-between">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2 px-2 text-foreground font-bold"
+                onClick={() => {
+                  setMobileFullscreenElementId(null);
+                  recalculateHeights();
+                }}
+              >
+                <ChevronLeft className="h-5 w-5" /> Back
+              </Button>
+              <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                {ELEMENT_LABELS[element.type]}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" 
+                  onClick={() => handleElementChange(element.id, { fontWeight: element.fontWeight === 'bold' ? 'normal' : 'bold' })}
+                >
+                  <Bold className={`h-4 w-4 ${element.fontWeight === 'bold' ? 'text-primary' : ''}`} />
+                </Button>
+                <Button 
+                  variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"
+                  onClick={() => setColorPickerElementId(element.id)}
+                >
+                  <Palette className={`h-4 w-4 ${element.color || element.highlight ? 'text-primary' : ''}`} />
+                </Button>
+                <Button 
+                  variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"
+                  onClick={() => setFontSizePickerElementId(element.id)}
+                >
+                  <Type className={`h-4 w-4 ${element.fontSize && element.fontSize !== 'medium' ? 'text-primary' : ''}`} />
+                </Button>
+                {script.content.length > 1 && (
+                  <Button 
+                    variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      handleRemoveElement();
+                      setMobileFullscreenElementId(null);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </header>
+            <main className="flex-1 p-6 bg-background flex flex-col">
+              <textarea
+                autoFocus
+                value={element.text}
+                onChange={(e) => handleElementChange(element.id, { text: e.target.value })}
+                placeholder={`Enter ${ELEMENT_LABELS[element.type]} text...`}
+                className="flex-1 w-full resize-none bg-transparent focus:outline-none font-mono text-[16px] leading-relaxed"
+                style={{
+                  color: element.color || undefined,
+                  backgroundColor: element.highlight || undefined,
+                  fontWeight: element.fontWeight || undefined,
+                  fontSize: element.fontSize === 'small' ? '14px' : element.fontSize === 'large' ? '20px' : '16px',
+                }}
+              />
+            </main>
+          </div>
+        );
+      })()}
     </div>
   );
 }
