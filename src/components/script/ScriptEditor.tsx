@@ -192,6 +192,53 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     }, 2000);
   }, [id]);
 
+  const handleMobileKeyboardScroll = (elementId: string) => {
+    // Only apply this behavior on mobile/tablet
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+
+    const textarea = editorRefs.current[elementId];
+    const main = textarea?.closest('main');
+
+    if (!textarea || !main) return;
+
+    // Wait for the mobile keyboard/viewport to appear
+    setTimeout(() => {
+      const viewport = window.visualViewport;
+
+      if (!viewport) {
+        textarea.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+        return;
+      }
+
+      const rect = textarea.getBoundingClientRect();
+
+      // Bottom of the currently visible area
+      const visibleBottom = viewport.offsetTop + viewport.height;
+
+      // Keep the field comfortably above the keyboard
+      const keyboardSafeSpace = 100;
+
+      if (rect.bottom > visibleBottom - keyboardSafeSpace) {
+        const amountToScroll = rect.bottom - (visibleBottom - keyboardSafeSpace);
+
+        main.scrollBy({
+          top: amountToScroll,
+          behavior: 'smooth',
+        });
+      } else if (rect.top < viewport.offsetTop + 60) {
+        const amountToScroll = rect.top - (viewport.offsetTop + 60);
+
+        main.scrollBy({
+          top: amountToScroll,
+          behavior: 'smooth',
+        });
+      }
+    }, 300);
+  };
+
   const handleElementChange = (elementId: string, updates: Partial<ScriptElement>) => {
     if (!script) return;
     const isOwner = user?.uid === script.ownerId;
@@ -578,7 +625,10 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                     value={element.text}
                     onChange={(e) => handleElementChange(element.id, { text: e.target.value })}
                     onKeyDown={(e) => handleKeyDown(e, index, element)}
-                    onFocus={() => setActiveElementId(element.id)}
+                    onFocus={() => {
+                      setActiveElementId(element.id);
+                      handleMobileKeyboardScroll(element.id);
+                    }}
                     placeholder={ELEMENT_LABELS[element.type]}
                     className={styles.className}
                     style={styles.style}
