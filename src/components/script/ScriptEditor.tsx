@@ -486,7 +486,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
 
       <main className="flex-1 overflow-y-auto bg-muted/30 py-10 px-4 flex justify-center relative">
         <div 
-          className="w-full max-w-[850px] min-h-[1100px] bg-card text-card-foreground shadow-xl border p-12 md:p-20 font-mono text-[14px] transition-colors duration-300"
+          className="w-full max-w-[850px] min-h-[1100px] bg-card text-card-foreground shadow-xl border p-4 sm:p-8 md:p-20 font-mono text-[14px] transition-colors duration-300"
           style={{ 
             fontFamily: 
               script.settings?.fontFamily === "courier" ? "var(--font-courier), monospace" :
