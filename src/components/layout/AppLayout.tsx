@@ -193,6 +193,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
       if (window.innerWidth >= 768) return;
       const target = e.target as HTMLElement;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        if (target.getAttribute('data-no-scroll') === 'true') return;
         setTimeout(() => {
           target.scrollIntoView({
             behavior: 'smooth',
@@ -206,6 +207,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
       if (window.innerWidth >= 768) return;
       const activeEl = document.activeElement as HTMLElement | null;
       if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        if (activeEl.getAttribute('data-no-scroll') === 'true') return;
         activeEl.scrollIntoView({
           behavior: 'smooth',
           block: 'center',

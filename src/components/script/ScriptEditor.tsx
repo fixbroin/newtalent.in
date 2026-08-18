@@ -125,6 +125,8 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
   const [colorPickerElementId, setColorPickerElementId] = useState<string | null>(null);
   const [fontSizePickerElementId, setFontSizePickerElementId] = useState<string | null>(null);
   const [mobileFullscreenElementId, setMobileFullscreenElementId] = useState<string | null>(null);
+  const [viewportHeight, setViewportHeight] = useState('100vh');
+  const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const editorRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
@@ -146,6 +148,25 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      setViewportHeight(`${viewport.height}px`);
+      setViewportOffsetTop(viewport.offsetTop);
+    };
+
+    viewport.addEventListener('resize', updateViewport);
+    viewport.addEventListener('scroll', updateViewport);
+    updateViewport();
+
+    return () => {
+      viewport.removeEventListener('resize', updateViewport);
+      viewport.removeEventListener('scroll', updateViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -373,7 +394,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300 relative">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
+      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/script-writing">
@@ -884,7 +905,13 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
         const element = script.content.find(el => el.id === mobileFullscreenElementId);
         if (!element) return null;
         return (
-          <div className="fixed inset-0 bg-background z-[100] flex flex-col animate-in slide-in-from-bottom duration-200">
+          <div 
+            className="fixed left-0 right-0 bg-background z-40 flex flex-col animate-in slide-in-from-bottom duration-200"
+            style={{
+              height: viewportHeight,
+              top: `${viewportOffsetTop}px`
+            }}
+          >
             <header className="border-b bg-background/95 backdrop-blur px-4 py-3 flex items-center justify-between">
               <Button 
                 variant="ghost" 
@@ -935,6 +962,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
             <main className="flex-1 p-6 bg-background flex flex-col">
               <textarea
                 autoFocus
+                data-no-scroll="true"
                 value={element.text}
                 onChange={(e) => handleElementChange(element.id, { text: e.target.value })}
                 placeholder={`Enter ${ELEMENT_LABELS[element.type]} text...`}
