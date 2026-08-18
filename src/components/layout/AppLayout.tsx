@@ -185,6 +185,49 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
     return () => document.removeEventListener('contextmenu', preventRightClick);
   }, []);
 
+  // Global helper to scroll focused input elements into view when mobile keyboard pops up
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      if (window.innerWidth >= 768) return;
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        setTimeout(() => {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 300);
+      }
+    };
+
+    const handleViewportResize = () => {
+      if (window.innerWidth >= 768) return;
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        activeEl.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    
+    const viewport = window.visualViewport;
+    if (viewport) {
+      viewport.addEventListener('resize', handleViewportResize);
+    }
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      if (viewport) {
+        viewport.removeEventListener('resize', handleViewportResize);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
