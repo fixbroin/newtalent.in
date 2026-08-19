@@ -26,7 +26,8 @@ import {
   Palette,
   Bold,
   MoreVertical,
-  Check
+  Check,
+  Maximize2
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -124,7 +125,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
   const [isMobile, setIsMobile] = useState(false);
   const [colorPickerElementId, setColorPickerElementId] = useState<string | null>(null);
   const [fontSizePickerElementId, setFontSizePickerElementId] = useState<string | null>(null);
-  const [mobileFullscreenElementId, setMobileFullscreenElementId] = useState<string | null>(null);
+  const [fullscreenElementId, setFullscreenElementId] = useState<string | null>(null);
   const [viewportHeight, setViewportHeight] = useState('100vh');
   const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
   const { toast } = useToast();
@@ -644,6 +645,15 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                         </DropdownMenu>
                       )}
 
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5 hover:text-primary text-muted-foreground/60" 
+                        onClick={() => setFullscreenElementId(element.id)}
+                      >
+                        <Maximize2 className="h-3 w-3" />
+                      </Button>
+
                       {script.content.length > 1 && (
                         <Button 
                           variant="ghost" 
@@ -667,12 +677,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                     onKeyDown={(e) => handleKeyDown(e, index, element)}
                     onFocus={() => {
                       setActiveElementId(element.id);
-                      if (isMobile) {
-                        setMobileFullscreenElementId(element.id);
-                        editorRefs.current[element.id]?.blur();
-                      } else {
-                        handleMobileKeyboardScroll(element.id);
-                      }
+                      handleMobileKeyboardScroll(element.id);
                     }}
                     placeholder={ELEMENT_LABELS[element.type]}
                     className={styles.className}
@@ -900,9 +905,9 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* Mobile Fullscreen Editor Overlay */}
-      {isMobile && mobileFullscreenElementId && (() => {
-        const element = script.content.find(el => el.id === mobileFullscreenElementId);
+      {/* Fullscreen Editor Overlay */}
+      {fullscreenElementId && (() => {
+        const element = script.content.find(el => el.id === fullscreenElementId);
         if (!element) return null;
         return (
           <div 
@@ -918,7 +923,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                 size="sm" 
                 className="gap-2 px-2 text-foreground font-bold"
                 onClick={() => {
-                  setMobileFullscreenElementId(null);
+                  setFullscreenElementId(null);
                   recalculateHeights();
                 }}
               >
@@ -951,7 +956,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                     variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
                     onClick={() => {
                       handleRemoveElement();
-                      setMobileFullscreenElementId(null);
+                      setFullscreenElementId(null);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
