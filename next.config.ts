@@ -4,7 +4,7 @@ import withPWAInit from '@ducanh2912/next-pwa';
 
 // Safely handles responses
 const cacheUpdatePlugin = {
-  cacheWillUpdate: async ({ response }: { response: Response }) => {
+  cacheWillUpdate: ({ response }: { response: Response }) => {
     if (!response || response.status !== 200) return null;
     return response;
   },
