@@ -8,7 +8,7 @@ import { CheckCircle2, Home, ListOrdered, Mail, Download, Loader2, MapPin, Tag, 
 import CheckoutStepper from '@/components/checkout/CheckoutStepper';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, doc, getDoc, runTransaction, query, where, getDocs, limit, updateDoc, deleteDoc, setDoc } from "firebase/firestore";
-import type { FirestoreBooking, BookingServiceItem, FirestoreService, FirestorePromoCode, AppSettings, AppliedPlatformFeeItem, FirestoreNotification, BookingStatus, MarketingAutomationSettings, MarketingSettings, SubscriptionPlan } from '@/types/firestore';
+import type { FirestoreBooking, BookingServiceItem, FirestoreService, FirestorePromoCode, AppSettings, AppliedPlatformFeeItem, FirestoreNotification, BookingStatus, MarketingAutomationSettings, MarketingSettings, SubscriptionPlan, FirestoreUser } from '@/types/firestore';
 import { getActiveCheckoutEntries, removeCheckedOutItemsFromCart } from '@/lib/cartManager';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -187,17 +187,40 @@ export default function ThankYouPage() {
                 const endDate = Timestamp.fromMillis(startDate.toMillis() + (planData.durationDays * 24 * 60 * 60 * 1000));
                 
                 if (currentUser?.uid) {
-                    await updateDoc(doc(db, "users", currentUser.uid), {
-                        subscriptionActive: true,
-                        currentSubscriptionId: pendingSubscriptionPlanId,
-                        subscriptionExpiresAt: endDate,
-                        updatedAt: Timestamp.now()
-                    });
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    
+                    if (planData.planType === 'hire') {
+                        const userSnap = await getDoc(userDocRef);
+                        const userData = userSnap.exists() ? (userSnap.data() as FirestoreUser) : null;
+                        
+                        const existingLimit = userData?.contactRevealLimit || 0;
+                        const existingUsed = userData?.contactRevealsUsed || 0;
+                        const oldRemaining = Math.max(0, existingLimit - existingUsed);
+                        const newLimit = (planData.revealLimit || 10) + oldRemaining;
+
+                        await updateDoc(userDocRef, {
+                            hireSubscriptionActive: true,
+                            currentHireSubscriptionId: pendingSubscriptionPlanId,
+                            hireSubscriptionExpiresAt: endDate,
+                            contactRevealLimit: newLimit,
+                            contactRevealsUsed: 0,
+                            updatedAt: Timestamp.now()
+                        });
+                    } else {
+                        await updateDoc(userDocRef, {
+                            subscriptionActive: true,
+                            currentSubscriptionId: pendingSubscriptionPlanId,
+                            subscriptionExpiresAt: endDate,
+                            updatedAt: Timestamp.now()
+                        });
+                    }
                     
                     await addDoc(collection(db, "userSubscriptions"), {
                         userId: currentUser.uid,
                         planId: pendingSubscriptionPlanId,
                         planName: planData.name,
+                        planType: planData.planType || 'artist',
+                        revealLimit: planData.revealLimit || 0,
                         startDate,
                         endDate,
                         status: 'active',

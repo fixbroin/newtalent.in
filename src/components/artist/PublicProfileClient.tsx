@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { 
   CheckCircle, MapPin, Calendar, Star, MessageSquare, Ban,
-  Share2, ArrowLeft, Instagram, Twitter, Facebook, Mail, Phone,
+  Share2, ArrowLeft, Instagram, Twitter, Facebook, Mail, Phone, PhoneCall,
   User, Briefcase, Ruler, Weight, UserCircle2, Clock, X, ZoomIn, Video, FileText, ExternalLink, Globe, Linkedin, Youtube
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,18 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, query, where, limit, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import SubscriptionPlansDialog from '@/components/category/SubscriptionPlansDialog';
+import { checkContactRevealStatus, unlockArtistContact } from '@/lib/hireSubscriptionUtils';
+import HireSubscriptionModal from '@/components/shared/HireSubscriptionModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { useFeaturesConfig } from '@/hooks/useFeaturesConfig';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -44,6 +56,73 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   const [selectedCertificate, setSelectedCertificate] = useState<ArtistCertificate | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [artistUserData, setArtistUserData] = useState<any>(null);
+
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [hireModalReason, setHireModalReason] = useState<'no_subscription' | 'limit_reached'>('no_subscription');
+  const [confirmUnlockOpen, setConfirmUnlockOpen] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [revealInfo, setRevealInfo] = useState<{ remaining: number; limit: number; used: number } | null>(null);
+
+  const phoneNumber = artist.mobileNumber || '';
+  const isUnlocked = firestoreUser?.unlockedArtistIds?.includes(artist.userId);
+
+  const handleCallClick = () => {
+    if (!user) {
+      triggerAuthRedirect(window.location.pathname);
+      return;
+    }
+
+    const check = checkContactRevealStatus(firestoreUser, artist.userId);
+
+    if (check.status === 'already_unlocked') {
+      if (phoneNumber) {
+        window.location.href = `tel:${phoneNumber}`;
+      } else {
+        toast({ title: "Contact Number", description: "Mobile number is not listed by artist.", variant: "destructive" });
+      }
+      return;
+    }
+
+    if (check.status === 'can_unlock') {
+      setRevealInfo({ remaining: check.remaining, limit: check.limit, used: check.used });
+      setConfirmUnlockOpen(true);
+      return;
+    }
+
+    if (check.status === 'limit_reached') {
+      setHireModalReason('limit_reached');
+      setRevealInfo({ remaining: 0, limit: check.limit, used: check.used });
+      setIsHireModalOpen(true);
+      return;
+    }
+
+    if (check.status === 'no_subscription') {
+      setHireModalReason('no_subscription');
+      setIsHireModalOpen(true);
+      return;
+    }
+  };
+
+  const handleConfirmUnlock = async () => {
+    if (!user) return;
+    setIsUnlocking(true);
+    try {
+      const success = await unlockArtistContact(user.uid, artist.userId);
+      if (success) {
+        setConfirmUnlockOpen(false);
+        toast({ title: "Contact Unlocked!", description: `1 reveal credit used. Dialing ${artist.fullName}...` });
+        if (phoneNumber) {
+          window.location.href = `tel:${phoneNumber}`;
+        }
+      } else {
+        toast({ title: "Error", description: "Failed to unlock contact.", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Unlock error:", err);
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -402,6 +481,20 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                         <><MessageSquare className="w-5 h-5 mr-2" /> Request Connection</>
                       )}
                     </Button>
+
+                    {!isSelf && (
+                      <Button 
+                        variant={isUnlocked ? "secondary" : "outline"}
+                        className={cn(
+                          "w-full h-12 rounded-2xl text-base font-black border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 shadow-md mt-3",
+                          isUnlocked && "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black border-emerald-500/60"
+                        )}
+                        onClick={handleCallClick}
+                      >
+                        <PhoneCall className="w-5 h-5 mr-2 shrink-0" />
+                        {isUnlocked ? (phoneNumber || "Call Now") : "Call / Reveal Mobile Number"}
+                      </Button>
+                    )}
                     
                     {appConfig?.isSubscriptionRequired && (
                       <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-tighter">
@@ -741,6 +834,39 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
           </Link>
         </div>
       </section>
+
+      {/* Hire Subscription Modal */}
+      <HireSubscriptionModal
+        isOpen={isHireModalOpen}
+        onClose={() => setIsHireModalOpen(false)}
+        reason={hireModalReason}
+        usedCount={revealInfo?.used || 0}
+        limitCount={revealInfo?.limit || 0}
+      />
+
+      {/* Confirmation Dialog before consuming 1 credit */}
+      <AlertDialog open={confirmUnlockOpen} onOpenChange={setConfirmUnlockOpen}>
+        <AlertDialogContent className="rounded-3xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PhoneCall className="w-5 h-5 text-emerald-500" /> Unlock Contact Number?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm mt-2">
+              Revealing <strong className="text-foreground">{artist.fullName}</strong>'s mobile number will use <strong>1 credit</strong> from your active Hire Subscription.
+              <br /><br />
+              <span className="text-xs bg-muted px-2.5 py-1 rounded-lg inline-block font-semibold">
+                Remaining Credits: {revealInfo?.remaining} / {revealInfo?.limit}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUnlock} disabled={isUnlocking} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+              {isUnlocking ? "Unlocking..." : "Unlock & Call"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

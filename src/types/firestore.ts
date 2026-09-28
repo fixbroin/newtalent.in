@@ -229,9 +229,11 @@ export interface Address {
 
 export interface SubscriptionPlan {
   id: string;
+  planType?: 'artist' | 'hire'; // 'artist' for profile listing, 'hire' for recruiter contact reveals
   name: string;
   price: number;
   durationDays: number;
+  revealLimit?: number;        // X numbers allowed to reveal for hire plans
   features: string[];
   isActive: boolean;
   order: number;
@@ -328,9 +330,17 @@ export interface FirestoreUser {
     completed: number;
   }
 
-  // Portfolio Fields
+  // Artist Portfolio Fields
   videos?: ArtistVideo[];
   certificates?: ArtistCertificate[];
+
+  // Hirer / Recruiter Subscription Fields
+  hireSubscriptionActive?: boolean;
+  currentHireSubscriptionId?: string;
+  hireSubscriptionExpiresAt?: Timestamp;
+  contactRevealLimit?: number;     // Total X contacts allowed in active plan
+  contactRevealsUsed?: number;      // Number of contacts revealed so far
+  unlockedArtistIds?: string[];     // Array of Artist UIDs unlocked by this recruiter/hirer
 
   // Profile visibility settings
   showMobileOnPublicProfile?: boolean;
