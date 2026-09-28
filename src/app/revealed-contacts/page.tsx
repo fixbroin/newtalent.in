@@ -50,16 +50,40 @@ export default function RevealedContactsPage() {
     setIsLoading(true);
     try {
       const fetched: any[] = [];
-      // Fetch artist profiles in chunks of 10 for Firestore 'in' query compatibility
-      const chunkSize = 10;
-      for (let i = 0; i < ids.length; i += chunkSize) {
-        const chunk = ids.slice(i, i + chunkSize);
-        const q = query(collection(db, 'artistProfiles'), where('userId', 'in', chunk));
-        const snapshot = await getDocs(q);
-        snapshot.docs.forEach((docSnap) => {
-          fetched.push({ id: docSnap.id, status: 'approved', ...docSnap.data() });
-        });
+      const fetchedIds = new Set<string>();
+
+      // 1. Direct getDoc for each ID (since many ArtistApplications doc IDs equal user UID)
+      for (const id of ids) {
+        try {
+          const docRef = doc(db, 'ArtistApplications', id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            fetched.push({ id: docSnap.id, ...docSnap.data() });
+            fetchedIds.add(id);
+            if (docSnap.data().userId) fetchedIds.add(docSnap.data().userId);
+          }
+        } catch (e) {
+          console.error('Error fetching artist doc by id:', e);
+        }
       }
+
+      // 2. Query remaining IDs by userId field in chunks of 10
+      const remainingIds = ids.filter(id => !fetchedIds.has(id));
+      if (remainingIds.length > 0) {
+        const chunkSize = 10;
+        for (let i = 0; i < remainingIds.length; i += chunkSize) {
+          const chunk = remainingIds.slice(i, i + chunkSize);
+          const q = query(collection(db, 'ArtistApplications'), where('userId', 'in', chunk));
+          const snapshot = await getDocs(q);
+          snapshot.docs.forEach((docSnap) => {
+            if (!fetchedIds.has(docSnap.id)) {
+              fetched.push({ id: docSnap.id, ...docSnap.data() });
+              fetchedIds.add(docSnap.id);
+            }
+          });
+        }
+      }
+
       setArtists(fetched);
     } catch (error) {
       console.error('Error fetching revealed artists:', error);
