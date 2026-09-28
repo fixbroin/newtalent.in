@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   User,  Bell, MessageSquare, LogOut, ChevronRight, Handshake,
-  Loader2, Info, FileText, Construction, UserPlus, CreditCard
+  Loader2, Info, FileText, Construction, UserPlus, CreditCard, PhoneCall
 } from 'lucide-react';
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth } from '@/hooks/useAuth';
@@ -115,7 +115,8 @@ function AccountPageContent() {
     { href: '/profile', label: 'Profile Setting', icon: User },
     { href: '/script-writing', label: 'Movie Script Writing', icon: FileText },
     { href: '/connections', label: 'Connections', icon: Handshake },
-    { href: '/subscriptions', label: 'Subscriptions', icon: CreditCard },
+    { href: '/subscriptions?type=profile', label: 'Profile Subscription', icon: CreditCard },
+    { href: '/subscriptions?type=contact', label: 'Contact Subscription', icon: PhoneCall },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, condition: () => !isLoadingAppConfig && !!referralSettings?.isReferralSystemEnabled },
     { href: '/notifications', label: 'Notifications', icon: Bell, badgeCount: unreadNotificationsCount },
     { href: '/chat', label: 'Chat with Support', icon: MessageSquare, isProtected: true, condition: () => !isLoadingGlobalSettings && !!globalSettings?.isChatEnabled },

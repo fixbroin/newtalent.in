@@ -236,12 +236,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
 
             {!isSelf && (
               <Button
-                variant={isUnlocked ? "secondary" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={handleCallClick}
                 className={cn(
-                  "w-full h-9 rounded-xl font-bold text-xs gap-1.5 transition-all border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30",
-                  isUnlocked && "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black border-emerald-500/50"
+                  "w-full h-9 rounded-xl font-bold text-xs gap-1.5 transition-all border-emerald-500/40 bg-emerald-50/60 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600",
+                  isUnlocked && "bg-emerald-600 text-white font-black border-emerald-600 hover:bg-emerald-700 hover:text-white hover:border-emerald-700 dark:bg-emerald-600 dark:text-white"
                 )}
               >
                 <PhoneCall className="w-3.5 h-3.5 shrink-0" />

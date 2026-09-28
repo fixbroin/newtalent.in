@@ -484,10 +484,10 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
                     {!isSelf && (
                       <Button 
-                        variant={isUnlocked ? "secondary" : "outline"}
+                        variant="outline"
                         className={cn(
-                          "w-full h-12 rounded-2xl text-base font-black border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 shadow-md mt-3",
-                          isUnlocked && "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black border-emerald-500/60"
+                          "w-full h-12 rounded-2xl text-base font-black transition-all border-emerald-500/40 bg-emerald-50/60 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600 shadow-md mt-3",
+                          isUnlocked && "bg-emerald-600 text-white font-black border-emerald-600 hover:bg-emerald-700 hover:text-white hover:border-emerald-700 dark:bg-emerald-600 dark:text-white"
                         )}
                         onClick={handleCallClick}
                       >

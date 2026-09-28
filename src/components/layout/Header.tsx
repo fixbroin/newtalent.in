@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, Bell, Menu, X, ShoppingCart, LogOut, UserCircle, Briefcase, Settings2, Moon, Sun, MessageSquare, UserPlus, MapPin as AddressIcon, Construction, Handshake, ChevronDown, CreditCard, FileText } from 'lucide-react';
+import { Search, Bell, Menu, X, ShoppingCart, LogOut, UserCircle, Briefcase, Settings2, Moon, Sun, MessageSquare, UserPlus, MapPin as AddressIcon, Construction, Handshake, ChevronDown, CreditCard, FileText, PhoneCall } from 'lucide-react';
 import Logo from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -213,12 +213,11 @@ const Header = () => {
   ];
 
   const userSpecificNavItems = [
-    
-    
     { href: '/profile', label: 'Profile Setting', icon: UserCircle, isProtected: true },
     { href: '/script-writing', label: 'Movie Script Writing', icon: FileText, isProtected: true },
     { href: '/connections', label: 'Connections', icon: Handshake, isProtected: true },
-    { href: '/subscriptions', label: 'Subscriptions', icon: CreditCard, isProtected: true },
+    { href: '/subscriptions?type=profile', label: 'Profile Subscription', icon: CreditCard, isProtected: true },
+    { href: '/subscriptions?type=contact', label: 'Contact Subscription', icon: PhoneCall, isProtected: true },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, isProtected: true, condition: () => !isLoadingReferral && !!referralSettings?.isReferralSystemEnabled },
     { href: '/notifications', label: 'Notifications', icon: Bell, isProtected: true },
     { href: '/chat', label: 'Chat with Support', icon: MessageSquare, condition: () => chatIsEnabled, isProtected: true },

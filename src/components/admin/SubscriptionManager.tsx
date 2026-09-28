@@ -267,14 +267,14 @@ export default function SubscriptionManager() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg rounded-3xl">
-          <DialogHeader>
+        <DialogContent className="max-w-lg rounded-3xl max-h-[85vh] flex flex-col overflow-hidden p-6">
+          <DialogHeader className="shrink-0 pb-2 border-b">
             <DialogTitle className="text-2xl font-black">
               {editingPlan ? 'Edit Plan' : `Create New ${formData.planType === 'hire' ? 'Recruiter' : 'Artist'} Plan`}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
+          <div className="flex-1 overflow-y-auto pr-2 py-4 space-y-6 custom-scrollbar">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider">Plan Name</Label>
@@ -341,7 +341,7 @@ export default function SubscriptionManager() {
                   <Plus className="w-3 h-3 mr-1" /> Add
                 </Button>
               </div>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
                 {formData.features.map((feature, index) => (
                   <div key={index} className="flex gap-2">
                     <Input 
@@ -370,7 +370,7 @@ export default function SubscriptionManager() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="shrink-0 pt-3 border-t gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl">Cancel</Button>
             <Button onClick={handleSave} className="rounded-xl px-8 shadow-lg shadow-primary/20" disabled={isSaving}>
               {editingPlan ? 'Update Plan' : 'Create Plan'}
