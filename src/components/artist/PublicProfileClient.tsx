@@ -659,41 +659,35 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-2 sm:p-4 select-none"
             onClick={() => setSelectedImageUrl(null)}
           >
-            {/* Larger Close Button for Mobile Accessibility */}
-            <div className="absolute top-0 right-0 p-4 z-[110]">
+            {/* Close Button */}
+            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-[110]">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-white hover:bg-white/10 rounded-full h-14 w-14 bg-black/20 backdrop-blur-sm"
+                className="text-white hover:bg-white/20 rounded-full h-12 w-12 bg-black/40"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImageUrl(null);
                 }}
               >
-                <X className="h-8 w-8" />
+                <X className="h-7 w-7" />
               </Button>
             </div>
             
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center p-2 md:p-10 pointer-events-none"
-            >
-              <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center pointer-events-auto">
-                <img 
-                  src={selectedImageUrl} 
-                  alt="Full view" 
-                  className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none"
-                />
-              </div>
-            </motion.div>
+            <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center p-2">
+              <img 
+                src={selectedImageUrl} 
+                alt="Full view" 
+                className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none"
+              />
+            </div>
             
             {/* Tap background text hint for mobile */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/40 text-[10px] uppercase tracking-widest pointer-events-none md:hidden">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-[10px] uppercase tracking-widest pointer-events-none md:hidden font-medium">
               Tap anywhere to close
             </div>
           </motion.div>
@@ -707,17 +701,18 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 select-none"
             onClick={() => setSelectedCertificate(null)}
           >
-            <div className="absolute top-0 right-0 p-4 z-[110] flex items-center gap-4">
-              <div className="text-white text-sm font-bold bg-black/40 px-4 py-2 rounded-full backdrop-blur-sm hidden md:block">
+            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-[110] flex items-center gap-4">
+              <div className="text-white text-sm font-bold bg-black/40 px-4 py-2 rounded-full hidden md:block">
                 {selectedCertificate.name}
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-white hover:bg-white/10 rounded-full h-12 w-12 bg-black/20 backdrop-blur-sm"
+                className="text-white hover:bg-white/20 rounded-full h-12 w-12 bg-black/40"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedCertificate(null);
@@ -727,10 +722,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
               </Button>
             </div>
             
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+            <div 
               className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 select-none"
               onClick={(e) => e.stopPropagation()}
               onContextMenu={(e) => e.preventDefault()}
@@ -750,7 +742,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                   />
                 </div>
               )}
-            </motion.div>
+            </div>
 
             <div className="mt-4 text-white/60 text-xs font-medium md:hidden">
               {selectedCertificate.name}

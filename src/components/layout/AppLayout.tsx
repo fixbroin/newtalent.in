@@ -170,9 +170,19 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
     const preventRightClick = (e: MouseEvent) => e.preventDefault();
     document.addEventListener('contextmenu', preventRightClick);
 
-    // --- SERVICE WORKER REGISTRATION ---
+    // --- SERVICE WORKER REGISTRATION & STALE SW PURGE ---
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', function() {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let registration of registrations) {
+            if (registration.active && registration.active.scriptURL.includes('sw.js') && !registration.active.scriptURL.includes('firebase-messaging-sw.js')) {
+              registration.unregister().then(unregistered => {
+                if (unregistered) console.log('Cleaned up stale service worker:', registration.active?.scriptURL);
+              });
+            }
+          }
+        });
+
         navigator.serviceWorker.register('/firebase-messaging-sw.js').then(function(registration) {
           console.log('FCM Service Worker registered with scope: ', registration.scope);
         }, function(err) {
