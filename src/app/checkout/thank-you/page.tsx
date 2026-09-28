@@ -204,6 +204,7 @@ export default function ThankYouPage() {
                             hireSubscriptionExpiresAt: endDate,
                             contactRevealLimit: newLimit,
                             contactRevealsUsed: 0,
+                            unlockedArtistIds: [],
                             updatedAt: Timestamp.now()
                         });
                     } else {

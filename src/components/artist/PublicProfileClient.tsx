@@ -681,16 +681,13 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center p-2 md:p-10"
+              className="relative w-full h-full flex items-center justify-center p-2 md:p-10 pointer-events-none"
             >
-              <div className="relative w-full h-full max-w-6xl max-h-[90vh]">
-                <AppImage 
+              <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center pointer-events-auto">
+                <img 
                   src={selectedImageUrl} 
                   alt="Full view" 
-                  fill 
-                  objectFit="contain"
-                  priority
-                  className="rounded-lg"
+                  className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none"
                 />
               </div>
             </motion.div>
@@ -745,13 +742,11 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                   title={selectedCertificate.name}
                 />
               ) : (
-                <div className="relative w-full h-full">
-                  <AppImage 
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img 
                     src={selectedCertificate.url} 
                     alt={selectedCertificate.name} 
-                    fill 
-                    objectFit="contain"
-                    priority
+                    className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
                   />
                 </div>
               )}

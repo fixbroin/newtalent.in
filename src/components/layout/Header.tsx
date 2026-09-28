@@ -218,6 +218,7 @@ const Header = () => {
     { href: '/connections', label: 'Connections', icon: Handshake, isProtected: true },
     { href: '/subscriptions?type=profile', label: 'Profile Subscription', icon: CreditCard, isProtected: true },
     { href: '/subscriptions?type=contact', label: 'Contact Subscription', icon: PhoneCall, isProtected: true },
+    { href: '/revealed-contacts', label: 'Revealed Contacts', icon: PhoneCall, isProtected: true },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, isProtected: true, condition: () => !isLoadingReferral && !!referralSettings?.isReferralSystemEnabled },
     { href: '/notifications', label: 'Notifications', icon: Bell, isProtected: true },
     { href: '/chat', label: 'Chat with Support', icon: MessageSquare, condition: () => chatIsEnabled, isProtected: true },

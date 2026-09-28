@@ -20,12 +20,7 @@ export function checkContactRevealStatus(
     return { status: 'not_logged_in' };
   }
 
-  // Check if artist is already in unlocked array
-  if (user.unlockedArtistIds && user.unlockedArtistIds.includes(artistUserId)) {
-    return { status: 'already_unlocked' };
-  }
-
-  // Check subscription active state and expiration
+  // Check subscription active state and expiration first
   const now = new Date();
   let isExpired = true;
 
@@ -40,6 +35,11 @@ export function checkContactRevealStatus(
 
   if (!isSubscribed) {
     return { status: 'no_subscription' };
+  }
+
+  // If subscription is active, check if artist is already in unlocked array
+  if (user.unlockedArtistIds && user.unlockedArtistIds.includes(artistUserId)) {
+    return { status: 'already_unlocked' };
   }
 
   const limit = user.contactRevealLimit || 0;

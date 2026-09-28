@@ -117,6 +117,7 @@ function AccountPageContent() {
     { href: '/connections', label: 'Connections', icon: Handshake },
     { href: '/subscriptions?type=profile', label: 'Profile Subscription', icon: CreditCard },
     { href: '/subscriptions?type=contact', label: 'Contact Subscription', icon: PhoneCall },
+    { href: '/revealed-contacts', label: 'Revealed Contacts', icon: PhoneCall },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, condition: () => !isLoadingAppConfig && !!referralSettings?.isReferralSystemEnabled },
     { href: '/notifications', label: 'Notifications', icon: Bell, badgeCount: unreadNotificationsCount },
     { href: '/chat', label: 'Chat with Support', icon: MessageSquare, isProtected: true, condition: () => !isLoadingGlobalSettings && !!globalSettings?.isChatEnabled },
