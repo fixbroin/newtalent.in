@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, query, where, limit, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import SubscriptionPlansDialog from '@/components/category/SubscriptionPlansDialog';
+import ImageLightboxModal from '@/components/shared/ImageLightboxModal';
+import CertificateLightboxModal from '@/components/shared/CertificateLightboxModal';
 import { checkContactRevealStatus, unlockArtistContact } from '@/lib/hireSubscriptionUtils';
 import HireSubscriptionModal from '@/components/shared/HireSubscriptionModal';
 import {
@@ -142,17 +144,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
   const isSelf = isMounted && user?.uid === artist.userId;
 
-  // Lock body scroll when lightbox or certificate viewer is open
-  useEffect(() => {
-    if (selectedImageUrl || selectedCertificate) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [selectedImageUrl, selectedCertificate]);
+
 
   useEffect(() => {
     if (!user || isSelf || !isMounted) return;
@@ -652,104 +644,19 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
         </div>
       </div>
 
-      {/* Lightbox Overlay */}
-      <AnimatePresence>
-        {selectedImageUrl && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-2 sm:p-4 select-none"
-            onClick={() => setSelectedImageUrl(null)}
-          >
-            {/* Close Button */}
-            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-[110]">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-white hover:bg-white/20 rounded-full h-12 w-12 bg-black/40"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedImageUrl(null);
-                }}
-              >
-                <X className="h-7 w-7" />
-              </Button>
-            </div>
-            
-            <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center p-2">
-              <img 
-                src={selectedImageUrl} 
-                alt="Full view" 
-                className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none"
-              />
-            </div>
-            
-            {/* Tap background text hint for mobile */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-[10px] uppercase tracking-widest pointer-events-none md:hidden font-medium">
-              Tap anywhere to close
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Standalone Zero-Flicker Lightbox Portals */}
+      <ImageLightboxModal 
+        isOpen={!!selectedImageUrl} 
+        imageUrl={selectedImageUrl} 
+        onClose={() => setSelectedImageUrl(null)} 
+        title={artist.fullName}
+      />
 
-      {/* Certificate Lightbox Overlay */}
-      <AnimatePresence>
-        {selectedCertificate && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 select-none"
-            onClick={() => setSelectedCertificate(null)}
-          >
-            <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-[110] flex items-center gap-4">
-              <div className="text-white text-sm font-bold bg-black/40 px-4 py-2 rounded-full hidden md:block">
-                {selectedCertificate.name}
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-white hover:bg-white/20 rounded-full h-12 w-12 bg-black/40"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCertificate(null);
-                }}
-              >
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-            
-            <div 
-              className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 select-none"
-              onClick={(e) => e.stopPropagation()}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              {selectedCertificate.type === 'pdf' ? (
-                <iframe 
-                  src={`${selectedCertificate.url}#toolbar=0&navpanes=0&scrollbar=0`} 
-                  className="w-full h-full border-none rounded-2xl bg-white"
-                  title={selectedCertificate.name}
-                />
-              ) : (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <img 
-                    src={selectedCertificate.url} 
-                    alt={selectedCertificate.name} 
-                    className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 text-white/60 text-xs font-medium md:hidden">
-              {selectedCertificate.name}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CertificateLightboxModal 
+        isOpen={!!selectedCertificate} 
+        certificate={selectedCertificate} 
+        onClose={() => setSelectedCertificate(null)} 
+      />
 
       <SubscriptionPlansDialog 
         open={showSubscriptionPlans} 
