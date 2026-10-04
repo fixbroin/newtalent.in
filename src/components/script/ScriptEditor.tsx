@@ -296,20 +296,32 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     }, 2000);
   }, [id]);
 
-  const handleMobileKeyboardScroll = (elementId: string) => {
-    // Only apply this behavior on mobile/tablet
-    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
-
+  const scrollToElement = useCallback((elementId: string, smooth: boolean = true) => {
+    if (typeof window === 'undefined') return;
     const textarea = editorRefs.current[elementId];
     if (!textarea) return;
 
-    // Wait for the mobile keyboard/viewport to fully appear and slide up
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       textarea.scrollIntoView({
-        behavior: 'smooth',
+        behavior: smooth ? 'smooth' : 'auto',
         block: 'center',
+        inline: 'nearest'
       });
-    }, 300);
+    });
+  }, []);
+
+  const handleFocusElement = (elementId: string) => {
+    setActiveElementId(elementId);
+    const textarea = editorRefs.current[elementId];
+    if (!textarea) return;
+
+    // Check if element is near viewport edges or out of view
+    const rect = textarea.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    if (rect.bottom > windowHeight * 0.85 || rect.top < windowHeight * 0.15) {
+      scrollToElement(elementId, true);
+    }
   };
 
   const handleElementChange = (elementId: string, updates: Partial<ScriptElement>) => {
@@ -353,9 +365,13 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     debouncedSave(newContent);
 
     setTimeout(() => {
-      editorRefs.current[newElement.id]?.focus();
       setActiveElementId(newElement.id);
-    }, 0);
+      const el = editorRefs.current[newElement.id];
+      if (el) {
+        el.focus({ preventScroll: true });
+        scrollToElement(newElement.id, true);
+      }
+    }, 60);
     setMobileMenuOpen(false);
   };
 
@@ -370,9 +386,13 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
     
     if (nextToFocus) {
       setTimeout(() => {
-        editorRefs.current[nextToFocus.id]?.focus();
         setActiveElementId(nextToFocus.id);
-      }, 0);
+        const el = editorRefs.current[nextToFocus.id];
+        if (el) {
+          el.focus({ preventScroll: true });
+          scrollToElement(nextToFocus.id, true);
+        }
+      }, 60);
     }
     setMobileMenuOpen(false);
   };
@@ -387,9 +407,13 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
       setScript({ ...script!, content: newContent });
       debouncedSave(newContent);
       setTimeout(() => {
-        editorRefs.current[newElement.id]?.focus();
         setActiveElementId(newElement.id);
-      }, 0);
+        const el = editorRefs.current[newElement.id];
+        if (el) {
+          el.focus({ preventScroll: true });
+          scrollToElement(newElement.id, true);
+        }
+      }, 60);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       const types: ScriptElementType[] = ['scene-heading', 'action', 'character', 'parenthetical', 'dialogue', 'transition'];
@@ -751,10 +775,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
                     value={element.text}
                     onChange={(e) => handleElementChange(element.id, { text: e.target.value })}
                     onKeyDown={(e) => handleKeyDown(e, index, element)}
-                    onFocus={() => {
-                      setActiveElementId(element.id);
-                      handleMobileKeyboardScroll(element.id);
-                    }}
+                    onFocus={() => handleFocusElement(element.id)}
                     placeholder={ELEMENT_LABELS[element.type]}
                     className={styles.className}
                     style={styles.style}
