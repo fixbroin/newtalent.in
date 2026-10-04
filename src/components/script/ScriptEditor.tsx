@@ -7,9 +7,13 @@ import {
   updateScript, 
   subscribeToScript, 
   getNextElementType,
-  exportToPDF
+  exportToPDF,
+  translateScriptApi,
+  createScript,
+  INDIAN_LANGUAGES
 } from "@/lib/scriptUtils";
 import { Script, ScriptElement, ScriptElementType, ScriptSettings } from "@/types/script";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
   Loader2, 
@@ -27,7 +31,10 @@ import {
   Bold,
   MoreVertical,
   Check,
-  Maximize2
+  Maximize2,
+  Languages,
+  Sparkles,
+  Copy
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -128,9 +135,69 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
   const [fullscreenElementId, setFullscreenElementId] = useState<string | null>(null);
   const [viewportHeight, setViewportHeight] = useState('100vh');
   const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
+
+  const [translateDialogOpen, setTranslateDialogOpen] = useState(false);
+  const [selectedTargetLang, setSelectedTargetLang] = useState('kn');
+  const [translateMode, setTranslateMode] = useState<'replace' | 'new_copy'>('replace');
+  const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const editorRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+  const handleTranslateScript = async () => {
+    if (!script || !user) return;
+    setIsTranslating(true);
+    try {
+      const selectedLangObj = INDIAN_LANGUAGES.find(l => l.code === selectedTargetLang);
+      const langName = selectedLangObj ? selectedLangObj.name : selectedTargetLang;
+
+      toast({
+        title: "Translating Script",
+        description: `Translating screenplay into ${langName}... Please wait.`,
+      });
+
+      const result = await translateScriptApi(script.content, selectedTargetLang, script.title);
+
+      if (translateMode === 'new_copy') {
+        const newTitle = `${result.translatedTitle || script.title} (${langName.split(' ')[0]})`;
+        const newScriptId = await createScript(
+          user.uid,
+          user.email || '',
+          newTitle,
+          script.writtenBy,
+          script.description
+        );
+        await updateScript(newScriptId, { content: result.translatedElements, settings: script.settings });
+        
+        toast({
+          title: "Translation Complete!",
+          description: `Created new script copy "${newTitle}". Redirecting...`,
+        });
+        setTranslateDialogOpen(false);
+        router.push(`/script-writing/${newScriptId}`);
+      } else {
+        const updatedTitle = result.translatedTitle || script.title;
+        const updatedContent = result.translatedElements;
+        setScript(prev => prev ? { ...prev, title: updatedTitle, content: updatedContent } : null);
+        await updateScript(id, { title: updatedTitle, content: updatedContent });
+        
+        toast({
+          title: "Translation Complete!",
+          description: `Script successfully translated to ${langName}.`,
+        });
+        setTranslateDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Translation error:", error);
+      toast({
+        title: "Translation Failed",
+        description: (error as Error).message || "Failed to translate script. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const recalculateHeights = useCallback(() => {
     setTimeout(() => {
@@ -395,7 +462,7 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300 relative">
-      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
+      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-2 py-3">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/script-writing">
@@ -422,6 +489,15 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 px-2 sm:px-3 gap-1 sm:gap-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-[10px] sm:text-xs font-bold" 
+              onClick={() => setTranslateDialogOpen(true)}
+            >
+              <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Translate</span>
+            </Button>
             <Button variant="outline" size="sm" className="h-8 px-2 sm:px-3 gap-1 sm:gap-2 border-primary text-primary hover:bg-primary/10 text-[10px] sm:text-xs" onClick={() => setShareDialogOpen(true)}>
               <Share2 className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Share</span>
             </Button>
@@ -983,6 +1059,108 @@ export function ScriptEditor({ id: propId }: { id?: string }) {
           </div>
         );
       })()}
+      <Dialog open={translateDialogOpen} onOpenChange={setTranslateDialogOpen}>
+        <DialogContent className="max-w-lg sm:rounded-3xl p-6 border shadow-2xl">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-3">
+              <Languages className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-2xl font-black tracking-tight text-center">
+              1-Click Script Translator
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground text-sm mt-1">
+              Translate your entire screenplay into any Indian language while preserving the exact script formatting, dialogue blocks, colors, and line spacing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4">
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
+                Target Language
+              </Label>
+              <Select value={selectedTargetLang} onValueChange={setSelectedTargetLang}>
+                <SelectTrigger className="w-full h-11 rounded-xl font-bold">
+                  <SelectValue placeholder="Select Language" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-60">
+                  {INDIAN_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code} className="font-bold cursor-pointer">
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
+                Translation Mode
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTranslateMode('replace')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all flex flex-col justify-between h-20",
+                    translateMode === 'replace' 
+                      ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold" 
+                      : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-bold">Translate Current</span>
+                    {translateMode === 'replace' && <Check className="w-4 h-4 text-emerald-600" />}
+                  </div>
+                  <span className="text-[10px] opacity-80 leading-tight">Overwrites text in current script</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTranslateMode('new_copy')}
+                  className={cn(
+                    "p-3 rounded-xl border-2 text-left transition-all flex flex-col justify-between h-20",
+                    translateMode === 'new_copy' 
+                      ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold" 
+                      : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-bold">Create New Copy</span>
+                    {translateMode === 'new_copy' && <Check className="w-4 h-4 text-emerald-600" />}
+                  </div>
+                  <span className="text-[10px] opacity-80 leading-tight">Saves as a new translated script</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setTranslateDialogOpen(false)}
+              disabled={isTranslating}
+              className="rounded-xl font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTranslateScript}
+              disabled={isTranslating}
+              className="rounded-xl font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20"
+            >
+              {isTranslating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Translating Script...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" /> Translate Entire Script
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

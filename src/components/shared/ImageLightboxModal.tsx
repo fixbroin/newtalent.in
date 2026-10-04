@@ -63,8 +63,7 @@ export default function ImageLightboxModal({
 
       {/* Main Image Container */}
       <div 
-        className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center p-2"
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center p-2 cursor-pointer"
       >
         <img 
           src={imageUrl} 

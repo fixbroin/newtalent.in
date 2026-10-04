@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import { Script, ScriptElement } from '@/types/script';
+import fs from 'fs';
+import path from 'path';
 
 const ELEMENT_STYLES: Record<string, string> = {
   'scene-heading': 'font-weight: bold; text-transform: uppercase; line-height: 1.2;',
@@ -60,6 +62,20 @@ function getElementHtml(el: ScriptElement, showLabels: boolean = true) {
   `;
 }
 
+
+
+let localFontsCss = '';
+try {
+  const fontsCssPath = path.join(process.cwd(), 'public/fonts/local_fonts.css');
+  if (fs.existsSync(fontsCssPath)) {
+    const rawCss = fs.readFileSync(fontsCssPath, 'utf8');
+    const absoluteFontsDir = path.join(process.cwd(), 'public/fonts').replace(/\\/g, '/');
+    localFontsCss = rawCss.replace(/\/fonts\//g, `file:///${absoluteFontsDir}/`);
+  }
+} catch (e) {
+  console.error('Error loading local fonts CSS for PDF export:', e);
+}
+
 export async function POST(req: NextRequest) {
   let browser;
   try {
@@ -71,13 +87,16 @@ export async function POST(req: NextRequest) {
       <html>
       <head>
         <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+          ${localFontsCss}
+        </style>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
         <style>
           @page { size: A4; margin: 1in; }
           body {
-            font-family: 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Tamil', 'Courier Prime', sans-serif;
+            font-family: 'Courier Prime', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Kannada', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Malayalam', 'Noto Sans Bengali', 'Noto Sans Gujarati', 'Noto Sans Gurmukhi', 'Noto Sans Oriya', sans-serif;
             font-size: 12pt;
-            line-height: 1.2;
+            line-height: 1.3;
             color: black;
             margin: 0;
             padding: 0;

@@ -57,8 +57,12 @@ export default function CertificateLightboxModal({
       </div>
 
       <div 
-        className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 select-none"
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 select-none cursor-pointer"
+        onClick={(e) => {
+          if (certificate.type === 'pdf') {
+            e.stopPropagation();
+          }
+        }}
       >
         {certificate.type === 'pdf' ? (
           <iframe 

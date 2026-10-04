@@ -18,6 +18,21 @@ import { nanoid } from "nanoid";
 
 const SCRIPTS_COLLECTION = "scripts";
 
+export const INDIAN_LANGUAGES = [
+  { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+  { code: 'te', name: 'Telugu (తెలుగు)' },
+  { code: 'hi', name: 'Hindi (हिंदी)' },
+  { code: 'ta', name: 'Tamil (தமிழ்)' },
+  { code: 'ml', name: 'Malayalam (മലയാളം)' },
+  { code: 'bn', name: 'Bengali (বাংলা)' },
+  { code: 'mr', name: 'Marathi (मराठी)' },
+  { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+  { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+  { code: 'or', name: 'Odia (ଓଡ଼ିଆ)' },
+  { code: 'ur', name: 'Urdu (اردو)' },
+  { code: 'en', name: 'English' },
+];
+
 export const createScript = async (userId: string, userEmail: string, title: string, writtenBy: string = "", description: string = ""): Promise<string> => {
   const initialContent: ScriptElement[] = [
     { id: nanoid(), type: 'scene-heading', text: 'EXT. LOCATION - DAY' },
@@ -137,4 +152,21 @@ export const getNextElementType = (currentType: ScriptElementType): ScriptElemen
     case 'transition': return 'scene-heading';
     default: return 'action';
   }
+};
+
+export const translateScriptApi = async (elements: ScriptElement[], targetLanguage: string, scriptTitle?: string) => {
+  const response = await fetch('/api/scripts/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ elements, targetLanguage, scriptTitle }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to translate script');
+  }
+
+  return await response.json();
 };
