@@ -268,7 +268,7 @@ const AppLayout: React.FC<PropsWithChildren> = ({ children }) => {
       
       const bottomNavActivePaths = ['/', '/chat', '/my-bookings', '/notifications', '/profile', '/referral','/checkout/schedule', '/custom-service',
         '/checkout/address', '/checkout/payment', '/checkout/thank-you', '/cart', '/categories', '/my-address', '/about-us', '/contact-us', '/terms-and-conditions', 
-        '/privacy-policy', '/cancellation-policy', '/account', '/connections', '/subscriptions'];
+        '/privacy-policy', '/cancellation-policy', '/account', '/revealed-contacts', '/subscriptions'];
       
       const pathSegments = pathname.split('/').filter(Boolean);
       const isArtistProfile = pathSegments[0] === 'category' && pathSegments.length === 3;

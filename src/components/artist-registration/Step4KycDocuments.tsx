@@ -119,8 +119,8 @@ export default function Step4KycDocuments({
   ) => {
     if (e.target.files && e.target.files[0]) {
       let file = e.target.files[0];
-      if (file.size > 50 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
+      if (file.size > 100 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Image must be < 100MB.", variant: "destructive" });
         e.target.value = ""; return;
       }
 
@@ -141,8 +141,8 @@ export default function Step4KycDocuments({
   };
 
   const handleAdditionalDocFileChange = async (typeId: string, side: 'front' | 'back', file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Image must be < 100MB.", variant: "destructive" });
       return;
     }
 

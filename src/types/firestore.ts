@@ -1393,6 +1393,7 @@ export interface ArtistApplication {
   adminReviewNotes?: string;
   kycUpdateRequest?: boolean;
   kycUpdateNotes?: string;
+  previousApprovedData?: Partial<ArtistApplication>;
   submittedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt?: Timestamp;

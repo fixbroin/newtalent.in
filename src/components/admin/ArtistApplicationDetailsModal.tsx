@@ -8,7 +8,7 @@ import type { ArtistApplication, KycDocument, BankDetails, ArtistApplicationStat
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, Briefcase, FileText, Banknote, MapPin, Image as ImageIcon, ShieldCheck, CheckCircle, AlertTriangle, XCircle, Loader2, Download, Edit as EditIcon, ExternalLink, Copy } from "lucide-react";
+import { UserCircle, Briefcase, FileText, Banknote, MapPin, Image as ImageIcon, ShieldCheck, CheckCircle, AlertTriangle, XCircle, Loader2, Download, Edit as EditIcon, ExternalLink, Copy, Sparkles } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef } from "react";
 import NextImage from 'next/image';
@@ -160,6 +160,119 @@ const DetailRow: React.FC<{
     </div>
   </div>
 );
+
+const ApplicationDiffView: React.FC<{
+  current: ArtistApplication;
+  before: Partial<ArtistApplication>;
+}> = ({ current, before }) => {
+  const getDiffItem = (label: string, oldVal: any, newVal: any, type: 'text' | 'image' | 'doc' = 'text') => {
+    const isDifferent = JSON.stringify(oldVal ?? '') !== JSON.stringify(newVal ?? '');
+    return { label, oldVal, newVal, isDifferent, type };
+  };
+
+  const diffItems = [
+    getDiffItem("Full Name", before.fullName, current.fullName),
+    getDiffItem("Email", before.email, current.email),
+    getDiffItem("Mobile Number", before.mobileNumber, current.mobileNumber),
+    getDiffItem("Alternate Mobile", before.alternateMobile, current.alternateMobile),
+    getDiffItem("Work Category", before.workCategoryName, current.workCategoryName),
+    getDiffItem("Experience Level", before.experienceLevelLabel, current.experienceLevelLabel),
+    getDiffItem("Gender", before.gender, current.gender),
+    getDiffItem("Bio", before.bio, current.bio),
+    getDiffItem("City", before.city, current.city),
+    getDiffItem("Area", before.area, current.area),
+    getDiffItem("Pin Code", before.pinCode, current.pinCode),
+    getDiffItem("Height", before.height, current.height),
+    getDiffItem("Weight", before.weight, current.weight),
+    getDiffItem("Skin Tone", before.skinTone, current.skinTone),
+    getDiffItem("Age", before.age, current.age),
+    getDiffItem("Qualification", before.qualificationLabel, current.qualificationLabel),
+    getDiffItem("Languages Spoken", before.languagesSpokenLabels?.join(', '), current.languagesSpokenLabels?.join(', ')),
+    getDiffItem("Profile Photo", before.profilePhotoUrl, current.profilePhotoUrl, 'image'),
+    getDiffItem("Face Close-Up", before.faceCloseUpUrl, current.faceCloseUpUrl, 'image'),
+    getDiffItem("Mid Shot", before.midShotUrl, current.midShotUrl, 'image'),
+    getDiffItem("Right Profile", before.rightProfileUrl, current.rightProfileUrl, 'image'),
+    getDiffItem("Left Profile", before.leftProfileUrl, current.leftProfileUrl, 'image'),
+    getDiffItem("Front Profile", before.frontProfileUrl, current.frontProfileUrl, 'image'),
+    getDiffItem("Back Profile", before.backProfileUrl, current.backProfileUrl, 'image'),
+    getDiffItem("Aadhaar Number", before.aadhaar?.docNumber, current.aadhaar?.docNumber),
+    getDiffItem("PAN Number", before.pan?.docNumber, current.pan?.docNumber),
+    getDiffItem("Bank Account", before.bankDetails?.accountNumber, current.bankDetails?.accountNumber),
+  ];
+
+  const changedItems = diffItems.filter(i => i.isDifferent);
+
+  return (
+    <div className="space-y-4 pt-1">
+      <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg flex items-center justify-between">
+        <div>
+          <h4 className="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4" /> Profile Re-Approval Request
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            The artist has modified their approved profile. Review the changes below before approving.
+          </p>
+        </div>
+        <Badge variant="outline" className="border-amber-500 text-amber-600 font-bold shrink-0">
+          {changedItems.length} Field{changedItems.length === 1 ? '' : 's'} Modified
+        </Badge>
+      </div>
+
+      {changedItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">No field changes detected between live baseline and current submission.</p>
+      ) : (
+        <div className="space-y-3">
+          {changedItems.map((item, index) => (
+            <div key={index} className="border rounded-lg p-3 bg-card shadow-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">{item.label}</span>
+                <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 text-[10px]">
+                  Changed
+                </Badge>
+              </div>
+
+              {item.type === 'image' ? (
+                <div className="grid grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-red-500 uppercase">Before (Previous Approved)</span>
+                    {item.oldVal ? (
+                      <div className="relative aspect-square w-24 border rounded overflow-hidden bg-muted">
+                        <NextImage src={item.oldVal} alt={`${item.label} Before`} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">None</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-green-600 uppercase">After (New Submission)</span>
+                    {item.newVal ? (
+                      <div className="relative aspect-square w-24 border rounded overflow-hidden bg-muted">
+                        <NextImage src={item.newVal} alt={`${item.label} After`} fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Removed</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm pt-1">
+                  <div className="bg-red-500/10 border border-red-500/20 p-2 rounded text-xs">
+                    <span className="text-[10px] font-bold text-red-600 uppercase block mb-0.5">Before</span>
+                    <span className="line-through text-muted-foreground">{String(item.oldVal || 'Empty / N/A')}</span>
+                  </div>
+                  <div className="bg-green-500/10 border border-green-500/20 p-2 rounded text-xs font-semibold text-green-700 dark:text-green-400">
+                    <span className="text-[10px] font-bold text-green-600 uppercase block mb-0.5">After</span>
+                    <span>{String(item.newVal || 'Empty / N/A')}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function ArtistApplicationDetailsModal({
   application,
@@ -354,13 +467,19 @@ export default function ArtistApplicationDetailsModal({
 
         <div className="overflow-y-auto overflow-x-hidden flex-grow min-h-0">
             <div className="p-4 sm:p-2">
-            <Tabs defaultValue="step1" className="w-full">
+            <Tabs defaultValue={application.previousApprovedData ? "diff" : "step1"} className="w-full">
                 <div className="relative mb-6">
                     <TabsList 
                       ref={setTabsListEl} 
                       style={{ scrollbarWidth: 'none' }}
                       className="h-12 w-full justify-start gap-4 bg-muted p-1 overflow-x-auto select-none flex-nowrap rounded-lg cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
                     >
+                        {application.previousApprovedData && (
+                          <TabsTrigger value="diff" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all font-bold text-amber-600 dark:text-amber-400">
+                            <Sparkles className="mr-2 h-4 w-4 shrink-0 text-amber-500 animate-pulse"/>
+                            Changes Diff (Before vs After)
+                          </TabsTrigger>
+                        )}
                         <TabsTrigger value="step1" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><Briefcase className="mr-2 h-4 w-4 shrink-0"/>Category & Languages</TabsTrigger>
                         <TabsTrigger value="step2" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><UserCircle className="mr-2 h-4 w-4 shrink-0"/>Personal Info</TabsTrigger>
                         <TabsTrigger value="step3" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><ImageIcon className="mr-2 h-4 w-4 shrink-0"/>Portfolio Photos</TabsTrigger>
@@ -368,6 +487,12 @@ export default function ArtistApplicationDetailsModal({
                         <TabsTrigger value="step5" className="px-4 py-2 text-xs sm:text-sm whitespace-nowrap rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"><MapPin className="mr-2 h-4 w-4 shrink-0"/>Location & Terms</TabsTrigger>
                     </TabsList>
                 </div>
+
+                {application.previousApprovedData && (
+                  <TabsContent value="diff" className="space-y-1 focus-visible:outline-none mt-0">
+                    <ApplicationDiffView current={application} before={application.previousApprovedData} />
+                  </TabsContent>
+                )}
 
                 <TabsContent value="step1" className="space-y-1 focus-visible:outline-none mt-0">
                     <DetailRow label="Primary Work Category" value={application.workCategoryName} />

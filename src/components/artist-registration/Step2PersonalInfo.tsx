@@ -378,8 +378,8 @@ export default function Step2PersonalInfo({
   const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       let file = event.target.files[0];
-      if (file.size > 50 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
+      if (file.size > 100 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Image must be < 100MB.", variant: "destructive" });
         if (fileInputRef.current) fileInputRef.current.value = "";
         setSelectedFile(null); setCurrentImagePreview(form.getValues('profilePhotoUrl') || initialData.profilePhotoUrl || null); return;
       }
@@ -805,7 +805,7 @@ export default function Step2PersonalInfo({
                   )}
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-2 text-center">
-                  Max size: 50MB
+                  Max size: 100MB
                 </span>
               </div>
 

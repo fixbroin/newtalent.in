@@ -112,8 +112,8 @@ export default function Step3PortfolioPhotos({
   };
 
   const handleFileChange = async (id: string, file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: "File Too Large", description: "Image must be < 50MB.", variant: "destructive" });
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Image must be < 100MB.", variant: "destructive" });
       return;
     }
 
@@ -152,8 +152,8 @@ export default function Step3PortfolioPhotos({
     const newItems: FileUploadState[] = [];
 
     for (const file of fileList) {
-      if (file.size > 50 * 1024 * 1024) {
-        toast({ title: "File Too Large", description: `${file.name} is > 50MB. Skipping.`, variant: "destructive" });
+      if (file.size > 100 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: `${file.name} is > 100MB. Skipping.`, variant: "destructive" });
         continue;
       }
       let processed = file;

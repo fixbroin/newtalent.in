@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, ShieldAlert, KeyRound, Trash2, Loader2, Phone, ShieldCheck, MapPin, Edit3, Save, User as UserIcon, AtSign, CheckCircle2, XCircle, Plus, Video, FileText, ExternalLink, Upload, Globe, Image as ImageIcon, Facebook, Instagram, Twitter, Linkedin, Youtube, Sparkles } from "lucide-react";
+import { Mail, ShieldAlert, KeyRound, Trash2, Loader2, Phone, ShieldCheck, MapPin, Edit3, Save, User as UserIcon, AtSign, CheckCircle2, XCircle, Plus, Video, FileText, ExternalLink, Upload, Globe, Image as ImageIcon, Facebook, Instagram, Twitter, Linkedin, Youtube, Sparkles, Camera } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -1164,6 +1164,25 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="portfolio" className="space-y-6">
+            {/* Portfolio & Gallery Photos Management Card */}
+            <Card className="border-primary/20 shadow-md bg-gradient-to-br from-card via-card to-primary/[0.03]">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Camera className="h-5 w-5 text-primary" /> Portfolio & Gallery Photos
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Upload, replace, or edit your 6 pose photos and additional portfolio gallery images.
+                  </CardDescription>
+                </div>
+                <Link href="/artist-registration?edit=profile">
+                  <Button className="rounded-xl font-bold bg-primary hover:bg-primary/90 shadow-sm shrink-0">
+                    <Camera className="h-4 w-4 mr-2" /> Edit & Replace Photos
+                  </Button>
+                </Link>
+              </CardHeader>
+            </Card>
+
             {/* Videos Section */}
             <Card className="border-primary/10 shadow-md">
               <CardHeader className="flex flex-row items-center justify-between">

@@ -10,7 +10,7 @@ import { Users2, Eye, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, Loader2
 import type { ArtistApplication, ArtistApplicationStatus, FirestoreNotification } from '@/types/firestore';
 import { db, storage } from '@/lib/firebase';
 import { triggerPushNotification } from '@/lib/fcmUtils';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, deleteDoc, addDoc, where, getDocs, limit, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, deleteDoc, addDoc, where, getDocs, limit, getDoc, deleteField } from "firebase/firestore";
 import { ref as storageRef, deleteObject } from "firebase/storage";
  
 import { useToast } from "@/hooks/use-toast";
@@ -100,6 +100,7 @@ export default function AdminArtistApplicationsPage() {
 
       // If approved, denormalize username and update user role
       if (newStatus === 'approved') {
+        (updatePayload as any).previousApprovedData = deleteField();
         const userDocRef = doc(db, 'users', appToUpdate.userId);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {

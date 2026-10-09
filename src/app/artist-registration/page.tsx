@@ -245,7 +245,16 @@ export default function ArtistRegistrationPage() {
     if (!targetUserIdForSave) return;
     setIsSavingStep(true);
   
-    const currentStatusForSave = isEditModeByAdmin ? (applicationData.status || 'pending_review') : nextStepStatus;
+    let currentStatusForSave = isEditModeByAdmin ? (applicationData.status || 'pending_review') : nextStepStatus;
+    let prevApprovedData = applicationData.previousApprovedData;
+
+    if (applicationData.status === 'approved' && !isEditModeByAdmin) {
+      if (!prevApprovedData) {
+        const { previousApprovedData: _, ...cleanBaseline } = applicationData;
+        prevApprovedData = cleanBaseline;
+      }
+      currentStatusForSave = 'pending_review';
+    }
 
     const currentAppData: Partial<ArtistApplication> = {
       ...applicationData,
@@ -256,6 +265,10 @@ export default function ArtistRegistrationPage() {
       updatedAt: Timestamp.now(),
     };
   
+    if (prevApprovedData) {
+      currentAppData.previousApprovedData = prevApprovedData;
+    }
+
     if (!currentAppData.createdAt && !isEditModeByAdmin) {
       currentAppData.createdAt = Timestamp.now();
     }
@@ -330,11 +343,21 @@ export default function ArtistRegistrationPage() {
     if (!targetUserIdForSubmit) return;
     setIsSavingStep(true);
 
+    let prevApprovedData = applicationData.previousApprovedData;
+    if (applicationData.status === 'approved' && !isEditModeByAdmin && !prevApprovedData) {
+      const { previousApprovedData: _, ...cleanBaseline } = applicationData;
+      prevApprovedData = cleanBaseline;
+    }
+
     const completeFinalData: Partial<ArtistApplication> = {
       ...applicationData, ...finalStepData,
       updatedAt: Timestamp.now(),
     };
     
+    if (prevApprovedData) {
+      completeFinalData.previousApprovedData = prevApprovedData;
+    }
+
     if (isEditModeByAdmin) {
       completeFinalData.status = applicationData.status || 'pending_review';
     } else {

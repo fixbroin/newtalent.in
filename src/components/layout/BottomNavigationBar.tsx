@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, Layers, Briefcase, UserCircle as UserIcon, Construction, Handshake, CreditCard } from 'lucide-react'; // Added Construction & Handshake
+import { Home, Layers, Briefcase, UserCircle as UserIcon, Construction, Handshake, CreditCard, PhoneCall } from 'lucide-react'; // Added Construction & Handshake
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/contexts/LoadingContext';
@@ -58,7 +58,7 @@ const BottomNavigationBar = () => {
   const navItems: NavItem[] = [
     { href: '/', label: 'Home', icon: Home, isProtected: false },
     { href: '/categories', label: 'Categories', icon: Layers, isProtected: true },
-    { href: '/connections', label: 'Connections', icon: Handshake, isProtected: true },
+    { href: '/revealed-contacts', label: 'Contacts', icon: PhoneCall, isProtected: true },
     { href: '/referral', label: 'Refer', icon: Handshake, isProtected: true, condition: () => !isLoadingReferral && !!referralSettings?.isReferralSystemEnabled },
     { href: '/account', label: 'Profile', icon: UserIcon, isProtected: true },
   ];

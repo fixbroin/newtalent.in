@@ -589,7 +589,7 @@ export default function PaymentPage() {
   }
 
   const basePaymentOptions = [
-    { value: 'online', label: 'Secure Online Payment (UPI, Credit/Debit Cards, NetBanking, Wallets)', icon: CreditCard, online: true, available: onlinePaymentEnabled },
+    { value: 'online', label: 'Pay Online (UPI, Card, or More)', icon: CreditCard, online: true, available: onlinePaymentEnabled },
     { value: 'later', label: 'Pay After Service (Cash on Delivery)', icon: HandCoins, online: false, available: payAfterServiceEnabled && !isCancellationFeeMode },
   ];
   const currentAvailablePaymentOptions = basePaymentOptions.filter(option => option.available);

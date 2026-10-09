@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export interface LightboxImageItem {
   url: string;
@@ -29,6 +30,7 @@ export default function ImageLightboxModal({
 }: ImageLightboxModalProps) {
   const [mounted, setMounted] = useState(false);
   const [activeIdx, setActiveIdx] = useState(currentIndex);
+  const [isImgLoading, setIsImgLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -37,6 +39,7 @@ export default function ImageLightboxModal({
   useEffect(() => {
     if (isOpen) {
       setActiveIdx(currentIndex);
+      setIsImgLoading(true);
     }
   }, [isOpen, currentIndex]);
 
@@ -44,15 +47,23 @@ export default function ImageLightboxModal({
     ? images
     : imageUrl ? [{ url: imageUrl, label: title }] : [];
 
+  const currentItem = gallery[activeIdx] || gallery[0];
+
+  useEffect(() => {
+    setIsImgLoading(true);
+  }, [activeIdx]);
+
   const handlePrev = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (gallery.length === 0) return;
+    setIsImgLoading(true);
     setActiveIdx(prev => (prev - 1 + gallery.length) % gallery.length);
   }, [gallery.length]);
 
   const handleNext = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (gallery.length === 0) return;
+    setIsImgLoading(true);
     setActiveIdx(prev => (prev + 1) % gallery.length);
   }, [gallery.length]);
 
@@ -69,7 +80,6 @@ export default function ImageLightboxModal({
 
   if (!mounted || !isOpen || gallery.length === 0) return null;
 
-  const currentItem = gallery[activeIdx] || gallery[0];
   const currentLabel = currentItem.label || title || "Photo View";
   const hasMultiple = gallery.length > 1;
 
@@ -81,7 +91,7 @@ export default function ImageLightboxModal({
     >
       {/* Top Bar / Close & Title */}
       <div className="absolute top-4 inset-x-4 sm:top-6 sm:inset-x-8 z-[10000] flex items-center justify-between pointer-events-none">
-        <div className="text-white text-xs sm:text-sm font-black bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 pointer-events-auto flex items-center gap-2">
+        <div className="text-white text-xs sm:text-sm font-black bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 pointer-events-auto flex items-center gap-2 shadow-lg">
           {hasMultiple && (
             <span className="text-amber-400 font-extrabold">{activeIdx + 1} / {gallery.length}</span>
           )}
@@ -132,20 +142,30 @@ export default function ImageLightboxModal({
         className="relative w-full h-full max-w-5xl max-h-[88vh] flex items-center justify-center p-2 cursor-pointer"
         onClick={(e) => e.stopPropagation()}
       >
+        {isImgLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 backdrop-blur-sm rounded-2xl">
+            <Loader2 className="h-12 w-12 text-amber-400 animate-spin mb-3" />
+            <p className="text-white text-xs font-black tracking-widest uppercase animate-pulse">Loading High-Res Image...</p>
+          </div>
+        )}
+
         <img 
           key={currentItem.url}
           src={currentItem.url} 
           alt={currentLabel} 
-          className="max-w-full max-h-[88vh] w-auto h-auto object-contain rounded-2xl shadow-2xl select-none animate-in zoom-in-95 duration-200"
+          onLoad={() => setIsImgLoading(false)}
+          onError={() => setIsImgLoading(false)}
+          className={cn(
+            "max-w-full max-h-[88vh] w-auto h-auto object-contain rounded-2xl shadow-2xl select-none transition-all duration-300",
+            isImgLoading ? "opacity-0 scale-95" : "opacity-100 scale-100"
+          )}
         />
       </div>
 
       {/* Bottom Hint Bar */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-[11px] font-bold uppercase tracking-widest pointer-events-none bg-black/40 px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-sm flex items-center gap-3">
         {hasMultiple ? (
-          <>
-            <span>Use ◄ / ► arrow keys or click arrows to view images</span>
-          </>
+          <span>Use ◄ / ► arrow keys or click arrows to view images</span>
         ) : (
           <span>Click anywhere to close</span>
         )}

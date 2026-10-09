@@ -215,10 +215,9 @@ const Header = () => {
   const userSpecificNavItems = [
     { href: '/profile', label: 'Profile Setting', icon: UserCircle, isProtected: true },
     { href: '/script-writing', label: 'Movie Script Writing', icon: FileText, isProtected: true },
-    { href: '/connections', label: 'Connections', icon: Handshake, isProtected: true },
+    { href: '/revealed-contacts', label: 'Contacts', icon: PhoneCall, isProtected: true },
     { href: '/subscriptions/profile', label: 'Profile Subscription', icon: CreditCard, isProtected: true },
     { href: '/subscriptions/contact', label: 'Contact Subscription', icon: PhoneCall, isProtected: true },
-    { href: '/revealed-contacts', label: 'Revealed Contacts', icon: PhoneCall, isProtected: true },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, isProtected: true, condition: () => !isLoadingReferral && !!referralSettings?.isReferralSystemEnabled },
     { href: '/notifications', label: 'Notifications', icon: Bell, isProtected: true },
     { href: '/chat', label: 'Chat with Support', icon: MessageSquare, condition: () => chatIsEnabled, isProtected: true },
@@ -330,15 +329,15 @@ const Header = () => {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  aria-label="Connections" 
-                  onClick={(e) => handleAuthRequiredNav(e, '/connections')} 
+                  aria-label="Contacts" 
+                  onClick={(e) => handleAuthRequiredNav(e, '/revealed-contacts')} 
                   className={cn(
                     "rounded-full bg-muted/50 hover:bg-primary hover:text-primary-foreground shadow-none h-10 w-10 transition-all duration-300",
-                    currentPathnameFromHook === '/connections' && "bg-primary text-primary-foreground shadow-md"
+                    currentPathnameFromHook === '/revealed-contacts' && "bg-primary text-primary-foreground shadow-md"
                   )}
-                  title="Connections"
+                  title="Contacts"
                 >
-                  <Handshake className="h-5 w-5" />
+                  <PhoneCall className="h-5 w-5" />
                 </Button>
               )}
 
