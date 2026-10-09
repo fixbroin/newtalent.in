@@ -106,33 +106,7 @@ export default function SubscriptionPageClient({ planType }: SubscriptionPageCli
           </p>
         </div>
 
-        {/* Navigation Tabs for Dedicated Pages */}
-        <div className="flex justify-center mb-10">
-          <div className="flex items-center gap-2 p-1.5 bg-muted/80 border rounded-2xl max-w-md w-full">
-            <Link 
-              href="/subscriptions/profile" 
-              className={cn(
-                "flex-1 text-center py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all",
-                !isContactPage 
-                  ? "bg-background text-foreground shadow-sm font-black" 
-                  : "text-muted-foreground hover:text-foreground font-medium"
-              )}
-            >
-              <UserCheck className="w-4 h-4" /> Profile Plans
-            </Link>
-            <Link 
-              href="/subscriptions/contact" 
-              className={cn(
-                "flex-1 text-center py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all",
-                isContactPage 
-                  ? "bg-background text-foreground shadow-sm font-black" 
-                  : "text-muted-foreground hover:text-foreground font-medium"
-              )}
-            >
-              <PhoneCall className="w-4 h-4" /> Contact Plans
-            </Link>
-          </div>
-        </div>
+
 
         {/* Current User Subscription Status */}
         {user && (

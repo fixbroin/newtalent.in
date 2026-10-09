@@ -99,6 +99,97 @@ export default function SubscriptionManager() {
     fetchSubscribers();
   }, []);
 
+  const seedDefaultPlans = async () => {
+    try {
+      const plansRef = collection(db, 'adminSubscriptionPlans');
+      const defaultPlansData = [
+        // 3 Artist Profile Plans
+        {
+          name: 'Starter Profile',
+          price: 49,
+          durationDays: 30,
+          revealLimit: 0,
+          planType: 'artist',
+          features: ['Priority artist listing', 'Portfolio & video showcase', 'Direct recruiter visibility'],
+          isActive: true,
+          order: 1,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        },
+        {
+          name: 'Pro Profile',
+          price: 99,
+          durationDays: 30,
+          revealLimit: 0,
+          planType: 'artist',
+          features: ['Top tier search ranking', 'Verified artist badge', 'Unlimited media uploads', 'Priority casting reach'],
+          isActive: true,
+          order: 2,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        },
+        {
+          name: 'Yearly Profile',
+          price: 499,
+          durationDays: 365,
+          revealLimit: 0,
+          planType: 'artist',
+          features: ['365 Days top placement', 'Maximum visibility to recruiters', 'VIP profile badge', '24/7 Priority support'],
+          isActive: true,
+          order: 3,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        },
+        // 3 Contact Reveal Plans
+        {
+          name: 'Starter Contact',
+          price: 1,
+          durationDays: 30,
+          revealLimit: 10,
+          planType: 'hire',
+          features: ['Unlock 10 direct phone numbers & emails', 'Direct WhatsApp & calling access', '30 days validity'],
+          isActive: true,
+          order: 1,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        },
+        {
+          name: 'Gold Contact',
+          price: 199,
+          durationDays: 30,
+          revealLimit: 25,
+          planType: 'hire',
+          features: ['Unlock 25 direct phone numbers & emails', 'Direct WhatsApp & calling access', 'Express casting support'],
+          isActive: true,
+          order: 2,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        },
+        {
+          name: 'Yearly Contact',
+          price: 499,
+          durationDays: 365,
+          revealLimit: 60,
+          planType: 'hire',
+          features: ['Unlock 60 direct phone numbers & emails', 'Direct WhatsApp & calling access', 'Full 365 days validity', 'Dedicated account manager'],
+          isActive: true,
+          order: 3,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        }
+      ];
+
+      for (const plan of defaultPlansData) {
+        await addDoc(plansRef, plan);
+      }
+      toast({ title: "Default Plans Seeded", description: "Created 3 Artist Profile Plans and 3 Recruiter Contact Plans." });
+      fetchPlans();
+    } catch (err) {
+      console.error("Error seeding default plans:", err);
+      toast({ title: "Error", description: "Failed to seed default plans.", variant: "destructive" });
+    }
+  };
+
   const fetchPlans = async () => {
     setIsLoadingPlans(true);
     try {
@@ -110,7 +201,12 @@ export default function SubscriptionManager() {
         planType: doc.data().planType || 'artist',
         ...doc.data() 
       } as SubscriptionPlan));
-      setPlans(fetchedPlans);
+
+      if (fetchedPlans.length === 0) {
+        await seedDefaultPlans();
+      } else {
+        setPlans(fetchedPlans);
+      }
     } catch (error) {
       console.error("Error fetching plans:", error);
     } finally {
