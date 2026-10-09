@@ -116,11 +116,20 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
   };
 
   const isUnlocked = firestoreUser?.unlockedArtistIds?.includes(artist.userId);
-  const isPaidSubscriber = !!((artist as any).subscriptionActive || (artist as any).isSubscribed);
+  const isPaidSubscriber = !!(
+    (artist as any).subscriptionActive ||
+    (artist as any).profileSubscriptionActive ||
+    (artist as any).isSubscribed ||
+    (artist as any).isPremium ||
+    ((artist as any).promotionIndex && (artist as any).promotionIndex > 0)
+  );
 
   return (
     <>
-      <div className="bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group">
+      <div className={cn(
+        "bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group relative",
+        isPaidSubscriber && "border-amber-500/40 ring-1 ring-amber-500/20 shadow-amber-500/10 shadow-md bg-gradient-to-b from-amber-500/5 to-transparent"
+      )}>
         {/* Image Section */}
         {profileUrl ? (
           <Link href={profileUrl} onClick={handleAboutClick} className="relative aspect-square w-full bg-muted flex items-center justify-center cursor-pointer overflow-hidden">

@@ -206,8 +206,8 @@ export default function CategoryPageClient({
       
       // Sort artists: Subscribed/Paid profile artists on TOP, higher plan price tier first!
       fetchedArtists.sort((a, b) => {
-        const aIsPaid = ((a as any).subscriptionActive || (a as any).isSubscribed) ? 1 : 0;
-        const bIsPaid = ((b as any).subscriptionActive || (b as any).isSubscribed) ? 1 : 0;
+        const aIsPaid = ((a as any).subscriptionActive || (a as any).profileSubscriptionActive || (a as any).isSubscribed || (a as any).isPremium) ? 1 : 0;
+        const bIsPaid = ((b as any).subscriptionActive || (b as any).profileSubscriptionActive || (b as any).isSubscribed || (b as any).isPremium) ? 1 : 0;
         if (aIsPaid !== bIsPaid) return bIsPaid - aIsPaid;
 
         const aPrice = Number((a as any).subscriptionPlanPrice || (a as any).subscriptionPrice || (a as any).planPrice || 0);

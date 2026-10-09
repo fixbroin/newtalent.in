@@ -1106,9 +1106,44 @@ export default function SubscriptionManager() {
               )}
             </div>
 
+            {/* Select Available Subscription Plan */}
+            <div>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">2. Select Available Subscription Plan</Label>
+              <Select
+                value={assignForm.planId || 'custom'}
+                onValueChange={(selectedPlanId) => {
+                  if (selectedPlanId === 'custom') {
+                    setAssignForm(prev => ({ ...prev, planId: '' }));
+                  } else {
+                    const found = plans.find(p => p.id === selectedPlanId);
+                    if (found) {
+                      setAssignForm({
+                        planId: found.id,
+                        planType: found.planType || 'artist',
+                        durationDays: found.durationDays,
+                        revealLimit: found.revealLimit || 10
+                      });
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger className="rounded-xl font-bold text-xs h-11 bg-background">
+                  <SelectValue placeholder="-- Choose from Available Plans --" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value="custom" className="text-xs font-bold">Custom / Manual Assignment</SelectItem>
+                  {plans.filter(p => p.isActive !== false).map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id} className="text-xs font-medium">
+                      {plan.name} (₹{plan.price} • {plan.durationDays} Days {plan.planType === 'hire' ? `• ${plan.revealLimit || 0} Reveals` : ''}) [{plan.planType === 'artist' ? 'Profile' : 'Contact'}]
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Plan Type Selection */}
             <div>
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">2. Select Subscription Type</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">3. Subscription Type</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"

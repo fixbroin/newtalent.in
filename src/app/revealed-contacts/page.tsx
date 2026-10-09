@@ -21,15 +21,21 @@ export default function RevealedContactsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedArtistForRequest, setSelectedArtistForRequest] = useState<any | null>(null);
 
-  // Check subscription active state and expiration
+  // Check subscription active state, expiration, and past subscription history
   const now = new Date();
   let isExpired = true;
+  let hasEverSubscribed = false;
+
   if (firestoreUser?.hireSubscriptionExpiresAt) {
+    hasEverSubscribed = true;
     const expiresDate = typeof (firestoreUser.hireSubscriptionExpiresAt as any).toDate === 'function'
       ? firestoreUser.hireSubscriptionExpiresAt.toDate()
       : new Date(firestoreUser.hireSubscriptionExpiresAt as any);
     isExpired = expiresDate < now;
+  } else if (firestoreUser?.hireSubscriptionActive || (firestoreUser?.unlockedArtistIds && firestoreUser.unlockedArtistIds.length > 0)) {
+    hasEverSubscribed = true;
   }
+
   const isSubscribed = !!firestoreUser?.hireSubscriptionActive && !isExpired;
   const unlockedIds = firestoreUser?.unlockedArtistIds || [];
 
@@ -134,22 +140,43 @@ export default function RevealedContactsPage() {
           </Button>
         </div>
 
-        {/* Subscription Expired Notice */}
+        {/* Subscription Notice: Never Subscribed vs Expired */}
         {!isSubscribed ? (
-          <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-8 text-center max-w-2xl mx-auto my-12 shadow-lg">
-            <ShieldAlert className="w-12 h-12 text-amber-600 dark:text-amber-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-black mb-2">Subscription Expired or Inactive</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-              Your revealed contacts expire when your Contact Access Plan expires. To view numbers again and unlock new contacts, please renew your subscription.
-            </p>
-            <Button
-              size="lg"
-              className="rounded-2xl font-black gap-2 shadow-lg shadow-primary/20"
-              onClick={() => router.push('/subscriptions/contact')}
-            >
-              Renew Contact Subscription <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
+          !hasEverSubscribed ? (
+            <div className="bg-[#faf6e9] border border-[#f3e5c8] dark:bg-amber-950/30 dark:border-amber-500/30 rounded-3xl p-8 md:p-12 text-center max-w-2xl mx-auto my-12 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black mb-2 text-foreground">Subscribe to Unlock Artist Contacts</h3>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed mb-6 max-w-lg mx-auto">
+                Subscribe to a Contact Access Plan to directly reveal, call, and unlock any artist's phone number.
+              </p>
+              <Button
+                size="lg"
+                className="rounded-2xl font-black gap-2 shadow-lg shadow-primary/20 px-8 py-6 text-base"
+                onClick={() => router.push('/subscriptions/contact')}
+              >
+                Subscribe Now <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-[#faf6e9] border border-[#f3e5c8] dark:bg-amber-950/30 dark:border-amber-500/30 rounded-3xl p-8 md:p-12 text-center max-w-2xl mx-auto my-12 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black mb-2 text-foreground">Subscription Expired or Inactive</h3>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed mb-6 max-w-lg mx-auto">
+                Your revealed contacts expire when your Contact Access Plan expires. To view numbers again and unlock new contacts, please renew your subscription.
+              </p>
+              <Button
+                size="lg"
+                className="rounded-2xl font-black gap-2 shadow-lg shadow-primary/20 px-8 py-6 text-base"
+                onClick={() => router.push('/subscriptions/contact')}
+              >
+                Renew Contact Subscription <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
+          )
         ) : isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (

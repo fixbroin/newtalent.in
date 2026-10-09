@@ -127,6 +127,31 @@ export default function PaymentPage() {
   const onlinePaymentEnabled = useMemo(() => appConfig.enableOnlinePayment !== false, [appConfig]);
   const payAfterServiceEnabled = useMemo(() => canOfferPayLater, [canOfferPayLater]);
 
+  const basePaymentOptions = useMemo(() => [
+    { value: 'online', label: 'Pay Online (UPI, Card, or More)', icon: CreditCard, online: true, available: onlinePaymentEnabled },
+  ], [onlinePaymentEnabled]);
+
+  const currentAvailablePaymentOptions = useMemo(() => {
+    return basePaymentOptions.filter(option => option.available);
+  }, [basePaymentOptions]);
+
+  // Auto-select default payment method when 1 option is available or current selection is invalid
+  useEffect(() => {
+    if (currentAvailablePaymentOptions.length > 0) {
+      const isCurrentValid = currentAvailablePaymentOptions.some(opt => opt.value === paymentMethod);
+      if (!isCurrentValid || currentAvailablePaymentOptions.length === 1) {
+        setPaymentMethod(currentAvailablePaymentOptions[0].value);
+      }
+    }
+  }, [currentAvailablePaymentOptions, paymentMethod]);
+
+  // Smooth scroll up to top on initial page load
+  useEffect(() => {
+    if (isMounted) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isMounted]);
+
 
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [appliedPromoCode, setAppliedPromoCode] = useState<AppliedPromoCodeInfo | null>(null);
@@ -540,15 +565,6 @@ export default function PaymentPage() {
       </div>
     );
   }
-
-  const basePaymentOptions = [
-    { value: 'upi', label: 'UPI', icon: IndianRupee, online: true, available: onlinePaymentEnabled },
-    { value: 'card', label: 'Credit/Debit Card', icon: CreditCard, online: true, available: onlinePaymentEnabled },
-    { value: 'netbanking', label: 'Net Banking', icon: Landmark, online: true, available: onlinePaymentEnabled },
-    { value: 'wallet', label: 'Wallets', icon: Wallet, online: true, available: onlinePaymentEnabled },
-    { value: 'later', label: 'Pay After Service', icon: HandCoins, online: false, available: payAfterServiceEnabled && !isCancellationFeeMode },
-  ];
-  const currentAvailablePaymentOptions = basePaymentOptions.filter(option => option.available);
 
   return (
     <div className="max-w-2xl mx-auto">

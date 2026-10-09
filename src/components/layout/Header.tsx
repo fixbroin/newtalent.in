@@ -331,10 +331,7 @@ const Header = () => {
                   size="icon" 
                   aria-label="Contacts" 
                   onClick={(e) => handleAuthRequiredNav(e, '/revealed-contacts')} 
-                  className={cn(
-                    "rounded-full bg-muted/50 hover:bg-primary hover:text-primary-foreground shadow-none h-10 w-10 transition-all duration-300",
-                    currentPathnameFromHook === '/revealed-contacts' && "bg-primary text-primary-foreground shadow-md"
-                  )}
+                  className="hidden md:flex rounded-full bg-muted/50 hover:bg-primary hover:text-primary-foreground shadow-none h-10 w-10 transition-all duration-300"
                   title="Contacts"
                 >
                   <PhoneCall className="h-5 w-5" />

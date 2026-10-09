@@ -114,7 +114,7 @@ function AccountPageContent() {
   const accountMenuItems = [
     { href: '/profile', label: 'Profile Setting', icon: User },
     { href: '/script-writing', label: 'Movie Script Writing', icon: FileText },
-    { href: '/revealed-contacts', label: 'Contacts', icon: PhoneCall },
+    { href: '/revealed-contacts', label: 'Revealed Contacts', icon: PhoneCall },
     { href: '/subscriptions/profile', label: 'Profile Subscription', icon: CreditCard },
     { href: '/subscriptions/contact', label: 'Contact Subscription', icon: PhoneCall },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, condition: () => !isLoadingAppConfig && !!referralSettings?.isReferralSystemEnabled },
