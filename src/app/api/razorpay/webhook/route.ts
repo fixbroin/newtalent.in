@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
             ...updateData,
             hireSubscriptionActive: true,
             hireSubscriptionId: planId,
+            currentHireSubscriptionId: planId,
             hireSubscriptionName: planName,
             hireSubscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
             contactRevealLimit: newRevealLimit,

@@ -163,84 +163,45 @@ export default function ThankYouPage() {
       const razorpaySignature = localStorage.getItem('razorpaySignature');
       const pendingSubscriptionPlanId = localStorage.getItem('newtalentPendingSubscriptionPlanId');
 
-      // --- 1. Handle Subscription Payment Verification ---
-      if (pendingSubscriptionPlanId && razorpayPaymentId && isOnlinePayment) {
+      // --- 1. Handle Subscription Payment Verification & Activation ---
+      if (pendingSubscriptionPlanId && razorpayPaymentId && isOnlinePayment && currentUser?.uid) {
         try {
-            const verificationResponse = await fetch('/api/razorpay/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ razorpay_payment_id: razorpayPaymentId, razorpay_order_id: razorpayOrderId, razorpay_signature: razorpaySignature }),
-            });
-            const verificationResult = await verificationResponse.json();
-            if (!verificationResult.success || verificationResult.status !== 'captured') {
-                throw new Error(verificationResult.error || "Payment verification failed.");
-            }
-            toast({ title: "Payment Verified", description: "Your subscription payment has been verified." });
-            
-            const planRef = doc(db, 'adminSubscriptionPlans', pendingSubscriptionPlanId);
-            const planSnap = await getDoc(planRef);
-            if (planSnap.exists()) {
-                const planData = { id: planSnap.id, ...planSnap.data() } as SubscriptionPlan;
-                setSubscriptionPlanDetails(planData);
-                
-                const startDate = Timestamp.now();
-                const endDate = Timestamp.fromMillis(startDate.toMillis() + (planData.durationDays * 24 * 60 * 60 * 1000));
-                
-                if (currentUser?.uid) {
-                    const userDocRef = doc(db, "users", currentUser.uid);
-                    
-                    if (planData.planType === 'hire') {
-                        const userSnap = await getDoc(userDocRef);
-                        const userData = userSnap.exists() ? (userSnap.data() as FirestoreUser) : null;
-                        
-                        const existingLimit = userData?.contactRevealLimit || 0;
-                        const existingUsed = userData?.contactRevealsUsed || 0;
-                        const oldRemaining = Math.max(0, existingLimit - existingUsed);
-                        const newLimit = (planData.revealLimit || 10) + oldRemaining;
+          // Call the server API endpoint which includes cryptographic verification AND idempotency check
+          const activateResponse = await fetch('/api/subscription/activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser.uid,
+              planId: pendingSubscriptionPlanId,
+              razorpay_order_id: razorpayOrderId,
+              razorpay_payment_id: razorpayPaymentId,
+              razorpay_signature: razorpaySignature
+            }),
+          });
 
-                        await updateDoc(userDocRef, {
-                            hireSubscriptionActive: true,
-                            currentHireSubscriptionId: pendingSubscriptionPlanId,
-                            hireSubscriptionExpiresAt: endDate,
-                            contactRevealLimit: newLimit,
-                            contactRevealsUsed: 0,
-                            unlockedArtistIds: [],
-                            updatedAt: Timestamp.now()
-                        });
-                    } else {
-                        await updateDoc(userDocRef, {
-                            subscriptionActive: true,
-                            currentSubscriptionId: pendingSubscriptionPlanId,
-                            subscriptionExpiresAt: endDate,
-                            updatedAt: Timestamp.now()
-                        });
-                    }
-                    
-                    await addDoc(collection(db, "userSubscriptions"), {
-                        userId: currentUser.uid,
-                        planId: pendingSubscriptionPlanId,
-                        planName: planData.name,
-                        planType: planData.planType || 'artist',
-                        revealLimit: planData.revealLimit || 0,
-                        startDate,
-                        endDate,
-                        status: 'active',
-                        paymentId: razorpayPaymentId,
-                        createdAt: Timestamp.now()
-                    });
-                }
-                
-                setIsSubscriptionConfirmation(true);
-                toast({ title: "Subscription Activated", description: `You are now subscribed to ${planData.name}!` });
-            }
+          const activateResult = await activateResponse.json();
+          if (!activateResult.success) {
+            throw new Error(activateResult.error || "Failed to activate subscription.");
+          }
+
+          toast({ title: "Payment Verified", description: "Your subscription payment has been verified." });
+
+          const planRef = doc(db, 'adminSubscriptionPlans', pendingSubscriptionPlanId);
+          const planSnap = await getDoc(planRef);
+          if (planSnap.exists()) {
+            const planData = { id: planSnap.id, ...planSnap.data() } as SubscriptionPlan;
+            setSubscriptionPlanDetails(planData);
+            setIsSubscriptionConfirmation(true);
+            toast({ title: "Subscription Activated", description: `You are now subscribed to ${planData.name}!` });
+          }
 
         } catch (error) {
-            console.error("Error during subscription verification:", error);
-            toast({ title: "Subscription Error", description: "Failed to activate subscription. Please contact support.", variant: "destructive" });
+          console.error("Error during subscription verification:", error);
+          toast({ title: "Subscription Error", description: (error as Error).message || "Failed to activate subscription. Please contact support.", variant: "destructive" });
         } finally {
-            localStorage.removeItem('newtalentPendingSubscriptionPlanId');
-            await clearLocalStorageItems(currentUser?.uid);
-            setIsLoadingPage(false);
+          localStorage.removeItem('newtalentPendingSubscriptionPlanId');
+          await clearLocalStorageItems(currentUser?.uid);
+          setIsLoadingPage(false);
         }
         return;
       }
