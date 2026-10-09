@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass, AlertTriangle, ExternalLink, Copy } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, CheckCircle, XCircle, Zap, PackageSearch, Compass, AlertTriangle, ExternalLink, Copy, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CityCategorySeoSetting, AreaCategorySeoSetting, FirestoreCategory, FirestoreCity, FirestoreArea } from '@/types/firestore';
 import { db } from '@/lib/firebase';
@@ -22,6 +22,12 @@ import AreaForm from '@/components/admin/AreaForm';
 import { triggerRefresh, submitPathToGoogleIndexing } from '@/lib/revalidateUtils';
 import OsmGeneratorDialog from '@/components/admin/OsmGeneratorDialog';
 import OsmAreaGeneratorDialog from '@/components/admin/OsmAreaGeneratorDialog';
+import { 
+  generateCitySeoOffline, 
+  generateCityCategorySeoOffline, 
+  generateAreaCategorySeoOffline, 
+  generateAreaSeoOffline 
+} from '@/lib/seoTemplatesHelper';
 
 const generateSeoSlug = (parts: (string | undefined)[]): string => {
     return parts.filter(Boolean).map(part => part!.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).join('/');
@@ -242,6 +248,201 @@ export default function SeoOverridesPage() {
     } catch (error) {
       console.error("Error deleting all settings:", error);
       toast({ title: "Delete All Failed", description: "Could not perform bulk deletion.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDefaultSeoCity = async (city: FirestoreCity) => {
+    setIsSubmitting(true);
+    try {
+      const activeCatNames = categories.map(c => c.name);
+      const generated = generateCitySeoOffline(city.name, "neighbouring regions", activeCatNames);
+      await updateDoc(doc(citiesRef, city.id), {
+        h1_title: generated.h1_title,
+        seo_title: generated.seo_title,
+        seo_description: generated.seo_description,
+        seo_keywords: generated.seo_keywords,
+        updatedAt: Timestamp.now()
+      });
+      await triggerRefresh('cities');
+      await triggerRefresh('sitemap');
+      toast({ title: "Default SEO Applied", description: `Updated SEO templates for ${city.name}` });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update city SEO.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDefaultSeoCityCategory = async (setting: CityCategorySeoSetting) => {
+    setIsSubmitting(true);
+    try {
+      const activeCatNames = categories.map(c => c.name);
+      const generated = generateCityCategorySeoOffline(setting.cityName || 'City', setting.categoryName || 'Talent', "neighbouring regions", activeCatNames);
+      await updateDoc(doc(cityCatSeoRef, setting.id), {
+        h1_title: generated.h1_title,
+        meta_title: generated.seo_title,
+        meta_description: generated.seo_description,
+        meta_keywords: generated.seo_keywords,
+        updatedAt: Timestamp.now()
+      });
+      await triggerRefresh('global-cache');
+      await triggerRefresh('sitemap');
+      toast({ title: "Default SEO Applied", description: `Updated SEO templates for ${setting.categoryName} in ${setting.cityName}` });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update City-Category SEO.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDefaultSeoAreaCategory = async (setting: AreaCategorySeoSetting) => {
+    setIsSubmitting(true);
+    try {
+      const activeCatNames = categories.map(c => c.name);
+      const generated = generateAreaCategorySeoOffline(setting.cityName || 'City', setting.areaName || 'Area', setting.categoryName || 'Talent', "neighbouring areas", activeCatNames);
+      await updateDoc(doc(areaCatSeoRef, setting.id), {
+        h1_title: generated.h1_title,
+        meta_title: generated.seo_title,
+        meta_description: generated.seo_description,
+        meta_keywords: generated.seo_keywords,
+        updatedAt: Timestamp.now()
+      });
+      await triggerRefresh('global-cache');
+      await triggerRefresh('sitemap');
+      toast({ title: "Default SEO Applied", description: `Updated SEO templates for ${setting.categoryName} in ${setting.areaName}` });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update Area-Category SEO.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDefaultSeoArea = async (area: FirestoreArea) => {
+    setIsSubmitting(true);
+    try {
+      const activeCatNames = categories.map(c => c.name);
+      const generated = generateAreaSeoOffline(area.cityName || 'City', area.name, "neighbouring areas", activeCatNames);
+      await updateDoc(doc(collection(db, "areas"), area.id), {
+        h1_title: generated.h1_title,
+        seo_title: generated.seo_title,
+        seo_description: generated.seo_description,
+        seo_keywords: generated.seo_keywords,
+        updatedAt: Timestamp.now()
+      });
+      await triggerRefresh('sitemap');
+      toast({ title: "Default SEO Applied", description: `Updated SEO templates for ${area.name} in ${area.cityName || 'City'}` });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update area SEO.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkDefaultSeo = async (type: 'city' | 'cityCategory' | 'areaCategory' | 'area') => {
+    setIsSubmitting(true);
+    const activeCatNames = categories.map(c => c.name);
+    try {
+      if (type === 'city') {
+        const snap = await getDocs(citiesRef);
+        let batch = writeBatch(db);
+        let count = 0;
+        for (const docSnap of snap.docs) {
+          const cityData = docSnap.data() as FirestoreCity;
+          const generated = generateCitySeoOffline(cityData.name, "neighbouring regions", activeCatNames);
+          batch.update(docSnap.ref, {
+            h1_title: generated.h1_title,
+            seo_title: generated.seo_title,
+            seo_description: generated.seo_description,
+            seo_keywords: generated.seo_keywords,
+            updatedAt: Timestamp.now()
+          });
+          count++;
+          if (count % 400 === 0) {
+            await batch.commit();
+            batch = writeBatch(db);
+          }
+        }
+        if (count % 400 !== 0) await batch.commit();
+        toast({ title: "Bulk SEO Updated", description: `Applied default offline SEO to ${count} cities.` });
+      } else if (type === 'cityCategory') {
+        const snap = await getDocs(cityCatSeoRef);
+        let batch = writeBatch(db);
+        let count = 0;
+        for (const docSnap of snap.docs) {
+          const setting = docSnap.data() as CityCategorySeoSetting;
+          const generated = generateCityCategorySeoOffline(setting.cityName || 'City', setting.categoryName || 'Talent', "neighbouring regions", activeCatNames);
+          batch.update(docSnap.ref, {
+            h1_title: generated.h1_title,
+            meta_title: generated.seo_title,
+            meta_description: generated.seo_description,
+            meta_keywords: generated.seo_keywords,
+            updatedAt: Timestamp.now()
+          });
+          count++;
+          if (count % 400 === 0) {
+            await batch.commit();
+            batch = writeBatch(db);
+          }
+        }
+        if (count % 400 !== 0) await batch.commit();
+        toast({ title: "Bulk SEO Updated", description: `Applied default offline SEO to ${count} City-Category overrides.` });
+      } else if (type === 'areaCategory') {
+        const snap = await getDocs(areaCatSeoRef);
+        let batch = writeBatch(db);
+        let count = 0;
+        for (const docSnap of snap.docs) {
+          const setting = docSnap.data() as AreaCategorySeoSetting;
+          const generated = generateAreaCategorySeoOffline(setting.cityName || 'City', setting.areaName || 'Area', setting.categoryName || 'Talent', "neighbouring areas", activeCatNames);
+          batch.update(docSnap.ref, {
+            h1_title: generated.h1_title,
+            meta_title: generated.seo_title,
+            meta_description: generated.seo_description,
+            meta_keywords: generated.seo_keywords,
+            updatedAt: Timestamp.now()
+          });
+          count++;
+          if (count % 400 === 0) {
+            await batch.commit();
+            batch = writeBatch(db);
+          }
+        }
+        if (count % 400 !== 0) await batch.commit();
+        toast({ title: "Bulk SEO Updated", description: `Applied default offline SEO to ${count} Area-Category overrides.` });
+      } else if (type === 'area') {
+        const snap = await getDocs(collection(db, "areas"));
+        let batch = writeBatch(db);
+        let count = 0;
+        for (const docSnap of snap.docs) {
+          const areaData = docSnap.data() as FirestoreArea;
+          const generated = generateAreaSeoOffline(areaData.cityName || 'City', areaData.name, "neighbouring areas", activeCatNames);
+          batch.update(docSnap.ref, {
+            h1_title: generated.h1_title,
+            seo_title: generated.seo_title,
+            seo_description: generated.seo_description,
+            seo_keywords: generated.seo_keywords,
+            updatedAt: Timestamp.now()
+          });
+          count++;
+          if (count % 400 === 0) {
+            await batch.commit();
+            batch = writeBatch(db);
+          }
+        }
+        if (count % 400 !== 0) await batch.commit();
+        toast({ title: "Bulk SEO Updated", description: `Applied default offline SEO to ${count} areas.` });
+      }
+
+      await triggerRefresh('sitemap');
+      fetchData();
+    } catch (err) {
+      console.error("Error bulk updating default SEO:", err);
+      toast({ title: "Error", description: "Failed to perform bulk SEO update.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -524,6 +725,9 @@ export default function SeoOverridesPage() {
             <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>City-Specific Homepages</CardTitle><CardDescription>Custom SEO and H1 for /[citySlug] pages.</CardDescription></div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => handleBulkDefaultSeo('city')} disabled={isSubmitting || !citiesExist} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+                  <Sparkles className="mr-2 h-4 w-4 text-primary" /> Bulk Default SEO
+                </Button>
                 <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
@@ -590,6 +794,9 @@ export default function SeoOverridesPage() {
                       <TableCell className="text-center"><Switch checked={city.isActive} onCheckedChange={() => handleToggleActive(city, 'city')} disabled={isSubmitting}/></TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleQuickDefaultSeoCity(city)} disabled={isSubmitting} className="border-primary/40 text-primary hover:bg-primary/10 font-bold" title="Generate offline default SEO instantly">
+                            <Sparkles className="h-4 w-4 mr-1 text-primary"/>Default SEO
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => handleEditSetting(city, 'city')} disabled={isSubmitting}>
                             <Edit className="h-4 w-4 mr-2"/>SEO
                           </Button>
@@ -647,6 +854,9 @@ export default function SeoOverridesPage() {
             <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>City-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/category/[categorySlug] pages.</CardDescription></div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => handleBulkDefaultSeo('cityCategory')} disabled={isSubmitting || cityCategorySettings.length === 0} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+                  <Sparkles className="mr-2 h-4 w-4 text-primary" /> Bulk Default SEO
+                </Button>
                 <Button variant="outline" onClick={() => setIsOsmOpen(true)} disabled={isSubmitting || categories.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
@@ -715,7 +925,33 @@ export default function SeoOverridesPage() {
                       </TableCell>
                         <TableCell className="text-xs max-w-xs truncate" title={setting.h1_title}>{setting.h1_title || "Not set"}</TableCell>
                         <TableCell className="text-center"><Switch checked={setting.isActive} onCheckedChange={() => handleToggleActive(setting, 'cityCategory')} disabled={isSubmitting}/></TableCell>
-                        <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'cityCategory')} disabled={isSubmitting}><Edit className="h-4 w-4"/></Button> <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete SEO override for {setting.cityName} - {setting.categoryName}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'cityCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleQuickDefaultSeoCityCategory(setting)} disabled={isSubmitting} className="border-primary/40 text-primary hover:bg-primary/10 font-bold" title="Generate offline default SEO instantly">
+                              <Sparkles className="h-4 w-4 mr-1 text-primary"/>Default SEO
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'cityCategory')} disabled={isSubmitting}>
+                              <Edit className="h-4 w-4"/>
+                            </Button> 
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" disabled={isSubmitting}>
+                                  <Trash2 className="h-4 w-4"/>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
+                                  <AlertDialogDescription>Delete SEO override for {setting.cityName} - {setting.categoryName}?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'cityCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -748,6 +984,9 @@ export default function SeoOverridesPage() {
             <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>Area-Category Specific Settings</CardTitle><CardDescription>Overrides for /[city]/[area]/[categorySlug] pages.</CardDescription></div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => handleBulkDefaultSeo('areaCategory')} disabled={isSubmitting || areaCategorySettings.length === 0} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+                  <Sparkles className="mr-2 h-4 w-4 text-primary" /> Bulk Default SEO
+                </Button>
                 <Button variant="outline" onClick={() => setIsOsmAreaOpen(true)} disabled={isSubmitting || cities.length === 0 || categories.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
@@ -816,7 +1055,33 @@ export default function SeoOverridesPage() {
                       </TableCell>
                         <TableCell className="text-xs max-w-xs truncate" title={setting.h1_title}>{setting.h1_title || "Not set"}</TableCell>
                         <TableCell className="text-center"><Switch checked={setting.isActive} onCheckedChange={() => handleToggleActive(setting, 'areaCategory')} disabled={isSubmitting}/></TableCell>
-                        <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'areaCategory')} disabled={isSubmitting}><Edit className="h-4 w-4"/></Button> <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete SEO override for {setting.areaName} - {setting.categoryName}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'areaCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleQuickDefaultSeoAreaCategory(setting)} disabled={isSubmitting} className="border-primary/40 text-primary hover:bg-primary/10 font-bold" title="Generate offline default SEO instantly">
+                              <Sparkles className="h-4 w-4 mr-1 text-primary"/>Default SEO
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={() => handleEditSetting(setting, 'areaCategory')} disabled={isSubmitting}>
+                              <Edit className="h-4 w-4"/>
+                            </Button> 
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" disabled={isSubmitting}>
+                                  <Trash2 className="h-4 w-4"/>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
+                                  <AlertDialogDescription>Delete SEO override for {setting.areaName} - {setting.categoryName}?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteSetting(setting.id!, 'areaCategory')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
@@ -850,6 +1115,9 @@ export default function SeoOverridesPage() {
             <CardHeader className="flex flex-col gap-4 items-stretch justify-start md:flex-row md:items-center md:justify-between">
               <div><CardTitle>Localities / Areas Management</CardTitle><CardDescription>Create and manage areas/localities within cities.</CardDescription></div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => handleBulkDefaultSeo('area')} disabled={isSubmitting || areas.length === 0} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+                  <Sparkles className="mr-2 h-4 w-4 text-primary" /> Bulk Default SEO
+                </Button>
                 <Button variant="outline" onClick={() => setIsOsmAreaOpen(true)} disabled={isSubmitting || cities.length === 0}>
                   <Compass className="mr-2 h-4 w-4 text-primary" /> OSM Generator
                 </Button>
@@ -923,7 +1191,33 @@ export default function SeoOverridesPage() {
                           })()}
                         </TableCell>
                         <TableCell className="text-center"><Switch checked={area.isActive} onCheckedChange={() => handleToggleActive(area, 'area')} disabled={isSubmitting}/></TableCell>
-                        <TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => handleEditSetting(area, 'area')} disabled={isSubmitting}><Edit className="h-4 w-4 mr-2"/>Edit</Button><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="icon" disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Confirmation</AlertDialogTitle><AlertDialogDescription>Delete locality {area.name}?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteSetting(area.id!, 'area')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleQuickDefaultSeoArea(area)} disabled={isSubmitting} className="border-primary/40 text-primary hover:bg-primary/10 font-bold" title="Generate offline default SEO instantly">
+                              <Sparkles className="h-4 w-4 mr-1 text-primary"/>Default SEO
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEditSetting(area, 'area')} disabled={isSubmitting}>
+                              <Edit className="h-4 w-4 mr-2"/>Edit
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" disabled={isSubmitting}>
+                                  <Trash2 className="h-4 w-4"/>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
+                                  <AlertDialogDescription>Delete locality {area.name}?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteSetting(area.id!, 'area')} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -965,6 +1259,7 @@ export default function SeoOverridesPage() {
             ) : formType === 'city' ? (
               <CitySeoForm 
                 initialData={editingSetting} 
+                categories={categories}
                 onSubmit={handleCityFormSubmit} 
                 onCancel={() => setIsFormOpen(false)} 
                 isSubmitting={isSubmitting} 

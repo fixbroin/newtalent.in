@@ -215,7 +215,7 @@ const Header = () => {
   const userSpecificNavItems = [
     { href: '/profile', label: 'Profile Setting', icon: UserCircle, isProtected: true },
     { href: '/script-writing', label: 'Movie Script Writing', icon: FileText, isProtected: true },
-    { href: '/revealed-contacts', label: 'Contacts', icon: PhoneCall, isProtected: true },
+    { href: '/revealed-contacts', label: 'Revealed Contacts', icon: PhoneCall, isProtected: true },
     { href: '/subscriptions/profile', label: 'Profile Subscription', icon: CreditCard, isProtected: true },
     { href: '/subscriptions/contact', label: 'Contact Subscription', icon: PhoneCall, isProtected: true },
     { href: '/referral', label: 'Refer & Earn', icon: Handshake, isProtected: true, condition: () => !isLoadingReferral && !!referralSettings?.isReferralSystemEnabled },

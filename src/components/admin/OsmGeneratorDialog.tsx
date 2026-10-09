@@ -20,6 +20,12 @@ import { useToast } from "@/hooks/use-toast";
 import { triggerRefresh } from '@/lib/revalidateUtils';
 import { Progress } from "@/components/ui/progress";
 import type { FirestoreCategory, FirestoreCity, FirestoreArea, CityCategorySeoSetting, AreaCategorySeoSetting } from '@/types/firestore';
+import { 
+  CITY_TEMPLATES, 
+  CITY_CATEGORY_TEMPLATES, 
+  AREA_CATEGORY_TEMPLATES, 
+  generateKeywordsList 
+} from '@/lib/seoTemplatesHelper';
 
 interface OsmGeneratorDialogProps {
   isOpen: boolean;
@@ -32,191 +38,6 @@ interface OsmGeneratorDialogProps {
   existingAreaCategorySettings?: AreaCategorySeoSetting[];
   onSuccess: () => void;
 }
-
-// 4 Distinct SEO templates for City-Specific Homepages (/[citySlug])
-// Mentioning NewTalent.in, casting platform purpose, and nearby locations.
-const CITY_TEMPLATES = [
-  {
-    h1: "Hire Actors, Models & Creative Talents in {cityName} on NewTalent.in",
-    title: "Verified Artists & Talents in {cityName} | NewTalent.in",
-    description: "Connect directly with casting directors, actors, models, and singers in {cityName} on NewTalent.in. Explore vetted creative professionals in {cityName} and nearby areas like {nearbyCities}.",
-    keywords: "{cityName} artists, NewTalent, hire actors {cityName}, models in {cityName}, creative hub {nearbyCities}"
-  },
-  {
-    h1: "Connect with Verified Professionals in {cityName} | NewTalent.in",
-    title: "Best Castings & Creative Talents in {cityName} - NewTalent.in",
-    description: "Discover vetted creative talents in {cityName} for film, photography, and advertising. Book local talent easily across {cityName} and neighbouring areas like {nearbyCities} on NewTalent.in.",
-    keywords: "casting call {cityName}, local models {cityName}, singers {cityName}, NewTalent booking {nearbyCities}"
-  },
-  {
-    h1: "{cityName} Talent Directory: Hire Artists on NewTalent.in",
-    title: "Top Actors & Models in {cityName} | Directory | NewTalent.in",
-    description: "Find verified actors, singers, and models in {cityName} on NewTalent.in. Hire the best local creatives for events and media shoots in {cityName} and surrounding {nearbyCities}.",
-    keywords: "{cityName} talent agency, hire singers {cityName}, actors {cityName}, NewTalent directory {nearbyCities}"
-  },
-  {
-    h1: "Cast & Book Vetted Artists in {cityName} - NewTalent.in",
-    title: "Artist Booking & Casting in {cityName} | NewTalent.in",
-    description: "NewTalent.in helps you hire creative artists in {cityName} for event and film productions. Connect with premium local talents in {cityName} and nearby {nearbyCities}.",
-    keywords: "production crew {cityName}, book models {cityName}, talent hub {cityName}, NewTalent casting {nearbyCities}"
-  }
-];
-
-// 4 Distinct SEO templates for City-Category combinations (/[citySlug]/category/[categorySlug])
-const CITY_CATEGORY_TEMPLATES = [
-  {
-    h1: "Hire Verified {categoryName}s in {cityName} - NewTalent.in",
-    title: "Best {categoryName}s in {cityName} | Casting & Booking | NewTalent.in",
-    description: "Connect with top verified {categoryName}s in {cityName} on NewTalent.in. Perfect for casting calls, shoots, and creative projects in {cityName} and nearby {nearbyCities}.",
-    keywords: "hire {categoryName} in {cityName}, NewTalent {cityName}, castings for {categoryName}s, creative hub {nearbyCities}"
-  },
-  {
-    h1: "Top {categoryName}s in {cityName} for Castings & Media Projects | NewTalent.in",
-    title: "{categoryName}s in {cityName} | Vetted Talents | NewTalent.in",
-    description: "Discover professional {categoryName}s in {cityName} on NewTalent.in. Vetted portfolios ready for film, modeling, and advertising bookings in {cityName} and neighbouring {nearbyCities}.",
-    keywords: "casting {categoryName}s {cityName}, NewTalent.in talent, local {categoryName} {cityName}, {nearbyCities}"
-  },
-  {
-    h1: "Discover Verified {categoryName}s in {cityName} on NewTalent.in",
-    title: "Verified {categoryName}s in {cityName} Directory - NewTalent.in",
-    description: "Browse the ultimate directory of verified {categoryName}s in {cityName} on NewTalent.in. Book casting calls, modeling assignments, and creative projects in {cityName} and adjacent regions like {nearbyCities}.",
-    keywords: "{cityName} {categoryName} talent, hire actor model {cityName}, NewTalent directory, {nearbyCities}"
-  },
-  {
-    h1: "Hire Local {categoryName}s in {cityName} for Film & Photography | NewTalent.in",
-    title: "Professional {categoryName} Booking in {cityName} | NewTalent.in",
-    description: "Book verified {categoryName}s in {cityName} through NewTalent.in - the premier local talent network. Direct messaging with creative professionals in {cityName} and nearby {nearbyCities}.",
-    keywords: "book {categoryName}s {cityName}, casting hub {cityName}, NewTalent portfolio, {nearbyCities}"
-  }
-];
-
-// 4 Distinct SEO templates for Area-Category combinations (/[citySlug]/[areaSlug]/category/[categorySlug])
-const AREA_CATEGORY_TEMPLATES = [
-  {
-    h1: "Hire {categoryName}s in {areaName}, {cityName} - NewTalent.in",
-    title: "Best {categoryName}s in {areaName}, {cityName} | Vetted Talent | NewTalent",
-    description: "Find verified local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Contact casting-ready talents for local projects near {areaName} and nearby areas like {nearbyCities}.",
-    keywords: "{areaName} {categoryName}s, hire {categoryName} {areaName}, casting calls, NewTalent {nearbyCities}"
-  },
-  {
-    h1: "Top Vetted {categoryName}s in {areaName}, {cityName} | NewTalent.in",
-    title: "Verified {categoryName}s in {areaName}, {cityName} | NewTalent.in",
-    description: "Discover professional local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Vetted talents available for local shoots and bookings in neighbouring {nearbyCities}.",
-    keywords: "creative {categoryName}s {areaName}, {areaName} models, casting, {nearbyCities} creative talent"
-  },
-  {
-    h1: "Connect with {categoryName}s in {areaName}, {cityName} on NewTalent.in",
-    title: "{categoryName} Directory in {areaName}, {cityName} | NewTalent.in",
-    description: "Ultimate portal for hiring verified {categoryName}s in {areaName}, {cityName} on NewTalent.in. Search casting call opportunities and connect with artists near {areaName} and adjacent {nearbyCities}.",
-    keywords: "{areaName} talent, hire {categoryName}s {areaName}, NewTalent directory, local casting {nearbyCities}"
-  },
-  {
-    h1: "Book Local {categoryName}s in {areaName}, {cityName} - NewTalent.in",
-    title: "Book {categoryName}s in {areaName}, {cityName} | Vetted Portfolios",
-    description: "Browse portfolios of local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Send direct booking invites to actors, models, and singers near {areaName} and adjacent {nearbyCities}.",
-    keywords: "{categoryName} booking {areaName}, casting directory {areaName}, NewTalent profile, local booking {nearbyCities}"
-  }
-];
-// Helper to generate at least 20 rich keywords for city or category pages
-const generateKeywordsList = (cityName: string, categoryName?: string, nearbyAreas?: string): string => {
-  const parts = [];
-  
-  if (categoryName) {
-    parts.push(
-      `${cityName} ${categoryName}s`,
-      `hire ${categoryName}s in ${cityName}`,
-      `verified ${categoryName}s in ${cityName}`,
-      `book ${categoryName}s in ${cityName}`,
-      `best ${categoryName}s in ${cityName}`,
-      `casting calls for ${categoryName}s in ${cityName}`,
-      `${categoryName} auditions ${cityName}`,
-      `${cityName} creative talents`,
-      `hire local ${categoryName}s`,
-      `NewTalent ${cityName}`,
-      `casting directors looking for ${categoryName}s in ${cityName}`,
-      `professional ${categoryName} bookings ${cityName}`,
-      `entertainment jobs in ${cityName}`,
-      `${cityName} talent directory`,
-      `portfolio booking for ${categoryName}s in ${cityName}`,
-      `production crew ${cityName}`,
-      `acting and modeling in ${cityName}`,
-      `hire artists in ${cityName}`,
-      `NewTalent.in castings ${cityName}`,
-      `casting ready artists ${cityName}`
-    );
-    if (nearbyAreas) {
-      parts.push(
-        `${categoryName}s near ${nearbyAreas}`,
-        `book local talents in ${nearbyAreas}`,
-        `casting options in ${nearbyAreas}`,
-        `creative professionals near ${nearbyAreas}`
-      );
-    }
-  } else {
-    parts.push(
-      `${cityName} artists`,
-      `hire talent in ${cityName}`,
-      `actors in ${cityName}`,
-      `models in ${cityName}`,
-      `singers in ${cityName}`,
-      `verified talents in ${cityName}`,
-      `NewTalent ${cityName}`,
-      `casting directors in ${cityName}`,
-      `entertainment hub ${cityName}`,
-      `creative professionals in ${cityName}`,
-      `auditions in ${cityName}`,
-      `production crew hire ${cityName}`,
-      `artist directory ${cityName}`,
-      `photographers in ${cityName}`,
-      `event planners ${cityName}`,
-      `media jobs in ${cityName}`,
-      `hire local artists in ${cityName}`,
-      `talent casting platform ${cityName}`,
-      `NewTalent.in network ${cityName}`,
-      `casting calls in ${cityName}`
-    );
-    if (nearbyAreas) {
-      parts.push(
-        `artists near ${nearbyAreas}`,
-        `creative talent in ${nearbyAreas}`,
-        `casting calls around ${nearbyAreas}`,
-        `book local talent in ${nearbyAreas}`
-      );
-    }
-  }
-  
-  return parts.join(", ");
-};
-
-// Helper to generate at least 20 rich keywords for area category page
-const generateAreaKeywordsList = (cityName: string, areaName: string, categoryName: string, nearbyAreas: string): string => {
-  return [
-    `${areaName} ${categoryName}s`,
-    `hire ${categoryName}s in ${areaName}`,
-    `verified ${categoryName}s in ${areaName}`,
-    `book ${categoryName}s in ${areaName}`,
-    `best ${categoryName}s in ${areaName}`,
-    `casting calls for ${categoryName}s in ${areaName}`,
-    `${categoryName} auditions ${areaName}`,
-    `${areaName} creative talents`,
-    `hire local ${categoryName}s in ${areaName}`,
-    `NewTalent ${areaName}`,
-    `casting directors looking for ${categoryName}s in ${areaName}`,
-    `professional ${categoryName} bookings in ${areaName}`,
-    `entertainment jobs in ${areaName} ${cityName}`,
-    `${areaName} talent directory`,
-    `portfolio booking for ${categoryName}s in ${areaName}`,
-    `production crew in ${areaName}`,
-    `acting and modeling in ${areaName}`,
-    `hire artists in ${areaName} ${cityName}`,
-    `${categoryName}s near ${nearbyAreas}`,
-    `book local talents in ${nearbyAreas}`,
-    `casting options in ${nearbyAreas}`,
-    `creative professionals near ${nearbyAreas}`,
-    `NewTalent.in casting call ${areaName}`,
-    `verified models and actors in ${areaName}`
-  ].join(", ");
-};
 
 const COMMON_COUNTRIES = [
   { code: 'IN', name: 'India (Default)' },
@@ -974,7 +795,7 @@ export default function OsmGeneratorDialog({
               .replace(/{categoryName}/g, categoryName)
               .replace(/{nearbyCities}/g, nearbyStr);
 
-            const seo_keywords = generateAreaKeywordsList(selectedParentCity.name, loc.name, categoryName, nearbyStr);
+            const seo_keywords = generateKeywordsList(selectedParentCity.name, loc.name, categoryName, nearbyStr);
 
             const h1_title = template.h1
               .replace(/{cityName}/g, selectedParentCity.name)

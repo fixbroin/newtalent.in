@@ -9,9 +9,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Wand2, Save, X, Check, ChevronsUpDown, Search, AlertCircle, ExternalLink, Copy } from "lucide-react";
+import { Loader2, Wand2, Save, X, Check, ChevronsUpDown, Search, AlertCircle, ExternalLink, Copy, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateAreaCategorySeo } from "@/ai/flows/generateAreaCategorySeoFlow";
+import { generateAreaCategorySeoOffline } from "@/lib/seoTemplatesHelper";
 import type { FirestoreCity, FirestoreArea, FirestoreCategory, AreaCategorySeoSetting } from "@/types/firestore";
 
 interface SearchableSelectProps {
@@ -180,6 +181,25 @@ export default function AreaCategorySeoForm({ initialData, cities, areas, catego
     );
   }, [watchedAreaId, watchedCategoryId, existingOverrides, initialData]);
 
+  const handleGenerateOffline = () => {
+    const city = cities.find(c => c.id === watchedCityId);
+    const area = areas.find(a => a.id === watchedAreaId);
+    const category = categories.find(c => c.id === watchedCategoryId);
+    
+    if (!city || !area || !category) {
+      toast({ title: "Selection Required", description: "Please select a city, area, and category first.", variant: "destructive" });
+      return;
+    }
+
+    const catList = categories.map(c => c.name);
+    const result = generateAreaCategorySeoOffline(city.name, area.name, category.name, "neighbouring areas", catList);
+    form.setValue("h1_title", result.h1_title, { shouldValidate: true });
+    form.setValue("meta_title", result.seo_title, { shouldValidate: true });
+    form.setValue("meta_description", result.seo_description, { shouldValidate: true });
+    form.setValue("meta_keywords", result.seo_keywords, { shouldValidate: true });
+    toast({ title: "Default SEO Applied!", description: `Populated templates for ${category.name} in ${area.name}, ${city.name}` });
+  };
+
   const handleGenerateAI = async () => {
     const city = cities.find(c => c.id === watchedCityId);
     const area = areas.find(a => a.id === watchedAreaId);
@@ -210,10 +230,16 @@ export default function AreaCategorySeoForm({ initialData, cities, areas, catego
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex items-center justify-between mb-4 pb-2 border-b">
           <h3 className="font-bold text-lg">{initialData ? 'Edit Area-Category Settings' : 'Add New Area-Category Override'}</h3>
-          <Button type="button" variant="outline" size="sm" onClick={handleGenerateAI} disabled={isGenerating || isSubmitting || !watchedCityId || !watchedAreaId || !watchedCategoryId || isAlreadyCreated}>
-            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-            Generate with AI
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={handleGenerateOffline} disabled={isSubmitting || !watchedCityId || !watchedAreaId || !watchedCategoryId || isAlreadyCreated} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+              <Sparkles className="mr-2 h-4 w-4 text-primary" />
+              Default SEO (Offline)
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleGenerateAI} disabled={isGenerating || isSubmitting || !watchedCityId || !watchedAreaId || !watchedCategoryId || isAlreadyCreated}>
+              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+              Generate with AI
+            </Button>
+          </div>
         </div>
 
         {isAlreadyCreated && (

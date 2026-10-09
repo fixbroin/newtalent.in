@@ -9,10 +9,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Wand2, Save, X, ExternalLink, Copy } from "lucide-react";
+import { Loader2, Wand2, Save, X, ExternalLink, Copy, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateCitySeo } from "@/ai/flows/generateCitySeoFlow";
-import type { FirestoreCity } from "@/types/firestore";
+import { generateCitySeoOffline } from "@/lib/seoTemplatesHelper";
+import type { FirestoreCity, FirestoreCategory } from "@/types/firestore";
 
 const citySeoFormSchema = z.object({
   id: z.string(),
@@ -28,12 +29,13 @@ type CitySeoFormData = z.infer<typeof citySeoFormSchema>;
 
 interface CitySeoFormProps {
   initialData?: FirestoreCity | null;
+  categories?: FirestoreCategory[];
   onSubmit: (data: CitySeoFormData) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
 }
 
-export default function CitySeoForm({ initialData, onSubmit, onCancel, isSubmitting }: CitySeoFormProps) {
+export default function CitySeoForm({ initialData, categories = [], onSubmit, onCancel, isSubmitting }: CitySeoFormProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -55,6 +57,20 @@ export default function CitySeoForm({ initialData, onSubmit, onCancel, isSubmitt
   const activeSlug = useMemo(() => {
     return initialData?.slug || (watchedName ? watchedName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : "");
   }, [watchedName, initialData]);
+
+  const handleGenerateOffline = () => {
+    if (!watchedName) {
+      toast({ title: "Name Required", description: "Please enter the city name first.", variant: "destructive" });
+      return;
+    }
+    const catList = categories.map(c => c.name);
+    const result = generateCitySeoOffline(watchedName, "neighbouring regions", catList);
+    form.setValue("h1_title", result.h1_title, { shouldValidate: true });
+    form.setValue("seo_title", result.seo_title, { shouldValidate: true });
+    form.setValue("seo_description", result.seo_description, { shouldValidate: true });
+    form.setValue("seo_keywords", result.seo_keywords, { shouldValidate: true });
+    toast({ title: "Default SEO Applied!", description: `Populated SEO templates for ${watchedName}` });
+  };
 
   const handleGenerateAI = async () => {
     if (!watchedName) {
@@ -81,10 +97,16 @@ export default function CitySeoForm({ initialData, onSubmit, onCancel, isSubmitt
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-lg">{initialData ? `City: ${initialData.name}` : 'Add New City'}</h3>
-            <Button type="button" variant="outline" size="sm" onClick={handleGenerateAI} disabled={isGenerating || isSubmitting || !watchedName}>
-                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                Generate with AI
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={handleGenerateOffline} disabled={isSubmitting || !watchedName} className="border-primary/40 text-primary hover:bg-primary/10 font-bold">
+                  <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                  Default SEO (Offline)
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleGenerateAI} disabled={isGenerating || isSubmitting || !watchedName}>
+                  {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  Generate with AI
+              </Button>
+            </div>
         </div>
 
         <FormField control={form.control} name="name" render={({ field }) => (

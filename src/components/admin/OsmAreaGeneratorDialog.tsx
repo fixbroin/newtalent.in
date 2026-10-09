@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { triggerRefresh } from '@/lib/revalidateUtils';
 import { Progress } from "@/components/ui/progress";
 import type { FirestoreCategory, FirestoreCity, FirestoreArea, AreaCategorySeoSetting } from '@/types/firestore';
+import { AREA_CATEGORY_TEMPLATES, generateKeywordsList } from '@/lib/seoTemplatesHelper';
 
 interface OsmAreaGeneratorDialogProps {
   isOpen: boolean;
@@ -31,60 +32,6 @@ interface OsmAreaGeneratorDialogProps {
   existingAreaCategorySettings?: AreaCategorySeoSetting[];
   onSuccess: () => void;
 }
-
-// 4 Distinct SEO templates for Area-Category combinations
-const AREA_CATEGORY_TEMPLATES = [
-  {
-    h1: "Hire Verified {categoryName}s in {areaName}, {cityName} - NewTalent.in",
-    title: "Best {categoryName}s in {areaName}, {cityName} | Vetted Talent | NewTalent.in",
-    description: "Find verified local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Connect with casting-ready talents for local projects, commercial shoots, and events near {areaName} and adjacent regions like {nearbyCities}.",
-  },
-  {
-    h1: "Top Vetted {categoryName}s in {areaName}, {cityName} | NewTalent.in",
-    title: "Verified {categoryName}s in {areaName}, {cityName} | NewTalent.in Casting",
-    description: "Discover professional local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Vetted creative talents are available for media productions, events, and bookings in neighbouring areas like {nearbyCities}.",
-  },
-  {
-    h1: "Connect with {categoryName}s in {areaName}, {cityName} on NewTalent.in",
-    title: "{categoryName} Casting Directory in {areaName}, {cityName} | NewTalent.in",
-    description: "Ultimate platform for hiring verified local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Explore booking portfolios and connect with production-ready artists near {areaName} and adjacent {nearbyCities}.",
-  },
-  {
-    h1: "Book Local {categoryName}s in {areaName}, {cityName} - NewTalent.in",
-    title: "Book {categoryName}s in {areaName}, {cityName} | Vetted Portfolios | NewTalent.in",
-    description: "Browse verified profiles of local {categoryName}s in {areaName}, {cityName} on NewTalent.in. Direct messaging and casting invites for events, film, and media shoots near {areaName} and surrounding {nearbyCities}.",
-  }
-];
-
-// Helper to generate at least 20 rich keywords for area category page
-const generateAreaKeywordsList = (cityName: string, areaName: string, categoryName: string, nearbyAreas: string): string => {
-  return [
-    `${areaName} ${categoryName}s`,
-    `hire ${categoryName}s in ${areaName}`,
-    `verified ${categoryName}s in ${areaName}`,
-    `book ${categoryName}s in ${areaName}`,
-    `best ${categoryName}s in ${areaName}`,
-    `casting calls for ${categoryName}s in ${areaName}`,
-    `${categoryName} auditions ${areaName}`,
-    `${areaName} creative talents`,
-    `hire local ${categoryName}s in ${areaName}`,
-    `NewTalent ${areaName}`,
-    `casting directors looking for ${categoryName}s in ${areaName}`,
-    `professional ${categoryName} bookings in ${areaName}`,
-    `entertainment jobs in ${areaName} ${cityName}`,
-    `${areaName} talent directory`,
-    `portfolio booking for ${categoryName}s in ${areaName}`,
-    `production crew in ${areaName}`,
-    `acting and modeling in ${areaName}`,
-    `hire artists in ${areaName} ${cityName}`,
-    `${categoryName}s near ${nearbyAreas}`,
-    `book local talents in ${nearbyAreas}`,
-    `casting options in ${nearbyAreas}`,
-    `creative professionals near ${nearbyAreas}`,
-    `NewTalent.in casting call ${areaName}`,
-    `verified models and actors in ${areaName}`
-  ].join(", ");
-};
 
 export default function OsmAreaGeneratorDialog({
   isOpen,
@@ -615,7 +562,7 @@ export default function OsmAreaGeneratorDialog({
               .replace(/{areaName}/g, loc.name)
               .replace(/{categoryName}/g, categoryName);
 
-            const seo_keywords = generateAreaKeywordsList(selectedParentCity.name, loc.name, categoryName, nearbyStr);
+            const seo_keywords = generateKeywordsList(selectedParentCity.name, categoryName, loc.name, nearbyStr);
 
             const payload = {
               cityId: selectedParentCity.id,
