@@ -55,46 +55,116 @@ export async function POST(req: NextRequest) {
         const planId = notes.subscription_plan_id;
         const planType = notes.plan_type || 'artist';
 
+        // Check idempotency for paymentId
+        if (paymentId) {
+          const existingTxn = await adminDb.collection('userSubscriptions')
+            .where('razorpayPaymentId', '==', paymentId)
+            .limit(1)
+            .get();
+
+          if (!existingTxn.empty) {
+            console.log(`Webhook: Payment ${paymentId} already processed.`);
+            return NextResponse.json({ success: true, received: true, message: 'Already processed' });
+          }
+        }
+
         const planDoc = await adminDb.collection('adminSubscriptionPlans').doc(planId).get();
         const durationDays = planDoc.exists ? (planDoc.data()?.durationDays || 30) : 30;
         const revealLimit = planDoc.exists ? (planDoc.data()?.revealLimit || 10) : 10;
         const planName = planDoc.exists ? (planDoc.data()?.name || 'Subscription') : 'Subscription';
+        const planPrice = planDoc.exists ? (planDoc.data()?.price || 0) : 0;
 
+        const userRef = adminDb.collection('users').doc(userId);
+        const userSnap = await userRef.get();
+        const userData = userSnap.exists ? userSnap.data() : {};
         const now = new Date();
-        const expiresAt = new Date();
-        expiresAt.setDate(now.getDate() + durationDays);
 
         let updateData: any = { updatedAt: Timestamp.fromDate(now) };
+        let calculatedExpiresAt: Date;
+
         if (planType === 'hire') {
+          const addedReveals = Number(revealLimit);
+          let existingLimit = Number(userData?.contactRevealLimit || 0);
+          let existingUsed = Number(userData?.contactRevealsUsed || 0);
+          let existingExpiresAt: Date | null = null;
+
+          if (userData?.hireSubscriptionExpiresAt) {
+            existingExpiresAt = typeof userData.hireSubscriptionExpiresAt.toDate === 'function'
+              ? userData.hireSubscriptionExpiresAt.toDate()
+              : new Date(userData.hireSubscriptionExpiresAt);
+          }
+
+          const isCurrentlyActive = !!(userData?.hireSubscriptionActive && existingExpiresAt && existingExpiresAt.getTime() > now.getTime());
+          let newExpiresAt = new Date();
+          let newRevealLimit = addedReveals;
+          let newRevealsUsed = 0;
+
+          if (isCurrentlyActive && existingExpiresAt) {
+            newExpiresAt = new Date(existingExpiresAt.getTime() + (durationDays * 24 * 60 * 60 * 1000));
+            newRevealLimit = existingLimit + addedReveals;
+            newRevealsUsed = existingUsed;
+          } else {
+            newExpiresAt.setDate(now.getDate() + durationDays);
+            newRevealLimit = addedReveals;
+            newRevealsUsed = 0;
+          }
+
+          calculatedExpiresAt = newExpiresAt;
+
           updateData = {
             ...updateData,
             hireSubscriptionActive: true,
             hireSubscriptionId: planId,
             hireSubscriptionName: planName,
-            hireSubscriptionExpiresAt: Timestamp.fromDate(expiresAt),
-            contactRevealLimit: revealLimit,
-            contactRevealsUsed: 0
+            hireSubscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
+            contactRevealLimit: newRevealLimit,
+            contactRevealsUsed: newRevealsUsed,
+            lastHireSubscriptionAt: Timestamp.fromDate(now)
           };
         } else {
+          let existingExpiresAt: Date | null = null;
+          if (userData?.subscriptionExpiresAt) {
+            existingExpiresAt = typeof userData.subscriptionExpiresAt.toDate === 'function'
+              ? userData.subscriptionExpiresAt.toDate()
+              : new Date(userData.subscriptionExpiresAt);
+          }
+
+          const isCurrentlyActive = !!(userData?.subscriptionActive && existingExpiresAt && existingExpiresAt.getTime() > now.getTime());
+          let newExpiresAt = new Date();
+
+          if (isCurrentlyActive && existingExpiresAt) {
+            newExpiresAt = new Date(existingExpiresAt.getTime() + (durationDays * 24 * 60 * 60 * 1000));
+          } else {
+            newExpiresAt.setDate(now.getDate() + durationDays);
+          }
+
+          calculatedExpiresAt = newExpiresAt;
+
           updateData = {
             ...updateData,
             subscriptionActive: true,
             currentSubscriptionId: planId,
             subscriptionPlanName: planName,
-            subscriptionExpiresAt: Timestamp.fromDate(expiresAt)
+            subscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
+            lastSubscriptionAt: Timestamp.fromDate(now)
           };
         }
 
-        await adminDb.collection('users').doc(userId).set(updateData, { merge: true });
+        await userRef.set(updateData, { merge: true });
 
         await adminDb.collection('userSubscriptions').add({
           userId,
+          userEmail: userData?.email || '',
+          userName: userData?.displayName || 'User',
           planId,
           planName,
           planType,
+          amount: planPrice,
+          startDate: Timestamp.fromDate(now),
+          endDate: Timestamp.fromDate(calculatedExpiresAt),
           status: 'active',
-          razorpayOrderId: orderId,
-          razorpayPaymentId: paymentId,
+          razorpayOrderId: orderId || '',
+          razorpayPaymentId: paymentId || '',
           createdAt: Timestamp.fromDate(now)
         });
       }

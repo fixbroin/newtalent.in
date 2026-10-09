@@ -252,23 +252,28 @@ export default function SubscriptionPageClient({ planType }: SubscriptionPageCli
                   </CardContent>
 
                   <CardFooter className="p-6 md:p-8 pt-0 mt-auto">
-                    {isCurrentActive ? (
-                      <Button className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 font-black cursor-default">
-                        <ShieldCheck className="h-5 w-5 mr-2" /> Active Plan
-                      </Button>
-                    ) : (
-                      <Button 
-                        className="w-full h-12 rounded-2xl font-black group-hover:shadow-lg transition-all"
-                        onClick={() => handlePurchase(plan)}
-                        disabled={!!isPurchasing}
-                      >
-                        {isPurchasing === plan.id ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <>Get Started <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></>
-                        )}
-                      </Button>
-                    )}
+                    <Button 
+                      className={cn(
+                        "w-full h-12 rounded-2xl font-black group-hover:shadow-lg transition-all",
+                        isCurrentActive ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""
+                      )}
+                      onClick={() => handlePurchase(plan)}
+                      disabled={!!isPurchasing}
+                    >
+                      {isPurchasing === plan.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : isCurrentActive ? (
+                        <>
+                          <ShieldCheck className="h-5 w-5 mr-2" /> 
+                          {isContactPage ? `Buy Again (+${plan.revealLimit || 0} Reveals)` : `Renew / Extend Plan`}
+                        </>
+                      ) : (
+                        <>
+                          {(isContactPage ? isHireSubscribed : isArtistSubscribed) ? 'Upgrade Plan' : 'Get Started'} 
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </>
+                      )}
+                    </Button>
                   </CardFooter>
                 </Card>
               );

@@ -49,35 +49,79 @@ export async function POST(req: NextRequest) {
       }
 
       const now = new Date();
-      const expiresAt = new Date();
-      expiresAt.setDate(now.getDate() + Number(days));
-
       const userRef = adminDb.collection('users').doc(targetUserId);
       const userDoc = await userRef.get();
       if (!userDoc.exists) {
         return NextResponse.json({ success: false, error: 'User document not found.' }, { status: 404 });
       }
+      const userData = userDoc.data() || {};
 
       let updatePayload: any = { updatedAt: Timestamp.fromDate(now) };
+      let calculatedExpiresAt: Date;
 
       if (type === 'hire') {
+        const addedLimit = Number(limitCount);
+        let existingLimit = Number(userData?.contactRevealLimit || 0);
+        let existingUsed = Number(userData?.contactRevealsUsed || 0);
+        let existingExpiresAt: Date | null = null;
+        if (userData?.hireSubscriptionExpiresAt) {
+          existingExpiresAt = typeof userData.hireSubscriptionExpiresAt.toDate === 'function'
+            ? userData.hireSubscriptionExpiresAt.toDate()
+            : new Date(userData.hireSubscriptionExpiresAt);
+        }
+
+        const isCurrentlyActive = !!(userData?.hireSubscriptionActive && existingExpiresAt && existingExpiresAt.getTime() > now.getTime());
+        let newExpiresAt = new Date();
+        let newRevealLimit = addedLimit;
+        let newRevealsUsed = 0;
+
+        if (isCurrentlyActive && existingExpiresAt) {
+          newExpiresAt = new Date(existingExpiresAt.getTime() + (Number(days) * 24 * 60 * 60 * 1000));
+          newRevealLimit = existingLimit + addedLimit;
+          newRevealsUsed = existingUsed;
+        } else {
+          newExpiresAt.setDate(now.getDate() + Number(days));
+          newRevealLimit = addedLimit;
+          newRevealsUsed = 0;
+        }
+
+        calculatedExpiresAt = newExpiresAt;
+
         updatePayload = {
           ...updatePayload,
           hireSubscriptionActive: true,
           hireSubscriptionId: planId || 'manual_admin',
           hireSubscriptionName: planName,
-          hireSubscriptionExpiresAt: Timestamp.fromDate(expiresAt),
-          contactRevealLimit: Number(limitCount),
-          contactRevealsUsed: 0,
+          hireSubscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
+          contactRevealLimit: newRevealLimit,
+          contactRevealsUsed: newRevealsUsed,
           lastHireSubscriptionAt: Timestamp.fromDate(now)
         };
       } else {
+        let existingExpiresAt: Date | null = null;
+        if (userData?.subscriptionExpiresAt) {
+          existingExpiresAt = typeof userData.subscriptionExpiresAt.toDate === 'function'
+            ? userData.subscriptionExpiresAt.toDate()
+            : new Date(userData.subscriptionExpiresAt);
+        }
+
+        const isCurrentlyActive = !!(userData?.subscriptionActive && existingExpiresAt && existingExpiresAt.getTime() > now.getTime());
+        let newExpiresAt = new Date();
+
+        if (isCurrentlyActive && existingExpiresAt) {
+          newExpiresAt = new Date(existingExpiresAt.getTime() + (Number(days) * 24 * 60 * 60 * 1000));
+        } else {
+          newExpiresAt.setDate(now.getDate() + Number(days));
+        }
+
+        calculatedExpiresAt = newExpiresAt;
+
         updatePayload = {
           ...updatePayload,
           subscriptionActive: true,
           currentSubscriptionId: planId || 'manual_admin',
           subscriptionPlanName: planName,
-          subscriptionExpiresAt: Timestamp.fromDate(expiresAt),
+          subscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
           lastSubscriptionAt: Timestamp.fromDate(now)
         };
       }
@@ -94,7 +138,7 @@ export async function POST(req: NextRequest) {
         planType: type,
         amount: price,
         startDate: Timestamp.fromDate(now),
-        endDate: Timestamp.fromDate(expiresAt),
+        endDate: Timestamp.fromDate(calculatedExpiresAt),
         status: 'active',
         assignedByAdmin: true,
         createdAt: Timestamp.fromDate(now)
@@ -102,7 +146,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Assigned ${planName} (${type}) to user successfully. Expires on ${expiresAt.toLocaleDateString('en-IN')}.`
+        message: `Assigned ${planName} (${type}) to user successfully. Expires on ${calculatedExpiresAt.toLocaleDateString('en-IN')}.`
       });
     }
 
@@ -145,6 +189,8 @@ export async function POST(req: NextRequest) {
           updatePayload.hireSubscriptionId = null;
           updatePayload.hireSubscriptionName = null;
           updatePayload.hireSubscriptionExpiresAt = null;
+          updatePayload.contactRevealLimit = 0;
+          updatePayload.contactRevealsUsed = 0;
         } else {
           updatePayload.subscriptionActive = false;
           updatePayload.currentSubscriptionId = null;
@@ -163,20 +209,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Target user email is required.' }, { status: 400 });
       }
 
-      // Fetch global settings for SMTP if available
-      const settingsDoc = await adminDb.collection('adminSettings').doc('global').get();
-      const settings = settingsDoc.exists ? settingsDoc.data() : {};
+      // Fetch appConfig for SMTP & globalSettings for logo/site name
+      const [appConfigSnap, globalSettingsSnap] = await Promise.all([
+        adminDb.collection('webSettings').doc('applicationConfig').get(),
+        adminDb.collection('webSettings').doc('globalSettings').get()
+      ]);
+
+      const appConfig = appConfigSnap.exists ? appConfigSnap.data() : {};
+      const globalSettings = globalSettingsSnap.exists ? globalSettingsSnap.data() : {};
 
       const result = await sendSubscriptionExpiryEmail({
         userName: body.userName || 'Valued User',
         userEmail: targetEmail,
-        smtpHost: settings?.smtpHost || process.env.SMTP_HOST,
-        smtpPort: settings?.smtpPort || process.env.SMTP_PORT,
-        smtpUser: settings?.smtpUser || process.env.SMTP_USER,
-        smtpPass: settings?.smtpPass || process.env.SMTP_PASS,
-        senderEmail: settings?.senderEmail || process.env.SENDER_EMAIL,
-        siteName: settings?.websiteName || 'Newtalent',
-        logoUrl: settings?.logoUrl || undefined
+        smtpHost: appConfig?.smtpHost || process.env.SMTP_HOST,
+        smtpPort: appConfig?.smtpPort ? String(appConfig.smtpPort) : process.env.SMTP_PORT,
+        smtpUser: appConfig?.smtpUser || process.env.SMTP_USER,
+        smtpPass: appConfig?.smtpPass || process.env.SMTP_PASS,
+        senderEmail: appConfig?.senderEmail || process.env.SENDER_EMAIL,
+        siteName: globalSettings?.websiteName || appConfig?.websiteName || 'Newtalent',
+        logoUrl: globalSettings?.logoUrl || appConfig?.logoUrl || undefined
       });
 
       return NextResponse.json(result);

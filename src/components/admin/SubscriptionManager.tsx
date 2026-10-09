@@ -121,15 +121,18 @@ export default function SubscriptionManager() {
   const fetchSubscribers = async () => {
     setIsLoadingSubscribers(true);
     try {
-      const records: UserSubscriptionRecord[] = [];
-
-      // 1. Fetch users with active or past subscriptions
+      const recordsMap = new Map<string, UserSubscriptionRecord>();
       const usersRef = collection(db, 'users');
-      const snapshot = await getDocs(query(usersRef, limit(200)));
-
       const now = new Date();
 
-      snapshot.docs.forEach(docSnap => {
+      // Parallel targeted queries for subscribers across the entire database
+      const [artistSnap, hireSnap, txnSnap] = await Promise.all([
+        getDocs(query(usersRef, where('subscriptionActive', '==', true))),
+        getDocs(query(usersRef, where('hireSubscriptionActive', '==', true))),
+        getDocs(query(collection(db, 'userSubscriptions'), orderBy('createdAt', 'desc'), limit(500)))
+      ]);
+
+      const processUserDoc = (docSnap: any) => {
         const data = docSnap.data() as FirestoreUser;
         const userName = data.displayName || 'Unnamed User';
         const userEmail = data.email || '';
@@ -150,7 +153,7 @@ export default function SubscriptionManager() {
             status = expDate < now ? 'expired' : 'deactivated';
           }
 
-          records.push({
+          recordsMap.set(`${docSnap.id}_artist`, {
             id: `${docSnap.id}_artist`,
             userId: docSnap.id,
             userName,
@@ -182,7 +185,7 @@ export default function SubscriptionManager() {
             status = expDate < now ? 'expired' : 'deactivated';
           }
 
-          records.push({
+          recordsMap.set(`${docSnap.id}_hire`, {
             id: `${docSnap.id}_hire`,
             userId: docSnap.id,
             userName,
@@ -200,37 +203,34 @@ export default function SubscriptionManager() {
             rawDoc: data
           });
         }
+      };
+
+      artistSnap.docs.forEach(processUserDoc);
+      hireSnap.docs.forEach(processUserDoc);
+
+      // Process transaction log entries
+      txnSnap.docs.forEach(docSnap => {
+        const tData = docSnap.data();
+        const key = `${tData.userId}_${tData.planType || 'artist'}`;
+        if (!recordsMap.has(key)) {
+          recordsMap.set(docSnap.id, {
+            id: docSnap.id,
+            userId: tData.userId || '',
+            userName: tData.userName || 'User',
+            userEmail: tData.userEmail || '',
+            userPhone: '',
+            type: tData.planType || 'artist',
+            planName: tData.planName || 'Subscription',
+            status: tData.status === 'active' ? 'active' : tData.status === 'failed' ? 'failed' : 'expired',
+            amount: tData.amount || 0,
+            startDate: tData.startDate ? (typeof tData.startDate.toDate === 'function' ? tData.startDate.toDate() : new Date(tData.startDate)) : null,
+            endDate: tData.endDate ? (typeof tData.endDate.toDate === 'function' ? tData.endDate.toDate() : new Date(tData.endDate)) : null,
+            rawDoc: tData
+          });
+        }
       });
 
-      // 2. Also fetch userSubscriptions collection for transaction logs / tried / failed
-      try {
-        const txnRef = collection(db, 'userSubscriptions');
-        const txnSnap = await getDocs(query(txnRef, orderBy('createdAt', 'desc'), limit(100)));
-        txnSnap.docs.forEach(docSnap => {
-          const tData = docSnap.data();
-          const existsInRecords = records.some(r => r.userId === tData.userId && r.type === (tData.planType || 'artist'));
-          if (!existsInRecords) {
-            records.push({
-              id: docSnap.id,
-              userId: tData.userId || '',
-              userName: tData.userName || 'User',
-              userEmail: tData.userEmail || '',
-              userPhone: '',
-              type: tData.planType || 'artist',
-              planName: tData.planName || 'Subscription',
-              status: tData.status === 'active' ? 'active' : tData.status === 'failed' ? 'failed' : 'expired',
-              amount: tData.amount || 0,
-              startDate: tData.startDate ? (typeof tData.startDate.toDate === 'function' ? tData.startDate.toDate() : new Date(tData.startDate)) : null,
-              endDate: tData.endDate ? (typeof tData.endDate.toDate === 'function' ? tData.endDate.toDate() : new Date(tData.endDate)) : null,
-              rawDoc: tData
-            });
-          }
-        });
-      } catch (err) {
-        console.warn("Could not query userSubscriptions log:", err);
-      }
-
-      setSubscribers(records);
+      setSubscribers(Array.from(recordsMap.values()));
     } catch (error) {
       console.error("Error fetching subscribers:", error);
       toast({ title: "Error", description: "Failed to load subscribers list.", variant: "destructive" });
@@ -428,29 +428,63 @@ export default function SubscriptionManager() {
     if (!assignSearch.trim()) return;
     setIsSearchingUsers(true);
     try {
-      const term = assignSearch.trim().toLowerCase();
+      const term = assignSearch.trim();
+      const lowerTerm = term.toLowerCase();
       const searchDigits = term.replace(/\D/g, '');
       const last10Search = searchDigits.length >= 10 ? searchDigits.slice(-10) : searchDigits;
 
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, limit(200));
-      const snap = await getDocs(q);
-      const found = snap.docs
-        .map(d => ({ id: d.id, ...d.data() } as FirestoreUser))
-        .filter(u => {
-          const matchName = u.displayName && u.displayName.toLowerCase().includes(term);
-          const matchEmail = u.email && u.email.toLowerCase().includes(term);
+      const foundMap = new Map<string, FirestoreUser>();
+
+      const queries: Promise<any>[] = [];
+
+      // 1. Email queries (exact & prefix range)
+      if (lowerTerm.includes('@') || lowerTerm.includes('.')) {
+        queries.push(getDocs(query(usersRef, where('email', '==', lowerTerm))));
+        queries.push(getDocs(query(usersRef, where('email', '>=', lowerTerm), where('email', '<=', lowerTerm + '\uf8ff'))));
+      } else {
+        queries.push(getDocs(query(usersRef, where('email', '>=', lowerTerm), where('email', '<=', lowerTerm + '\uf8ff'))));
+      }
+
+      // 2. Phone queries (various format prefixes)
+      if (last10Search.length >= 5) {
+        queries.push(getDocs(query(usersRef, where('mobileNumber', '==', last10Search))));
+        queries.push(getDocs(query(usersRef, where('mobileNumber', '==', `+91${last10Search}`))));
+        queries.push(getDocs(query(usersRef, where('mobileNumber', '==', `91${last10Search}`))));
+        queries.push(getDocs(query(usersRef, where('mobileNumber', '==', `0${last10Search}`))));
+      }
+
+      // 3. Name queries (exact & range)
+      queries.push(getDocs(query(usersRef, where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'))));
+      if (term !== lowerTerm) {
+        queries.push(getDocs(query(usersRef, where('displayName', '>=', lowerTerm), where('displayName', '<=', lowerTerm + '\uf8ff'))));
+      }
+
+      // 4. Fallback broad query to capture any extra documents
+      queries.push(getDocs(query(usersRef, limit(500))));
+
+      const snapshots = await Promise.all(queries);
+
+      snapshots.forEach(snap => {
+        snap.docs.forEach((d: any) => {
+          const u = { id: d.id, ...d.data() } as FirestoreUser;
+          const matchName = u.displayName && u.displayName.toLowerCase().includes(lowerTerm);
+          const matchEmail = u.email && u.email.toLowerCase().includes(lowerTerm);
           let matchPhone = false;
           if (u.mobileNumber) {
             const userPhoneDigits = u.mobileNumber.replace(/\D/g, '');
             const last10User = userPhoneDigits.length >= 10 ? userPhoneDigits.slice(-10) : userPhoneDigits;
-            matchPhone = u.mobileNumber.toLowerCase().includes(term) ||
+            matchPhone = u.mobileNumber.toLowerCase().includes(lowerTerm) ||
               (searchDigits.length > 0 && userPhoneDigits.includes(searchDigits)) ||
-              (last10Search.length === 10 && last10User === last10Search);
+              (last10Search.length >= 5 && last10User.includes(last10Search));
           }
-          return matchName || matchEmail || matchPhone;
+          if (matchName || matchEmail || matchPhone) {
+            foundMap.set(u.id, u);
+          }
         });
-      setSearchedUsers(found);
+      });
+
+      setSearchedUsers(Array.from(foundMap.values()));
     } catch (err) {
       console.error("Error searching users:", err);
     } finally {
