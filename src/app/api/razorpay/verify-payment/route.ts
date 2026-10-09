@@ -1,6 +1,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,10 +11,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing payment details for verification.' }, { status: 400 });
     }
     
-    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+    let razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    try {
+      const configSnap = await adminDb.collection('webSettings').doc('applicationConfig').get();
+      if (configSnap.exists) {
+        const cData = configSnap.data();
+        if (cData?.razorpayKeySecret) razorpayKeySecret = cData.razorpayKeySecret;
+      }
+    } catch (err) {
+      console.warn("Could not fetch applicationConfig for Razorpay Key Secret:", err);
+    }
 
     if (!razorpayKeySecret) {
-      console.error("Razorpay Key Secret is not set in environment variables.");
+      console.error("Razorpay Key Secret is not configured in Admin Settings or Environment variables.");
       return NextResponse.json({ success: false, error: 'Payment gateway not configured on server for verification.' }, { status: 500 });
     }
 

@@ -25,7 +25,8 @@ export const defaultAppSettings: AppSettings = {
   enableOnlinePayment: true,
   razorpayKeyId: "",
   razorpayKeySecret: "",
-  enableCOD: true, // Represents "Pay After Service"
+  razorpayWebhookSecret: "",
+  enableCOD: false, // Pay After Service disabled
   // Time Slots
   timeSlotSettings: {
     slotIntervalMinutes: 60,

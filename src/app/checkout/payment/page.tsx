@@ -82,7 +82,7 @@ const calculateIncrementalTotalPriceForItem = (service: FirestoreService, quanti
 };
 
 export default function PaymentPage() {
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod, setPaymentMethod] = useState("online");
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -488,10 +488,20 @@ export default function PaymentPage() {
     if (!scriptLoaded) { toast({ title: "Error", description: "Could not load Razorpay checkout. Please try again.", variant: "destructive" }); setIsProcessingPayment(false); hideLoading(); return; }
 
     try {
+      const orderNotes: any = {};
+      if (isSubscriptionMode && subscriptionPlan && currentUser) {
+        orderNotes.user_id = currentUser.uid;
+        orderNotes.subscription_plan_id = subscriptionPlan.id;
+        orderNotes.plan_type = subscriptionPlan.planType || 'artist';
+      }
+
       const orderCreationResponse = await fetch('/api/razorpay/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: Math.round(totalAmountDue * 100) }),
+          body: JSON.stringify({ 
+            amount: Math.round(totalAmountDue * 100),
+            notes: orderNotes
+          }),
       });
 
       if (!orderCreationResponse.ok) {
@@ -579,11 +589,8 @@ export default function PaymentPage() {
   }
 
   const basePaymentOptions = [
-    { value: 'upi', label: 'UPI', icon: IndianRupee, online: true, available: onlinePaymentEnabled },
-    { value: 'card', label: 'Credit/Debit Card', icon: CreditCard, online: true, available: onlinePaymentEnabled },
-    { value: 'netbanking', label: 'Net Banking', icon: Landmark, online: true, available: onlinePaymentEnabled },
-    { value: 'wallet', label: 'Wallets', icon: Wallet, online: true, available: onlinePaymentEnabled },
-    { value: 'later', label: 'Pay After Service', icon: HandCoins, online: false, available: payAfterServiceEnabled && !isCancellationFeeMode },
+    { value: 'online', label: 'Secure Online Payment (UPI, Credit/Debit Cards, NetBanking, Wallets)', icon: CreditCard, online: true, available: onlinePaymentEnabled },
+    { value: 'later', label: 'Pay After Service (Cash on Delivery)', icon: HandCoins, online: false, available: payAfterServiceEnabled && !isCancellationFeeMode },
   ];
   const currentAvailablePaymentOptions = basePaymentOptions.filter(option => option.available);
 

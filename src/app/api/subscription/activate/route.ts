@@ -18,9 +18,19 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Verify Razorpay Signature
-    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+    let razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+    try {
+      const configSnap = await adminDb.collection('webSettings').doc('applicationConfig').get();
+      if (configSnap.exists) {
+        const cData = configSnap.data();
+        if (cData?.razorpayKeySecret) razorpayKeySecret = cData.razorpayKeySecret;
+      }
+    } catch (err) {
+      console.warn("Could not fetch applicationConfig for Razorpay Key Secret:", err);
+    }
+
     if (!razorpayKeySecret) {
-      console.error("RAZORPAY_KEY_SECRET is not set.");
+      console.error("RAZORPAY_KEY_SECRET is not configured in Admin Settings or Environment variables.");
       return NextResponse.json({ success: false, error: 'Payment configuration error.' }, { status: 500 });
     }
 
@@ -41,29 +51,48 @@ export async function POST(req: NextRequest) {
     }
     const planData = planDoc.data();
     const durationDays = planData?.durationDays || 30;
+    const planType = planData?.planType || 'artist';
 
-    // 3. Update User Subscription
+    // 3. Update User Subscription based on Plan Type
     const userRef = adminDb.collection('users').doc(userId);
     const now = new Date();
     const expiresAt = new Date();
     expiresAt.setDate(now.getDate() + durationDays);
 
-    const subscriptionData = {
-      subscriptionActive: true,
-      currentSubscriptionId: planId,
-      subscriptionPlanName: planData?.name,
-      subscriptionExpiresAt: Timestamp.fromDate(expiresAt),
-      lastSubscriptionAt: Timestamp.fromDate(now),
+    let subscriptionData: any = {
       updatedAt: Timestamp.fromDate(now)
     };
 
+    if (planType === 'hire') {
+      subscriptionData = {
+        ...subscriptionData,
+        hireSubscriptionActive: true,
+        hireSubscriptionId: planId,
+        hireSubscriptionName: planData?.name,
+        hireSubscriptionExpiresAt: Timestamp.fromDate(expiresAt),
+        contactRevealLimit: planData?.revealLimit || 10,
+        contactRevealsUsed: 0,
+        lastHireSubscriptionAt: Timestamp.fromDate(now)
+      };
+    } else {
+      subscriptionData = {
+        ...subscriptionData,
+        subscriptionActive: true,
+        currentSubscriptionId: planId,
+        subscriptionPlanName: planData?.name,
+        subscriptionExpiresAt: Timestamp.fromDate(expiresAt),
+        lastSubscriptionAt: Timestamp.fromDate(now)
+      };
+    }
+
     await userRef.set(subscriptionData, { merge: true });
 
-    // 4. Record the subscription transaction (Optional but good practice)
+    // 4. Record the subscription transaction
     await adminDb.collection('userSubscriptions').add({
       userId,
       planId,
       planName: planData?.name,
+      planType: planType,
       amount: planData?.price,
       startDate: Timestamp.fromDate(now),
       endDate: Timestamp.fromDate(expiresAt),

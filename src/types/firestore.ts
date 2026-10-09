@@ -287,10 +287,12 @@ export interface FirestoreUser {
   createdAt: Timestamp;
   lastLoginAt?: Timestamp;
 
-  // Subscription Fields
+  // Profile Subscription Fields
   subscriptionActive?: boolean;
   currentSubscriptionId?: string;
+  subscriptionPlanName?: string;
   subscriptionExpiresAt?: Timestamp;
+  lastSubscriptionAt?: Timestamp;
 
   // Fields for marketing automation logic
   hasBooking?: boolean;
@@ -336,6 +338,8 @@ export interface FirestoreUser {
 
   // Hirer / Recruiter Subscription Fields
   hireSubscriptionActive?: boolean;
+  hireSubscriptionId?: string;
+  hireSubscriptionName?: string;
   currentHireSubscriptionId?: string;
   hireSubscriptionExpiresAt?: Timestamp;
   contactRevealLimit?: number;     // Total X contacts allowed in active plan
@@ -594,6 +598,7 @@ export interface AppSettings {
   enableOnlinePayment: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  razorpayWebhookSecret?: string;
   enableCOD: boolean; // Represents "Pay After Service"
   // Time Slots
   timeSlotSettings: {
