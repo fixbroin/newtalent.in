@@ -42,9 +42,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
   const [revealInfo, setRevealInfo] = useState<{ remaining: number; limit: number; used: number } | null>(null);
 
   const isSelf = user?.uid === artist.userId;
-  const profileUrl = artist.username 
-    ? (categorySlug ? `/category/${categorySlug}/${artist.username}` : `/${artist.username}`) 
-    : null;
+  const catSlug = categorySlug || artist.workCategorySlug || 'all';
+  const uname = artist.username || artist.userId || artist.id;
+  const profileUrl = uname ? `/category/${catSlug}/${uname}` : null;
   const mainImage = artist.profilePhotoUrl || "/default-image.png";
   const phoneNumber = artist.mobileNumber || '';
 
@@ -192,44 +192,16 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
           <div className="mt-auto flex flex-col gap-2 w-full">
             <div className="flex gap-2 w-full">
               {profileUrl ? (
-                <Button asChild variant="outline" size="sm" className="flex-1 h-9 rounded-xl border-primary/20 hover:border-primary hover:bg-primary/5 hover:text-primary px-2 sm:px-3">
+                <Button asChild variant="outline" size="sm" className="w-full h-9 rounded-xl border-primary/20 hover:border-primary hover:bg-primary/5 hover:text-primary px-3">
                   <Link href={profileUrl} onClick={handleAboutClick}>
-                    <Info className="w-3.5 h-3.5 mr-1 shrink-0" /> 
-                    <span className="text-xs">About</span>
+                    <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" /> 
+                    <span className="text-xs font-bold">About & Portfolio</span>
                   </Link>
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" className="flex-1 h-9 rounded-xl border-primary/20 opacity-50 cursor-not-allowed px-2 sm:px-3" disabled>
-                  <Info className="w-3.5 h-3.5 mr-1 shrink-0" /> 
-                  <span className="text-xs">About</span>
-                </Button>
-              )}
-
-              {!isSelf && (
-                <Button 
-                  size="sm" 
-                  variant={isBlocked ? 'secondary' : connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'secondary' : 'default'}
-                  className={cn(
-                    "flex-1 h-9 rounded-xl px-2 sm:px-3 transition-all duration-300",
-                    connectionStatus === 'pending' && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-80",
-                    connectionStatus === 'rejected' && "bg-destructive/10 text-destructive border-none cursor-not-allowed opacity-80",
-                    isBlocked && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-85"
-                  )}
-                  onClick={() => connectionStatus !== 'pending' && connectionStatus !== 'rejected' && !isBlocked && onRequest(artist)}
-                  isLoading={isLoading}
-                  disabled={connectionStatus === 'pending' || connectionStatus === 'rejected' || isBlocked}
-                >
-                  {isBlocked ? (
-                    <><Ban className="w-3.5 h-3.5 mr-1 shrink-0" /> <span className="text-xs">Blocked</span></>
-                  ) : connectionStatus === 'accepted' ? (
-                    <><MessageSquare className="w-3.5 h-3.5 mr-1 shrink-0" /> <span className="text-xs">Chat</span></>
-                  ) : connectionStatus === 'pending' ? (
-                    <><Clock className="w-3.5 h-3.5 mr-1 shrink-0" /> <span className="text-xs">Requested</span></>
-                  ) : connectionStatus === 'rejected' ? (
-                    <><X className="w-3.5 h-3.5 mr-1 shrink-0" /> <span className="text-xs">Rejected</span></>
-                  ) : (
-                    <><MessageSquare className="w-3.5 h-3.5 mr-1 shrink-0" /> <span className="text-xs">Request</span></>
-                  )}
+                <Button variant="outline" size="sm" className="w-full h-9 rounded-xl border-primary/20 opacity-50 cursor-not-allowed px-3" disabled>
+                  <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" /> 
+                  <span className="text-xs font-bold">About & Portfolio</span>
                 </Button>
               )}
             </div>

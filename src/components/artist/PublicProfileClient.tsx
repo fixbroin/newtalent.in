@@ -433,49 +433,18 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
 
                 {isMounted && (
                   <>
-                    <Button 
-                      className={cn(
-                        "w-full h-12 rounded-2xl text-base font-black shadow-lg shadow-primary/20", 
-                        isSelf && "hidden",
-                        connectionStatus === 'rejected' && "bg-destructive/10 text-destructive border-none cursor-not-allowed opacity-80",
-                        isBlocked && "bg-muted text-muted-foreground border-none cursor-not-allowed opacity-85"
-                      )}
-                      variant={isBlocked ? 'secondary' : connectionStatus === 'accepted' ? 'default' : connectionStatus === 'pending' ? 'outline' : connectionStatus === 'rejected' ? 'secondary' : 'default'}
-                      onClick={handleRequest}
-                      isLoading={isRequesting}
-                      disabled={isSelf || connectionStatus === 'pending' || connectionStatus === 'rejected' || isBlocked}
-                    >
-                      {isBlocked ? (
-                        <><Ban className="w-5 h-5 mr-2" /> Blocked</>
-                      ) : connectionStatus === 'accepted' ? (
-                        <><MessageSquare className="w-5 h-5 mr-2" /> Chat Now</>
-                      ) : connectionStatus === 'pending' ? (
-                        <><Clock className="w-5 h-5 mr-2" /> Requested</>
-                      ) : connectionStatus === 'rejected' ? (
-                        <><X className="w-5 h-5 mr-2" /> Rejected</>
-                      ) : (
-                        <><MessageSquare className="w-5 h-5 mr-2" /> Request Connection</>
-                      )}
-                    </Button>
-
                     {!isSelf && (
                       <Button 
-                        variant="outline"
+                        variant="default"
                         className={cn(
-                          "w-full h-12 rounded-2xl text-base font-black transition-all border-emerald-500/40 bg-emerald-50/60 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white dark:hover:border-emerald-600 shadow-md mt-3",
-                          isUnlocked && "bg-emerald-600 text-white font-black border-emerald-600 hover:bg-emerald-700 hover:text-white hover:border-emerald-700 dark:bg-emerald-600 dark:text-white"
+                          "w-full h-12 rounded-2xl text-base font-black transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20",
+                          isUnlocked && "bg-emerald-600 text-white font-black hover:bg-emerald-700"
                         )}
                         onClick={handleCallClick}
                       >
                         <PhoneCall className="w-5 h-5 mr-2 shrink-0" />
                         {isUnlocked ? (phoneNumber || "Call Now") : "Call / Reveal Mobile Number"}
                       </Button>
-                    )}
-                    
-                    {appConfig?.isSubscriptionRequired && (
-                      <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-tighter">
-                        Subscription required to connect
-                      </p>
                     )}
                   </>
                 )}
