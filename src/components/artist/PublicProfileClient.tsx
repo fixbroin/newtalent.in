@@ -383,22 +383,6 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                       <span>{artist.age} Years Old</span>
                     </div>
                   )}
-                  {artistUserData?.showMobileOnPublicProfile && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-primary" />
-                      <a href={`tel:${artist.mobileNumber || artistUserData.mobileNumber}`} className="hover:text-primary transition-colors">
-                        {artist.mobileNumber || artistUserData.mobileNumber}
-                      </a>
-                    </div>
-                  )}
-                  {artistUserData?.showEmailOnPublicProfile && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-primary" />
-                      <a href={`mailto:${artist.email || artistUserData.email}`} className="truncate hover:text-primary transition-colors">
-                        {artist.email || artistUserData.email}
-                      </a>
-                    </div>
-                  )}
 
                   {artistUserData?.showSocialMediaOnPublicProfile && artistUserData?.socialMediaLinks && (
                     <div className="flex flex-wrap gap-3 pt-2">

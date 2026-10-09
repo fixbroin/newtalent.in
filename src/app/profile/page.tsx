@@ -190,7 +190,6 @@ export default function ProfilePage() {
 
   // Onboarding items details
   const hasSocialLinks = !!firestoreUser?.socialMediaLinks && Object.values(firestoreUser.socialMediaLinks).some(link => !!link);
-  const hasVisibilitySettings = firestoreUser?.showMobileOnPublicProfile !== undefined || firestoreUser?.showEmailOnPublicProfile !== undefined;
 
   const checklistItems = [
     {
@@ -198,7 +197,7 @@ export default function ProfilePage() {
       label: 'Upload Profile Photo & Write Bio',
       tab: 'account',
       isCompleted: !!artistApp?.profilePhotoUrl && !!artistApp?.bio,
-      percentage: 20,
+      percentage: 25,
       description: 'Add a professional headshot and brief description of your talent.'
     },
     {
@@ -206,7 +205,7 @@ export default function ProfilePage() {
       label: 'Add Audition or Work Videos',
       tab: 'portfolio',
       isCompleted: videos.length > 0,
-      percentage: 20,
+      percentage: 25,
       description: 'Add links to your best performances or video work samples.'
     },
     {
@@ -214,7 +213,7 @@ export default function ProfilePage() {
       label: 'Add Course Certificates',
       tab: 'portfolio',
       isCompleted: certificates.length > 0,
-      percentage: 20,
+      percentage: 25,
       description: 'Showcase your training, diplomas, or professional certifications.'
     },
     {
@@ -222,16 +221,8 @@ export default function ProfilePage() {
       label: 'Link Social Media Profiles',
       tab: 'social',
       isCompleted: hasSocialLinks,
-      percentage: 20,
+      percentage: 25,
       description: 'Link your Instagram, YouTube, or LinkedIn accounts so clients can research you.'
-    },
-    {
-      id: 'visibility',
-      label: 'Configure Mobile & Email Visibility',
-      tab: 'security',
-      isCompleted: hasVisibilitySettings,
-      percentage: 20,
-      description: 'Set whether casting directors can see your contact numbers/emails.'
     }
   ];
 
@@ -1348,55 +1339,6 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
-            <Card className="border-primary/10 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-primary" />
-                  Profile Visibility
-                </CardTitle>
-                <CardDescription>Control what information is visible on your public profile.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-primary/5">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Show Mobile Number</Label>
-                    <p className="text-[10px] text-muted-foreground italic">If enabled, your mobile number will be visible to everyone.</p>
-                  </div>
-                  <Switch 
-                    checked={!!firestoreUser?.showMobileOnPublicProfile} 
-                    onCheckedChange={async (checked) => {
-                      if (!user) return;
-                      try {
-                        await updateDoc(doc(db, "users", user.uid), { showMobileOnPublicProfile: checked });
-                        toast({ title: checked ? "Mobile Visibility Enabled" : "Mobile Visibility Disabled" });
-                      } catch (error: any) {
-                        toast({ title: "Update Failed", description: error.message, variant: "destructive" });
-                      }
-                    }}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-primary/5">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-bold">Show Email Address</Label>
-                    <p className="text-[10px] text-muted-foreground italic">If enabled, your email address will be visible to everyone.</p>
-                  </div>
-                  <Switch 
-                    checked={!!firestoreUser?.showEmailOnPublicProfile} 
-                    onCheckedChange={async (checked) => {
-                      if (!user) return;
-                      try {
-                        await updateDoc(doc(db, "users", user.uid), { showEmailOnPublicProfile: checked });
-                        toast({ title: checked ? "Email Visibility Enabled" : "Email Visibility Disabled" });
-                      } catch (error: any) {
-                        toast({ title: "Update Failed", description: error.message, variant: "destructive" });
-                      }
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
             <Card className="border-primary/10 shadow-md">
               <CardHeader>
                 <CardTitle className="text-xl">Account Security</CardTitle>
