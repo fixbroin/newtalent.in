@@ -1,10 +1,9 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Camera, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Camera, Trash2, AlertCircle, CheckCircle2, Plus, Image as ImageIcon } from "lucide-react";
 import type { ArtistApplication, ArtistControlOptions } from '@/types/firestore';
 import { useState } from "react";
 import NextImage from 'next/image';
@@ -51,6 +50,16 @@ export default function Step3PortfolioPhotos({
     leftProfile: { file: null, previewUrl: initialData.leftProfileUrl || null, uploadProgress: null, existingUrl: initialData.leftProfileUrl },
     frontProfile: { file: null, previewUrl: initialData.frontProfileUrl || null, uploadProgress: null, existingUrl: initialData.frontProfileUrl },
     backProfile: { file: null, previewUrl: initialData.backProfileUrl || null, uploadProgress: null, existingUrl: initialData.backProfileUrl },
+  });
+
+  const [additionalPhotos, setAdditionalPhotos] = useState<FileUploadState[]>(() => {
+    const existing = initialData.additionalImages || initialData.galleryImages || [];
+    return existing.map(url => ({
+      file: null,
+      previewUrl: url,
+      uploadProgress: null,
+      existingUrl: url
+    }));
   });
 
   const photoLabels: Record<string, string> = {
@@ -135,6 +144,46 @@ export default function Step3PortfolioPhotos({
     });
   };
 
+  const handleAddAdditionalFiles = async (files: FileList | File[]) => {
+    const fileList = Array.from(files);
+    if (fileList.length === 0) return;
+
+    setIsFormBusy(true);
+    const newItems: FileUploadState[] = [];
+
+    for (const file of fileList) {
+      if (file.size > 50 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: `${file.name} is > 50MB. Skipping.`, variant: "destructive" });
+        continue;
+      }
+      let processed = file;
+      if (file.size > 1 * 1024 * 1024 && file.type.startsWith('image/')) {
+        try {
+          const { compressImage } = await import('@/lib/imageCompression');
+          processed = await compressImage(file);
+        } catch (err) {
+          console.error("Compression error:", err);
+        }
+      }
+      newItems.push({
+        file: processed,
+        previewUrl: URL.createObjectURL(processed),
+        uploadProgress: null
+      });
+    }
+
+    setAdditionalPhotos(prev => [...prev, ...newItems]);
+    setIsFormBusy(false);
+  };
+
+  const handleRemoveAdditionalPhoto = (index: number) => {
+    setAdditionalPhotos(prev => {
+      const target = prev[index];
+      if (target?.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const uploadFile = async (
     id: string,
     fileState: FileUploadState,
@@ -162,9 +211,14 @@ export default function Step3PortfolioPhotos({
     const uploadTask = uploadBytesResumable(fileRef, file);
     return new Promise((resolve, reject) => {
       uploadTask.on('state_changed',
-        (snapshot) => setPhotos(prev => ({
-          ...prev, [id]: { ...prev[id], uploadProgress: (snapshot.bytesTransferred / snapshot.totalBytes) * 100 }
-        })),
+        (snapshot) => {
+          const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (id in photos) {
+            setPhotos(prev => ({
+              ...prev, [id]: { ...prev[id], uploadProgress: prog }
+            }));
+          }
+        },
         (error) => reject(error),
         async () => {
           try {
@@ -212,8 +266,17 @@ export default function Step3PortfolioPhotos({
         uploadFile(id, photos[id], `Artist_portfolio/${userUid}/${id}`)
       );
 
-      const results = await Promise.all(uploadPromises);
-      
+      const additionalUploadPromises = additionalPhotos.map((state, idx) =>
+        uploadFile(`additional_${idx}`, state, `Artist_portfolio/${userUid}/additional_${idx}`)
+      );
+
+      const [results, additionalResults] = await Promise.all([
+        Promise.all(uploadPromises),
+        Promise.all(additionalUploadPromises)
+      ]);
+
+      const validAdditionalUrls = additionalResults.filter((url): url is string => !!url);
+
       onNext({
         faceCloseUpUrl: results[0] || undefined,
         midShotUrl: results[1] || undefined,
@@ -221,9 +284,12 @@ export default function Step3PortfolioPhotos({
         leftProfileUrl: results[3] || undefined,
         frontProfileUrl: results[4] || undefined,
         backProfileUrl: results[5] || undefined,
+        additionalImages: validAdditionalUrls,
+        galleryImages: validAdditionalUrls,
       });
 
     } catch (error) {
+      console.error("Portfolio upload error:", error);
       toast({ title: "Upload Failed", description: "An error occurred while uploading photos.", variant: "destructive" });
     } finally {
       setIsFormBusy(false);
@@ -315,6 +381,80 @@ export default function Step3PortfolioPhotos({
               </div>
             );
           })}
+        </CardContent>
+      </Card>
+
+      {/* 7th Section: Additional Portfolio Images */}
+      <Card className="border-primary/20 bg-primary/[0.02]">
+        <CardHeader className="p-6 pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-primary" /> 7. Additional Portfolio Images (Optional)
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload any additional portfolio shots, headshots, or modeling photos of your choice.
+              </p>
+            </div>
+            <label htmlFor="input-additional-images">
+              <Button type="button" variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer pointer-events-none">
+                <Plus className="h-4 w-4" /> Add Photos
+              </Button>
+            </label>
+            <input 
+              id="input-additional-images" 
+              type="file" 
+              accept="image/*" 
+              multiple 
+              className="hidden" 
+              onChange={e => e.target.files && handleAddAdditionalFiles(e.target.files)} 
+              disabled={isFormBusy || isSaving} 
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="p-6 pt-4">
+          {additionalPhotos.length === 0 ? (
+            <div 
+              onClick={() => document.getElementById("input-additional-images")?.click()}
+              className="py-10 border-2 border-dashed border-primary/20 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors bg-background/50"
+            >
+              <Camera className="h-10 w-10 text-primary/40 mb-2" />
+              <p className="text-sm font-bold text-muted-foreground">Click to select and upload extra gallery photos</p>
+              <p className="text-[11px] text-muted-foreground/70">You can upload multiple photos of your choice.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {additionalPhotos.map((item, index) => (
+                <div key={index} className="relative aspect-[3/4] rounded-xl overflow-hidden border bg-card group shadow-sm">
+                  {item.previewUrl && (
+                    <NextImage src={item.previewUrl} alt={`Additional ${index + 1}`} fill className="object-cover" unoptimized={item.previewUrl.startsWith('blob:')} />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-full" 
+                      onClick={() => handleRemoveAdditionalPhoto(index)}
+                      disabled={isFormBusy || isSaving}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] font-black px-2 py-0.5 rounded-full backdrop-blur-sm">
+                    Photo #{index + 1}
+                  </div>
+                </div>
+              ))}
+              <div 
+                onClick={() => document.getElementById("input-additional-images")?.click()}
+                className="aspect-[3/4] rounded-xl border-2 border-dashed border-primary/30 hover:border-primary flex flex-col items-center justify-center cursor-pointer transition-all bg-background/50 group"
+              >
+                <Plus className="h-8 w-8 text-primary group-hover:scale-110 transition-transform mb-1" />
+                <span className="text-xs font-bold text-primary">Add More</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

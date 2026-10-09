@@ -54,7 +54,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   const [showSubscriptionPlans, setShowSubscriptionPlans] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'pending' | 'accepted' | 'rejected' | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [selectedCertificate, setSelectedCertificate] = useState<ArtistCertificate | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [artistUserData, setArtistUserData] = useState<any>(null);
@@ -191,13 +191,18 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   }, [user, artist.userId, isSelf, isMounted]);
 
   const portfolioImages = [
+    { url: artist.profilePhotoUrl, label: "Main Profile Photo" },
     { url: artist.faceCloseUpUrl, label: "Close Up" },
     { url: artist.midShotUrl, label: "Mid Shot" },
     { url: artist.leftProfileUrl, label: "Left Profile" },
     { url: artist.rightProfileUrl, label: "Right Profile" },
-    { url: artist.frontProfileUrl, label: "Front" },
-    { url: artist.backProfileUrl, label: "Back" },
-  ].filter(img => img.url);
+    { url: artist.frontProfileUrl, label: "Front Profile" },
+    { url: artist.backProfileUrl, label: "Back Profile" },
+    ...(artist.additionalImages || artist.galleryImages || []).map((url, i) => ({
+      url,
+      label: `Additional Photo #${i + 1}`
+    }))
+  ].filter((img): img is { url: string; label: string } => !!img.url);
 
   const handleRequest = async () => {
     if (connectionStatus === 'accepted') {
@@ -342,7 +347,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
             <div className="bg-card border rounded-3xl overflow-hidden shadow-sm sticky top-24">
               <div 
                 className="relative aspect-square cursor-zoom-in group"
-                onClick={() => setSelectedImageUrl(artist.profilePhotoUrl || "/default-image.png")}
+                onClick={() => setSelectedImageIndex(0)}
               >
                 <AppImage 
                   src={artist.profilePhotoUrl || "/default-image.png"} 
@@ -512,20 +517,23 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                 {portfolioImages.map((img, i) => (
                   <div 
                     key={i} 
-                    className="group relative aspect-[3/4] rounded-2xl overflow-hidden border bg-muted cursor-zoom-in"
-                    onClick={() => setSelectedImageUrl(img.url!)}
+                    className="group relative aspect-[3/4] rounded-2xl overflow-hidden border bg-muted cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300"
+                    onClick={() => setSelectedImageIndex(i)}
                   >
                     <AppImage 
                       src={img.url!} 
                       alt={img.label} 
                       fill 
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                        <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 drop-shadow-md" />
                     </div>
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white text-xs font-bold">{img.label}</p>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 opacity-90 group-hover:opacity-100 transition-opacity flex items-center justify-between">
+                      <p className="text-white text-xs font-bold truncate">{img.label}</p>
+                      <span className="text-[10px] text-amber-300 font-black bg-black/60 px-2 py-0.5 rounded-full border border-amber-300/30 shrink-0">
+                        View #{i + 1}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -605,13 +613,6 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
       </div>
 
       {/* Standalone Zero-Flicker Lightbox Portals */}
-      <ImageLightboxModal 
-        isOpen={!!selectedImageUrl} 
-        imageUrl={selectedImageUrl} 
-        onClose={() => setSelectedImageUrl(null)} 
-        title={artist.fullName}
-      />
-
       <CertificateLightboxModal 
         isOpen={!!selectedCertificate} 
         certificate={selectedCertificate} 
@@ -721,6 +722,14 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Lightbox Gallery Modal */}
+      <ImageLightboxModal
+        isOpen={selectedImageIndex !== null}
+        images={portfolioImages}
+        currentIndex={selectedImageIndex ?? 0}
+        onClose={() => setSelectedImageIndex(null)}
+      />
     </div>
   );
 }

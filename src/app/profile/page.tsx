@@ -1139,8 +1139,8 @@ export default function ProfilePage() {
               <span>Security</span>
               {tourStep === 3 && (
                 <TourTooltip 
-                  title="Visibility & Security"
-                  description="Choose whether casting directors can directly view your mobile number and email."
+                  title="Account Security"
+                  description="Change your password and manage your account security settings."
                   onNext={endTour}
                   onSkip={endTour}
                   step={3}

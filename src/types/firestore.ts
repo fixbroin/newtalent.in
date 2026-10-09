@@ -1371,6 +1371,8 @@ export interface ArtistApplication {
   leftProfileUrl?: string;
   frontProfileUrl?: string;
   backProfileUrl?: string;
+  additionalImages?: string[]; // Multiple extra portfolio photos
+  galleryImages?: string[]; // Alias for additional images
 
   // Step 3: KYC Documents
   aadhaar?: KycDocument | null;
