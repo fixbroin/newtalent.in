@@ -612,7 +612,27 @@ export default function PaymentPage() {
               {currentAvailablePaymentOptions.length > 0 ? (
                 <div className="mt-4"><h3 className="text-lg font-semibold mb-3">Select Payment Method</h3>
                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
-                    {currentAvailablePaymentOptions.map(method => { const Icon = method.icon; return (<Label key={method.value} htmlFor={`payment-${method.value}`} className={`flex items-center space-x-3 border rounded-md p-4 hover:bg-accent/50 cursor-pointer transition-colors ${paymentMethod === method.value ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary' : 'border-input bg-background'} ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => !isProcessingPayment && setPaymentMethod(method.value)}><RadioGroupItem value={method.value} id={`payment-${method.value}`} className="border-muted-foreground data-[state=checked]:border-primary-foreground" disabled={isProcessingPayment}/><Icon className="h-5 w-5" /><span>{method.label}</span></Label>);})}
+                    {currentAvailablePaymentOptions.map(method => { 
+                      const Icon = method.icon; 
+                      const isSelected = paymentMethod === method.value;
+                      return (
+                        <Label 
+                          key={method.value} 
+                          htmlFor={`payment-${method.value}`} 
+                          className={`flex items-center space-x-3 border rounded-xl p-4 hover:bg-accent/50 cursor-pointer transition-colors ${isSelected ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary' : 'border-input bg-background'} ${isProcessingPayment ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                          onClick={() => !isProcessingPayment && setPaymentMethod(method.value)}
+                        >
+                          <RadioGroupItem 
+                            value={method.value} 
+                            id={`payment-${method.value}`} 
+                            className={`border-2 transition-all ${isSelected ? 'border-white text-white fill-white bg-white/20 data-[state=checked]:border-white data-[state=checked]:text-white data-[state=checked]:fill-white' : 'border-muted-foreground'}`} 
+                            disabled={isProcessingPayment}
+                          />
+                          <Icon className="h-5 w-5" />
+                          <span className="font-bold">{method.label}</span>
+                        </Label>
+                      );
+                    })}
                     </RadioGroup>
                 </div>
               ) : (<Alert variant="destructive" className="mt-4"><AlertTitle>No Payment Methods Available</AlertTitle><AlertDescription>Contact support or try later. Admin may need to enable a payment option.</AlertDescription></Alert>)}

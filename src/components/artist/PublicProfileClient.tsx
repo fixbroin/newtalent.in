@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import type { ArtistApplication, FirestoreUser, ArtistCertificate } from '@/types/firestore';
+import type { ArtistApplication, FirestoreUser, ArtistCertificate, FirestoreCategory } from '@/types/firestore';
+import { getOverriddenCategoryName } from '@/lib/adminDataOverrides';
 import AppImage from '@/components/ui/AppImage';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp, query, where, limit, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, query, where, limit, onSnapshot, doc, getDoc, getDocs, orderBy } from 'firebase/firestore';
 import SubscriptionPlansDialog from '@/components/category/SubscriptionPlansDialog';
 import ImageLightboxModal from '@/components/shared/ImageLightboxModal';
 import CertificateLightboxModal from '@/components/shared/CertificateLightboxModal';
@@ -42,9 +43,10 @@ interface PublicProfileClientProps {
   artist: ArtistApplication;
   relatedArtists?: ArtistApplication[];
   categorySlug?: string;
+  allCategories?: FirestoreCategory[];
 }
 
-export default function PublicProfileClient({ artist, relatedArtists = [], categorySlug }: PublicProfileClientProps) {
+export default function PublicProfileClient({ artist, relatedArtists = [], categorySlug, allCategories = [] }: PublicProfileClientProps) {
   const router = useRouter();
   const { user, firestoreUser, triggerAuthRedirect } = useAuth();
   const { config: appAppSettings } = useApplicationConfig();
@@ -58,6 +60,31 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   const [selectedCertificate, setSelectedCertificate] = useState<ArtistCertificate | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [artistUserData, setArtistUserData] = useState<any>(null);
+  const [categoriesList, setCategoriesList] = useState<FirestoreCategory[]>(allCategories);
+
+  useEffect(() => {
+    if (allCategories && allCategories.length > 0) {
+      setCategoriesList(allCategories);
+      return;
+    }
+    const fetchCategories = async () => {
+      try {
+        const q = query(
+          collection(db, 'adminCategories'),
+          where('isActive', '==', true),
+          orderBy('order', 'asc')
+        );
+        const snapshot = await getDocs(q);
+        const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FirestoreCategory));
+        if (fetched.length > 0) {
+          setCategoriesList(fetched);
+        }
+      } catch (err) {
+        console.error("Error fetching categories in PublicProfileClient:", err);
+      }
+    };
+    fetchCategories();
+  }, [allCategories]);
 
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
   const [hireModalReason, setHireModalReason] = useState<'no_subscription' | 'limit_reached'>('no_subscription');
@@ -672,15 +699,18 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
           Browse Categories
         </h3>
         <div className="flex flex-wrap justify-center gap-3">
-          {['Acting', 'Singing', 'Modeling', 'Photography', 'Dancing', 'Voice Over'].map((cat) => (
-            <Link 
-              key={cat} 
-              href={`/category/${cat.toLowerCase().replace(' ', '-')}`}
-              className="px-4 py-2 rounded-xl bg-secondary/10 border border-primary/5 text-sm font-bold hover:bg-primary hover:text-white transition-all"
-            >
-              {cat}
-            </Link>
-          ))}
+          {categoriesList.map((cat) => {
+            const name = getOverriddenCategoryName(cat.id, cat.name);
+            return (
+              <Link 
+                key={cat.id || cat.slug} 
+                href={`/category/${cat.slug}`}
+                className="px-4 py-2 rounded-xl bg-secondary/10 border border-primary/5 text-sm font-bold hover:bg-primary hover:text-white transition-all"
+              >
+                {name}
+              </Link>
+            );
+          })}
           <Link 
             href="/categories"
             className="px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-sm font-black text-primary hover:bg-primary hover:text-white transition-all"

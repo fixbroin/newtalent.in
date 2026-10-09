@@ -157,11 +157,31 @@ const getRelatedArtists = cache(async (categorySlug: string, currentUsername: st
   )();
 });
 
+const getActiveCategories = cache(async (): Promise<FirestoreCategory[]> => {
+  return unstable_cache(
+    async () => {
+      try {
+        const snapshot = await adminDb.collection('adminCategories')
+          .where('isActive', '==', true)
+          .orderBy('order', 'asc')
+          .get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...serializeFirestoreData<any>(doc.data()) } as FirestoreCategory));
+      } catch (error) {
+        console.error("Error fetching active categories:", error);
+        return [];
+      }
+    },
+    ['active-categories-list-all'],
+    { revalidate: false, tags: ['categories', 'global-cache'] }
+  )();
+});
+
 export default async function ArtistProfileUnderCategoryPage({ params }: PageProps) {
   const { slug, username } = await params;
-  const [artist, relatedArtists] = await Promise.all([
+  const [artist, relatedArtists, allCategories] = await Promise.all([
     getArtistData(username, slug),
-    getRelatedArtists(slug, username)
+    getRelatedArtists(slug, username),
+    getActiveCategories()
   ]);
   
   if (!artist) {
@@ -188,7 +208,7 @@ export default async function ArtistProfileUnderCategoryPage({ params }: PagePro
   return (
     <>
       <JsonLdScript data={personSchema} idSuffix={`artist-${artist.id}`} />
-      <PublicProfileClient artist={artist} relatedArtists={relatedArtists} categorySlug={slug} />
+      <PublicProfileClient artist={artist} relatedArtists={relatedArtists} categorySlug={slug} allCategories={allCategories} />
     </>
   );
 }
