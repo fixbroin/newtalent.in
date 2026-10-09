@@ -204,11 +204,15 @@ export default function CategoryPageClient({
       const artistsSnapshot = await getDocs(artistsQuery);
       let fetchedArtists = artistsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArtistApplication));
       
-      // Sort artists: Paid/Subscribed profile artists on TOP!
+      // Sort artists: Subscribed/Paid profile artists on TOP, higher plan price tier first!
       fetchedArtists.sort((a, b) => {
         const aIsPaid = ((a as any).subscriptionActive || (a as any).isSubscribed) ? 1 : 0;
         const bIsPaid = ((b as any).subscriptionActive || (b as any).isSubscribed) ? 1 : 0;
         if (aIsPaid !== bIsPaid) return bIsPaid - aIsPaid;
+
+        const aPrice = Number((a as any).subscriptionPlanPrice || (a as any).subscriptionPrice || (a as any).planPrice || 0);
+        const bPrice = Number((b as any).subscriptionPlanPrice || (b as any).subscriptionPrice || (b as any).planPrice || 0);
+        if (aPrice !== bPrice) return bPrice - aPrice;
 
         const aIndex = a.promotionIndex ?? 1000;
         const bIndex = b.promotionIndex ?? 1000;

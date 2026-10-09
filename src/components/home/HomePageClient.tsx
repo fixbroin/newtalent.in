@@ -18,7 +18,7 @@ import type { BreadcrumbItem } from '@/types/ui';
 import { useLoading } from '@/contexts/LoadingContext';
 import AppImage from '@/components/ui/AppImage';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn, getTimestampMillis } from '@/lib/utils';
 import { Sparkles, Clock, ListChecks, Loader2, FileText, ShoppingCart, Users, Ban, Percent, Info, UserPlus, Star } from 'lucide-react';
 import AdBannerCard from '@/components/shared/AdBannerCard';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
@@ -596,7 +596,23 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
 
     const popularQuery = query(collection(db, "ArtistApplications"), where("status", "==", "approved"), limit(20));
     const unsubscribePopular = onSnapshot(popularQuery, (snapshot) => {
-      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ArtistApplication));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ArtistApplication)).sort((a, b) => {
+        const aIsPaid = ((a as any).subscriptionActive || (a as any).isSubscribed) ? 1 : 0;
+        const bIsPaid = ((b as any).subscriptionActive || (b as any).isSubscribed) ? 1 : 0;
+        if (aIsPaid !== bIsPaid) return bIsPaid - aIsPaid;
+
+        const aPrice = Number((a as any).subscriptionPlanPrice || (a as any).subscriptionPrice || (a as any).planPrice || 0);
+        const bPrice = Number((b as any).subscriptionPlanPrice || (b as any).subscriptionPrice || (b as any).planPrice || 0);
+        if (aPrice !== bPrice) return bPrice - aPrice;
+
+        const aIndex = a.promotionIndex ?? 1000;
+        const bIndex = b.promotionIndex ?? 1000;
+        if (aIndex !== bIndex) return aIndex - bIndex;
+
+        const aTime = getTimestampMillis(a.updatedAt) || 0;
+        const bTime = getTimestampMillis(b.updatedAt) || 0;
+        return bTime - aTime;
+      });
       setPopularArtists(data);
       setCache('popularArtists', data, true);
       setIsLoadingPopular(false);

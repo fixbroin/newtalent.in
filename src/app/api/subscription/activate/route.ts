@@ -149,12 +149,30 @@ export async function POST(req: NextRequest) {
         subscriptionActive: true,
         currentSubscriptionId: planId,
         subscriptionPlanName: planData?.name,
+        subscriptionPlanPrice: Number(planData?.price || 0),
         subscriptionExpiresAt: Timestamp.fromDate(newExpiresAt),
         lastSubscriptionAt: Timestamp.fromDate(now)
       };
     }
 
     await userRef.set(subscriptionData, { merge: true });
+
+    // Sync to ArtistApplications if user is an artist
+    try {
+      if (planType === 'artist') {
+        const appRef = adminDb.collection('ArtistApplications').doc(userId);
+        await appRef.set({
+          subscriptionActive: true,
+          subscriptionPlanId: planId,
+          subscriptionPlanName: planData?.name || '',
+          subscriptionPlanPrice: Number(planData?.price || 0),
+          subscriptionExpiresAt: Timestamp.fromDate(calculatedExpiresAt),
+          updatedAt: Timestamp.fromDate(now)
+        }, { merge: true });
+      }
+    } catch (appErr) {
+      console.error("Error syncing subscription to ArtistApplications:", appErr);
+    }
 
     // 5. Record the subscription transaction
     await adminDb.collection('userSubscriptions').add({

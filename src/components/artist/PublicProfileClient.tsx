@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { 
   CheckCircle, MapPin, Calendar, Star, MessageSquare, Ban,
   Share2, ArrowLeft, Instagram, Twitter, Facebook, Mail, Phone, PhoneCall,
-  User, Briefcase, Ruler, Weight, UserCircle2, Clock, X, ZoomIn, Video, FileText, ExternalLink, Globe, Linkedin, Youtube
+  User, Briefcase, Ruler, Weight, UserCircle2, Clock, X, ZoomIn, Video, FileText, ExternalLink, Globe, Linkedin, Youtube, Sparkles
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -353,6 +353,13 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                    <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-10 h-10 drop-shadow-lg" />
                 </div>
+                {((artist as any).subscriptionActive || (artist as any).isSubscribed) && (
+                  <div className="absolute top-4 left-4 z-10">
+                    <Badge className="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black border-none px-3 py-1 rounded-full shadow-md flex items-center">
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5 fill-slate-950 text-slate-950" /> PREMIUM
+                    </Badge>
+                  </div>
+                )}
                 {artist.status === 'approved' && (
                   <div className="absolute top-4 right-4">
                     <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 rounded-full">

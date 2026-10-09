@@ -116,6 +116,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
   };
 
   const isUnlocked = firestoreUser?.unlockedArtistIds?.includes(artist.userId);
+  const isPaidSubscriber = !!((artist as any).subscriptionActive || (artist as any).isSubscribed);
 
   return (
     <>
@@ -129,6 +130,13 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
               fill 
               className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
             />
+            {isPaidSubscriber && (
+              <div className="absolute top-3 left-3 z-10">
+                <Badge className="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black border-none shadow-md backdrop-blur-sm px-2.5 py-0.5 text-[10px] tracking-wider uppercase flex items-center">
+                  <Sparkles className="w-3 h-3 mr-1 fill-slate-950 text-slate-950" /> Premium
+                </Badge>
+              </div>
+            )}
             {artist.status === 'approved' && (
               <div className="absolute top-3 right-3 z-10">
                 <Badge className="bg-green-500/90 hover:bg-green-600 text-white border-none backdrop-blur-sm">
@@ -145,6 +153,13 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onRequest, isLoading, c
               fill 
               className="object-contain w-full h-full transition-transform duration-500 group-hover:scale-105"
             />
+            {isPaidSubscriber && (
+              <div className="absolute top-3 left-3 z-10">
+                <Badge className="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black border-none shadow-md backdrop-blur-sm px-2.5 py-0.5 text-[10px] tracking-wider uppercase flex items-center">
+                  <Sparkles className="w-3 h-3 mr-1 fill-slate-950 text-slate-950" /> Premium
+                </Badge>
+              </div>
+            )}
             {artist.status === 'approved' && (
               <div className="absolute top-3 right-3">
                 <Badge className="bg-green-500/90 hover:bg-green-600 text-white border-none backdrop-blur-sm">

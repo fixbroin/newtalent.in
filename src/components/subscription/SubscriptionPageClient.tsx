@@ -128,31 +128,43 @@ export default function SubscriptionPageClient({ planType }: SubscriptionPageCli
                           : "You don't have an active contact reveal plan yet."
                         : isArtistSubscribed 
                           ? "You are currently on an active artist profile plan." 
-                          : "You don't have an active profile subscription yet."}
+                          : "You are a free user. Need to subscribe."}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {(isContactPage ? isHireSubscribed : isArtistSubscribed) && (
-                    <div className="text-right">
-                      <Badge className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 mb-1">ACTIVE</Badge>
-                      {isContactPage && firestoreUser?.hireSubscriptionExpiresAt && (
-                        <p className="text-xs font-bold text-muted-foreground flex items-center justify-end">
-                          <Clock className="h-3 w-3 mr-1" /> 
-                          Expires: {typeof (firestoreUser.hireSubscriptionExpiresAt as any).toDate === 'function' 
-                            ? firestoreUser.hireSubscriptionExpiresAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : 'Active'}
-                        </p>
-                      )}
-                      {!isContactPage && firestoreUser?.subscriptionExpiresAt && (
-                        <p className="text-xs font-bold text-muted-foreground flex items-center justify-end">
-                          <Clock className="h-3 w-3 mr-1" /> 
-                          Expires: {typeof (firestoreUser.subscriptionExpiresAt as any).toDate === 'function' 
-                            ? firestoreUser.subscriptionExpiresAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                            : 'Active'}
-                        </p>
-                      )}
-                    </div>
+                  {isContactPage ? (
+                    isHireSubscribed && (
+                      <div className="text-right">
+                        <Badge className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 mb-1">ACTIVE</Badge>
+                        {firestoreUser?.hireSubscriptionExpiresAt && (
+                          <p className="text-xs font-bold text-muted-foreground flex items-center justify-end">
+                            <Clock className="h-3 w-3 mr-1" /> 
+                            Expires: {typeof (firestoreUser.hireSubscriptionExpiresAt as any).toDate === 'function' 
+                              ? firestoreUser.hireSubscriptionExpiresAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                              : 'Active'}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    isArtistSubscribed ? (
+                      <div className="text-right">
+                        <Badge className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 mb-1">ACTIVE</Badge>
+                        {firestoreUser?.subscriptionExpiresAt && (
+                          <p className="text-xs font-bold text-muted-foreground flex items-center justify-end">
+                            <Clock className="h-3 w-3 mr-1" /> 
+                            Expires: {typeof (firestoreUser.subscriptionExpiresAt as any).toDate === 'function' 
+                              ? firestoreUser.subscriptionExpiresAt.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                              : 'Active'}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-right">
+                        <Badge variant="outline" className="border-amber-500/30 text-amber-600 bg-amber-500/10 font-bold px-4 py-1 mb-1">FREE USER</Badge>
+                      </div>
+                    )
                   )}
                 </div>
               </div>

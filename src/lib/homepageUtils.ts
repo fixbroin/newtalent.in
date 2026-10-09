@@ -102,6 +102,14 @@ export const getHomepageData = cache(async (): Promise<HomepageData> => {
                     });
 
                     return enriched.sort((a, b) => {
+                        const aIsPaid = ((a as any).subscriptionActive || (a as any).isSubscribed) ? 1 : 0;
+                        const bIsPaid = ((b as any).subscriptionActive || (b as any).isSubscribed) ? 1 : 0;
+                        if (aIsPaid !== bIsPaid) return bIsPaid - aIsPaid;
+
+                        const aPrice = Number((a as any).subscriptionPlanPrice || (a as any).subscriptionPrice || (a as any).planPrice || 0);
+                        const bPrice = Number((b as any).subscriptionPlanPrice || (b as any).subscriptionPrice || (b as any).planPrice || 0);
+                        if (aPrice !== bPrice) return bPrice - aPrice;
+
                         const aIndex = a.promotionIndex ?? 1000;
                         const bIndex = b.promotionIndex ?? 1000;
                         if (aIndex !== bIndex) return aIndex - bIndex;
@@ -252,6 +260,14 @@ export const getCategoryFullData = cache(async (categorySlug: string): Promise<F
                     id: doc.id,
                     ...serializeFirestoreData<any>(doc.data())
                 } as ArtistApplication)).sort((a, b) => {
+                    const aIsPaid = ((a as any).subscriptionActive || (a as any).isSubscribed) ? 1 : 0;
+                    const bIsPaid = ((b as any).subscriptionActive || (b as any).isSubscribed) ? 1 : 0;
+                    if (aIsPaid !== bIsPaid) return bIsPaid - aIsPaid;
+
+                    const aPrice = Number((a as any).subscriptionPlanPrice || (a as any).subscriptionPrice || (a as any).planPrice || 0);
+                    const bPrice = Number((b as any).subscriptionPlanPrice || (b as any).subscriptionPrice || (b as any).planPrice || 0);
+                    if (aPrice !== bPrice) return bPrice - aPrice;
+
                     const aIndex = a.promotionIndex ?? 1000;
                     const bIndex = b.promotionIndex ?? 1000;
                     if (aIndex !== bIndex) return aIndex - bIndex;
