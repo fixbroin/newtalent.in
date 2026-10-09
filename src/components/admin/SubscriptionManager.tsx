@@ -248,10 +248,20 @@ export default function SubscriptionManager() {
       if (subscriberStatusFilter !== 'all' && sub.status !== subscriberStatusFilter) return false;
       // Search term
       if (subscriberSearch.trim()) {
-        const term = subscriberSearch.toLowerCase();
+        const term = subscriberSearch.toLowerCase().trim();
+        const searchDigits = term.replace(/\D/g, '');
+        const last10Search = searchDigits.length >= 10 ? searchDigits.slice(-10) : searchDigits;
+
         const matchName = sub.userName.toLowerCase().includes(term);
         const matchEmail = sub.userEmail.toLowerCase().includes(term);
-        const matchPhone = sub.userPhone ? sub.userPhone.includes(term) : false;
+        let matchPhone = false;
+        if (sub.userPhone) {
+          const userPhoneDigits = sub.userPhone.replace(/\D/g, '');
+          const last10User = userPhoneDigits.length >= 10 ? userPhoneDigits.slice(-10) : userPhoneDigits;
+          matchPhone = sub.userPhone.toLowerCase().includes(term) ||
+            (searchDigits.length > 0 && userPhoneDigits.includes(searchDigits)) ||
+            (last10Search.length === 10 && last10User === last10Search);
+        }
         const matchPlan = sub.planName.toLowerCase().includes(term);
         return matchName || matchEmail || matchPhone || matchPlan;
       }
@@ -419,16 +429,27 @@ export default function SubscriptionManager() {
     setIsSearchingUsers(true);
     try {
       const term = assignSearch.trim().toLowerCase();
+      const searchDigits = term.replace(/\D/g, '');
+      const last10Search = searchDigits.length >= 10 ? searchDigits.slice(-10) : searchDigits;
+
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, limit(20));
+      const q = query(usersRef, limit(200));
       const snap = await getDocs(q);
       const found = snap.docs
         .map(d => ({ id: d.id, ...d.data() } as FirestoreUser))
-        .filter(u => 
-          (u.displayName && u.displayName.toLowerCase().includes(term)) ||
-          (u.email && u.email.toLowerCase().includes(term)) ||
-          (u.mobileNumber && u.mobileNumber.includes(term))
-        );
+        .filter(u => {
+          const matchName = u.displayName && u.displayName.toLowerCase().includes(term);
+          const matchEmail = u.email && u.email.toLowerCase().includes(term);
+          let matchPhone = false;
+          if (u.mobileNumber) {
+            const userPhoneDigits = u.mobileNumber.replace(/\D/g, '');
+            const last10User = userPhoneDigits.length >= 10 ? userPhoneDigits.slice(-10) : userPhoneDigits;
+            matchPhone = u.mobileNumber.toLowerCase().includes(term) ||
+              (searchDigits.length > 0 && userPhoneDigits.includes(searchDigits)) ||
+              (last10Search.length === 10 && last10User === last10Search);
+          }
+          return matchName || matchEmail || matchPhone;
+        });
       setSearchedUsers(found);
     } catch (err) {
       console.error("Error searching users:", err);

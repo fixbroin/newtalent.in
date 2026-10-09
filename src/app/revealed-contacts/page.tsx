@@ -127,7 +127,7 @@ export default function RevealedContactsPage() {
           </div>
 
           <Button
-            onClick={() => router.push('/subscriptions?type=contact')}
+            onClick={() => router.push('/subscriptions/contact')}
             className="rounded-2xl font-bold gap-2 shrink-0"
           >
             <Sparkles className="w-4 h-4" /> Manage Subscription
@@ -145,7 +145,7 @@ export default function RevealedContactsPage() {
             <Button
               size="lg"
               className="rounded-2xl font-black gap-2 shadow-lg shadow-primary/20"
-              onClick={() => router.push('/subscriptions?type=contact')}
+              onClick={() => router.push('/subscriptions/contact')}
             >
               Renew Contact Subscription <ArrowRight className="w-4 h-4" />
             </Button>
