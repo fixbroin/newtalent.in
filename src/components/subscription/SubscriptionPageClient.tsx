@@ -133,7 +133,7 @@ export default function SubscriptionPageClient({ planType }: SubscriptionPageCli
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {(isContactPage ? isHireSubscribed : isArtistSubscribed) ? (
+                  {(isContactPage ? isHireSubscribed : isArtistSubscribed) && (
                     <div className="text-right">
                       <Badge className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-1 mb-1">ACTIVE</Badge>
                       {isContactPage && firestoreUser?.hireSubscriptionExpiresAt && (
@@ -153,12 +153,7 @@ export default function SubscriptionPageClient({ planType }: SubscriptionPageCli
                         </p>
                       )}
                     </div>
-                  ) : (
-                    <Badge variant="outline" className="font-bold px-4 py-1 border-dashed">FREE USER</Badge>
                   )}
-                  <Button variant="outline" className="rounded-xl font-bold" onClick={() => router.push('/profile')}>
-                    <UserCircle className="h-4 w-4 mr-2" /> View Account
-                  </Button>
                 </div>
               </div>
             </CardContent>

@@ -10,10 +10,11 @@ import { serializeFirestoreData } from './serializeUtils';
 export interface DashboardData {
   stats: {
     totalRevenue: number;
+    profileRevenue: number;
+    contactRevenue: number;
     activeArtists: number;
     activeUsers: number;
     newSignups: number;
-    totalConnections: number;
   };
   analytics: {
     topCategories: any[];
@@ -25,63 +26,44 @@ export interface DashboardData {
 export const getDashboardData = unstable_cache(
   async (ArtistFeeType?: string, ArtistFeeValue?: number): Promise<DashboardData> => {
     try {
-      // 1. Fetch Aggregate Stats (1 read)
-      const statsDoc = await adminDb.collection('appConfiguration').doc('stats').get();
-      const systemStats = statsDoc.exists ? statsDoc.data() : null;
-
-      let totalRevenue = systemStats?.totalRevenue || 0;
-      let totalConnections = systemStats?.totalConnections || 0;
-      let activeUsers = systemStats?.totalUsers || 0;
-      let activeArtists = systemStats?.totalArtists || 0;
-      let newSignups = systemStats?.newSignups30d || 0;
-
-      // 2. Fetch recent search activities
-      const [searchActivitiesSnap, persistentSearchSnap] = await Promise.all([
+      // 1. Fetch Subscription Transactions to calculate precise Profile vs Contact revenue
+      const [subsSnap, usersSnap, searchActivitiesSnap, persistentSearchSnap] = await Promise.all([
+        adminDb.collection('userSubscriptions').get(),
+        adminDb.collection('users').get(),
         adminDb.collection('userActivities').where('eventType', '==', 'search').limit(100).get(),
         adminDb.collection('searchAnalytics').limit(100).get()
       ]);
 
-      // If stats don't exist yet, we do a one-time scan to initialize them
-      if (!systemStats) {
-        console.log("Dashboard stats missing, performing full scan to initialize...");
-        const [usersSnap, connectionsSnap, subsSnap] = await Promise.all([
-          adminDb.collection('users').get(),
-          adminDb.collection('connectionRequests').get(),
-          adminDb.collection('userSubscriptions').get()
-        ]);
+      let profileRevenue = 0;
+      let contactRevenue = 0;
 
-        totalRevenue = 0;
-        subsSnap.forEach(doc => {
-            // In a real app, you'd fetch plan price or store it in userSubscriptions
-            // For now let's assume we store 'amount' in userSubscriptions if we implemented it fully
-            const data = doc.data();
-            totalRevenue += (data.amount || 0); 
-        });
+      subsSnap.forEach(doc => {
+        const data = doc.data();
+        const amt = Number(data.amount || 0);
+        if (data.planType === 'hire') {
+          contactRevenue += amt;
+        } else {
+          profileRevenue += amt;
+        }
+      });
 
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const totalRevenue = profileRevenue + contactRevenue;
 
-        activeUsers = 0;
-        activeArtists = 0;
-        newSignups = 0;
-        usersSnap.forEach(doc => {
-          const data = doc.data() as FirestoreUser;
-          if (data.isActive) activeUsers++;
-          if (data.roles?.includes('artist')) activeArtists++;
-          if (data.createdAt && data.createdAt.toDate() >= thirtyDaysAgo) newSignups++;
-        });
-        totalConnections = connectionsSnap.size;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // Initialize the stats document
-        adminDb.collection('appConfiguration').doc('stats').set({
-          totalConnections,
-          totalRevenue,
-          totalUsers: usersSnap.size,
-          totalArtists: activeArtists,
-          newSignups30d: newSignups,
-          updatedAt: Timestamp.now()
-        }).catch(e => console.error("Error initializing stats:", e));
-      }
+      let activeUsers = 0;
+      let activeArtists = 0;
+      let newSignups = 0;
+
+      usersSnap.forEach(doc => {
+        const data = doc.data() as FirestoreUser;
+        if (data.isActive !== false) activeUsers++;
+        if (data.roles?.includes('artist') || data.subscriptionActive) activeArtists++;
+        if (data.createdAt && typeof (data.createdAt as any).toDate === 'function' && (data.createdAt as any).toDate() >= thirtyDaysAgo) {
+          newSignups++;
+        }
+      });
 
       // 3. Analytics: Top Categories (By artist count)
       const categoriesSnap = await adminDb.collection('adminCategories').where('isActive', '==', true).get();
@@ -119,22 +101,22 @@ export const getDashboardData = unstable_cache(
         .map(([term, count]) => ({ term, count }))
         .slice(0, 20);
 
-      // 5. Recent Activities
-      const [recentConnections, recentUsers] = await Promise.all([
-        adminDb.collection('connectionRequests').orderBy('createdAt', 'desc').limit(5).get(),
+      // 5. Recent Activities (Subscriptions & User Signups)
+      const [recentSubs, recentUsers] = await Promise.all([
+        adminDb.collection('userSubscriptions').orderBy('createdAt', 'desc').limit(5).get(),
         adminDb.collection('users').orderBy('createdAt', 'desc').limit(5).get()
       ]);
 
       const activities = [
-        ...recentConnections.docs.map(doc => {
+        ...recentSubs.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
-            type: 'new_connection',
+            type: 'new_subscription',
             timestamp: serializeFirestoreData<string>(data.createdAt),
-            title: 'New Connection Request',
-            description: `${data.senderName} → ${data.receiverName}`,
-            href: `/admin/chat`, // Or direct to a connections view if you have one
+            title: `New Subscription Activated`,
+            description: `${data.userName || data.userEmail || 'User'} - ${data.planName || 'Plan'} (₹${data.amount || 0})`,
+            href: `/admin/subscriptions`,
           };
         }),
         ...recentUsers.docs.map(doc => {
@@ -153,7 +135,8 @@ export const getDashboardData = unstable_cache(
       return serializeFirestoreData<DashboardData>({
         stats: {
           totalRevenue,
-          totalConnections,
+          profileRevenue,
+          contactRevenue,
           activeUsers,
           activeArtists,
           newSignups
@@ -169,7 +152,7 @@ export const getDashboardData = unstable_cache(
       throw error;
     }
   },
-  ['admin-dashboard-stats'],
+  ['admin-dashboard-stats-v2'],
   { revalidate: 31536000, tags: ['admin-stats', 'global-cache'] }
 );
 
@@ -177,10 +160,8 @@ export const getArchivedBookings = unstable_cache(
   async (): Promise<FirestoreBooking[]> => {
     try {
       const q = adminDb.collection('bookings').orderBy('createdAt', 'desc');
-      
       const offset = 10;
       const snapshot = await q.offset(offset).limit(50).get();
-      
       return serializeFirestoreData(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
@@ -191,17 +172,15 @@ export const getArchivedBookings = unstable_cache(
     }
   },
   ['archived-bookings', 'bookings'],
-  { revalidate: 31536000, tags: ['bookings', 'global-cache'] } // Lifetime cache
+  { revalidate: 31536000, tags: ['bookings', 'global-cache'] }
 );
 
 export const getArchivedUsers = unstable_cache(
   async (): Promise<FirestoreUser[]> => {
     try {
       const q = adminDb.collection('users').orderBy('createdAt', 'desc');
-      
-      const offset = 20;
+      const offset = 10;
       const snapshot = await q.offset(offset).limit(50).get();
-      
       return serializeFirestoreData(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
@@ -218,11 +197,9 @@ export const getArchivedUsers = unstable_cache(
 export const getArchivedActivities = unstable_cache(
   async (): Promise<UserActivity[]> => {
     try {
-      const snapshot = await adminDb.collection('userActivities')
-        .orderBy('timestamp', 'desc')
-        .limit(100)
-        .get();
-
+      const q = adminDb.collection('userActivities').orderBy('timestamp', 'desc');
+      const offset = 20;
+      const snapshot = await q.offset(offset).limit(50).get();
       return serializeFirestoreData(snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id
@@ -232,39 +209,27 @@ export const getArchivedActivities = unstable_cache(
       return [];
     }
   },
-  ['archived-activities'],
-  { revalidate: 31536000, tags: ['activities', 'global-cache'] }
+  ['archived-activities', 'activities'],
+  { revalidate: 3600, tags: ['activities', 'global-cache'] }
 );
 
-export async function clearSearchHotspots() {
+export const clearSearchHotspots = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    const batchSize = 500;
-    
-    // 1. Delete from searchAnalytics
-    const searchAnalyticsSnap = await adminDb.collection('searchAnalytics').limit(batchSize).get();
-    if (!searchAnalyticsSnap.empty) {
-      const batch = adminDb.batch();
-      searchAnalyticsSnap.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-    }
+    const [searchActivitiesSnap, persistentSearchSnap] = await Promise.all([
+      adminDb.collection('userActivities').where('eventType', '==', 'search').get(),
+      adminDb.collection('searchAnalytics').get()
+    ]);
 
-    // 2. Delete from userActivities where eventType is 'search'
-    const searchActivitiesSnap = await adminDb.collection('userActivities')
-      .where('eventType', '==', 'search')
-      .limit(batchSize)
-      .get();
-      
-    if (!searchActivitiesSnap.empty) {
-      const batch = adminDb.batch();
-      searchActivitiesSnap.docs.forEach((doc) => batch.delete(doc.ref));
-      await batch.commit();
-    }
+    const batch = adminDb.batch();
+    searchActivitiesSnap.docs.forEach(doc => batch.delete(doc.ref));
+    persistentSearchSnap.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
 
-    revalidateTag('admin-dashboard-stats');
+    revalidateTag('global-cache');
+    revalidateTag('admin-stats');
     return { success: true };
   } catch (error) {
     console.error("Error clearing search hotspots:", error);
-    return { success: false, error: String(error) };
+    return { success: false, error: (error as Error).message };
   }
-}
-
+};

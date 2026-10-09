@@ -169,11 +169,20 @@ export default function AdminDashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <motion.div variants={itemVariants}>
           <StatCard 
-            title="Revenue" 
-            value={`₹${stats.totalRevenue.toLocaleString()}`} 
-            icon={DollarSign} 
+            title="Profile Revenue" 
+            value={`₹${stats.profileRevenue.toLocaleString()}`} 
+            icon={CreditCard} 
             colorClass="bg-blue-500/10 text-blue-500" 
-            subtitle="Subscription Earnings"
+            subtitle="Profile Subscriptions"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard 
+            title="Contact Revenue" 
+            value={`₹${stats.contactRevenue.toLocaleString()}`} 
+            icon={HandCoins} 
+            colorClass="bg-emerald-500/10 text-emerald-500" 
+            subtitle="Contact Reveal Plans"
           />
         </motion.div>
         <motion.div variants={itemVariants}>
@@ -181,17 +190,8 @@ export default function AdminDashboardPage() {
             title="Artists" 
             value={stats.activeArtists} 
             icon={UserCheck} 
-            colorClass="bg-primary/10 text-primary" 
+            colorClass="bg-purple-500/10 text-purple-500" 
             subtitle="Verified Active Profiles"
-          />
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <StatCard 
-            title="Connections" 
-            value={stats.totalConnections} 
-            icon={MessageSquare} 
-            colorClass="bg-amber-500/10 text-amber-500" 
-            subtitle="Request Ecosystem"
           />
         </motion.div>
         <motion.div variants={itemVariants}>
@@ -199,8 +199,8 @@ export default function AdminDashboardPage() {
             title="Users" 
             value={stats.activeUsers} 
             icon={Users} 
-            colorClass="bg-emerald-500/10 text-emerald-500" 
-            subtitle="Total Registered base"
+            colorClass="bg-amber-500/10 text-amber-500" 
+            subtitle="Total Registered Base"
           />
         </motion.div>
         <motion.div variants={itemVariants}>
@@ -209,7 +209,7 @@ export default function AdminDashboardPage() {
             value={`+${stats.newSignups}`} 
             icon={UserPlus} 
             colorClass="bg-indigo-500/10 text-indigo-500" 
-            subtitle="New signups (30d)"
+            subtitle="New Signups (30d)"
           />
         </motion.div>
       </div>
@@ -234,7 +234,7 @@ export default function AdminDashboardPage() {
                 {recentActivities.map((activity: any) => (
                   <Link key={activity.id} href={activity.href || '#'} className="relative flex items-center group">
                     <div className="z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-card border-2 border-muted shadow-sm group-hover:border-primary/50 group-hover:scale-110 transition-all duration-300">
-                      {activity.type === 'new_connection' ? <MessageSquare className="h-4 w-4 text-primary" /> : <UserPlus className="h-4 w-4 text-emerald-500" />}
+                      {activity.type === 'new_subscription' ? <CreditCard className="h-4 w-4 text-primary" /> : <UserPlus className="h-4 w-4 text-emerald-500" />}
                     </div>
                     <div className="ml-6 flex-grow p-4 rounded-2xl bg-muted/30 border border-border/40 group-hover:bg-primary/[0.03] group-hover:border-primary/10 transition-all duration-300 shadow-sm">
                       <div className="flex justify-between items-center mb-1">
