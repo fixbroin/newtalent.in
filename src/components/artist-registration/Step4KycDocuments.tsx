@@ -21,7 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { nanoid } from 'nanoid';
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = 'newtalent_reg_step4';
+const STORAGE_KEY = 'connectfilmcircle_reg_step4';
 
 const generateRandomHexString = (length: number) => Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 const isFirebaseStorageUrl = (url: string | null | undefined): boolean => !!url && typeof url === 'string' && url.includes("firebasestorage.googleapis.com");

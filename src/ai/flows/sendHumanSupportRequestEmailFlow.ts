@@ -105,7 +105,7 @@ const humanSupportRequestEmailFlow = ai.defineFlow(
   },
   async (details) => {
     try {
-      const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = "Newtalent", logoUrl, ...requestDetails } = details;
+      const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = "Connect Film Circle", logoUrl, ...requestDetails } = details;
 
       // Primary Admin Email
       const adminEmail = "fixbro.in@gmail.com"; 
@@ -141,7 +141,7 @@ const humanSupportRequestEmailFlow = ai.defineFlow(
       });
       
       await transporter.sendMail({
-        from: `Newtalent Support <${senderEmail}>`,
+        from: `Connect Film Circle Support <${senderEmail}>`,
         to: adminEmail,
         subject: emailSubject,
         html: htmlBody,

@@ -71,7 +71,7 @@ export default function AdminCategoriesPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !isMounted) return;
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'newtalentCategoryNameOverrides') {
+      if (event.key === 'connectfilmcircleCategoryNameOverrides') {
         setCategories(prevCategories =>
           prevCategories.map(cat => ({
             ...cat,

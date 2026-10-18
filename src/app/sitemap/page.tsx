@@ -16,8 +16,8 @@ import { serializeFirestoreData } from '@/lib/serializeUtils';
 export const revalidate = false;
 
 export const metadata: Metadata = {
-  title: 'Sitemap - Newtalent Casting & Auditions',
-  description: 'Explore all pages, cities, and categories on Newtalent. Your complete guide to India\'s number one casting and audition platform.',
+  title: 'Sitemap - Connect Film Circle Casting & Auditions',
+  description: 'Explore all pages, cities, and categories on Connect Film Circle. Your complete guide to India\'s number one casting and audition platform.',
   robots: {
     index: true,
     follow: true,

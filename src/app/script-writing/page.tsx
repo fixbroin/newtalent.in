@@ -8,8 +8,8 @@ export const revalidate = false; // Cache permanently on the server side
 
 export async function generateMetadata(): Promise<Metadata> {
   const appBaseUrl = getBaseUrl();
-  const title = "Free Screenplay Writer & Script Writing Software Online | Newtalent";
-  const description = "Start writing your movie script, film screenplay, or theater play online for free. Newtalent is India's No. 1 free script writing tool for screenplay writers.";
+  const title = "Free Screenplay Writer & Script Writing Software Online | Connect Film Circle";
+  const description = "Start writing your movie script, film screenplay, or theater play online for free. Connect Film Circle is India's No. 1 free script writing tool for screenplay writers.";
   const keywords = [
     "screenplay writer", "free script writing software", "write movie script online",
     "script format", "screenwriting tool", "free screenplay editor", "write script for free",
@@ -45,7 +45,7 @@ export default function Page() {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Is the Newtalent script writing software really free?",
+        "name": "Is the Connect Film Circle script writing software really free?",
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Yes, it is 100% free with no monthly subscriptions, page limits, or hidden fees. We want screenplay writers to write freely without financial barriers."
@@ -64,7 +64,7 @@ export default function Page() {
         "name": "Who owns the copyright to my script?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "You retain 100% ownership of your work. Newtalent serves as a secure storage environment and holds no rights or claims to any screenplay written on the platform."
+          "text": "You retain 100% ownership of your work. Connect Film Circle serves as a secure storage environment and holds no rights or claims to any screenplay written on the platform."
         }
       }
     ]
@@ -73,7 +73,7 @@ export default function Page() {
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Newtalent Screenplay Editor",
+    "name": "Connect Film Circle Screenplay Editor",
     "url": `${appBaseUrl}/script-writing`,
     "image": `${appBaseUrl}/android-chrome-512x512.png`,
     "description": "Free online script writing software and screenplay editor in industry standard formatting.",

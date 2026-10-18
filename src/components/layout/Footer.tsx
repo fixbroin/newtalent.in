@@ -65,8 +65,8 @@ const Footer = () => {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
 
-  const websiteName = settings?.websiteName || "Newtalent";
-  const contactEmail = settings?.contactEmail || "support@newtalent.in"; 
+  const websiteName = settings?.websiteName || "Connect Film Circle";
+  const contactEmail = settings?.contactEmail || "support@connectfilmcircle.in"; 
   const socialLinks = settings?.socialMediaLinks;
 
   useEffect(() => {
@@ -185,7 +185,7 @@ const Footer = () => {
           <div className="lg:col-span-4 space-y-6">
             <Logo logoUrl={settings?.logoUrl} websiteName={websiteName} />
             <p className="text-muted-foreground leading-relaxed max-w-sm text-sm">
-              NewTalent.in is a leading platform to discover and connect with talented artists, actors, singers, and creators across India. Build your profile, explore opportunities, and grow your career.
+              Connect Film Circle.in is a leading platform to discover and connect with talented artists, actors, singers, and creators across India. Build your profile, explore opportunities, and grow your career.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks?.facebook && (

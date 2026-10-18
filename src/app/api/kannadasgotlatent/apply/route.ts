@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
             <p>Best regards,<br><strong>Show Team</strong><br>Kannada's Got Latent</p>
         </div>
         <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Newtalent.in. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Connect Film Circle.in. All rights reserved.</p>
             <p>This is an automated notification. Please do not reply directly.</p>
         </div>
     </div>
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
 
       if (appConfigSnap.exists) {
         const appConfig = appConfigSnap.data();
-        const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = 'Newtalent' } = appConfig || {};
+        const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = 'Connect Film Circle' } = appConfig || {};
         
         if (smtpHost && smtpPort && smtpUser && smtpPass && senderEmail) {
           const portNumber = parseInt(smtpPort, 10);

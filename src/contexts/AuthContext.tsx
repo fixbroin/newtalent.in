@@ -559,7 +559,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                       body: JSON.stringify({
                           to: user.phoneNumber || details.mobileNumber,
                           templateName: marketingConfig.whatsAppOnSignup.templateName,
-                          parameters: [details.fullName, "Newtalent"],
+                          parameters: [details.fullName, "Connect Film Circle"],
                       }),
                   });
               } catch (waError) {
@@ -577,7 +577,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         // 1. Notify User
         const userNotification: Omit<FirestoreNotification, 'id'> = {
           userId: user.uid,
-          title: "Welcome to Newtalent!",
+          title: "Welcome to Connect Film Circle!",
           message: `Hi ${details.fullName}, thank you for joining us! We're excited to help you with your home services.`,
           type: 'success',
           href: '/profile',
@@ -600,7 +600,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
           const adminNotification: Omit<FirestoreNotification, 'id'> = {
             userId: adminId,
             title: "New User Registered!",
-            message: `${details.fullName} has just signed up on Newtalent.`,
+            message: `${details.fullName} has just signed up on Connect Film Circle.`,
             type: 'info',
             href: `/admin/users`, // Assuming there's a users management page
             read: false,
@@ -619,7 +619,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
       }
       // --- END SIGNUP NOTIFICATIONS ---
   
-      toast({ title: "Account Created!", description: "Welcome to Newtalent!" });
+      toast({ title: "Account Created!", description: "Welcome to Connect Film Circle!" });
   
       const redirectPathFromQuery = searchParams.get('redirect');
       let finalRedirectPath = '/';

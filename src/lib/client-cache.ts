@@ -24,7 +24,7 @@ export const setCache = (key: string, data: any, persist = false): void => {
 
   if (persist && typeof window !== 'undefined') {
     try {
-      localStorage.setItem(`newtalent_cache_${key}`, JSON.stringify(entry));
+      localStorage.setItem(`connectfilmcircle_cache_${key}`, JSON.stringify(entry));
     } catch (e) {
       console.warn("client-cache: Failed to persist to localStorage", e);
     }
@@ -42,7 +42,7 @@ export const getCache = <T>(key: string, usePersistence = false): T | null => {
 
   if (!entry && usePersistence && typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem(`newtalent_cache_${key}`);
+      const stored = localStorage.getItem(`connectfilmcircle_cache_${key}`);
       if (stored) {
         entry = JSON.parse(stored);
       }
@@ -60,7 +60,7 @@ export const getCache = <T>(key: string, usePersistence = false): T | null => {
   
   if (isStale) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(`newtalent_cache_${key}`);
+      localStorage.removeItem(`connectfilmcircle_cache_${key}`);
     }
     cache.delete(key);
     return null;
@@ -76,7 +76,7 @@ export const clearCache = (): void => {
   cache.clear();
   if (typeof window !== 'undefined') {
     Object.keys(localStorage)
-      .filter(key => key.startsWith('newtalent_cache_'))
+      .filter(key => key.startsWith('connectfilmcircle_cache_'))
       .forEach(key => localStorage.removeItem(key));
   }
 };

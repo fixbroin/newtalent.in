@@ -383,11 +383,11 @@ export default function ArtistRegistrationPage() {
         }
       }
 
-      localStorage.removeItem('newtalent_reg_step1');
-      localStorage.removeItem('newtalent_reg_step2');
-      localStorage.removeItem('newtalent_reg_step3');
-      localStorage.removeItem('newtalent_reg_step4');
-      localStorage.removeItem('newtalent_reg_step5');
+      localStorage.removeItem('connectfilmcircle_reg_step1');
+      localStorage.removeItem('connectfilmcircle_reg_step2');
+      localStorage.removeItem('connectfilmcircle_reg_step3');
+      localStorage.removeItem('connectfilmcircle_reg_step4');
+      localStorage.removeItem('connectfilmcircle_reg_step5');
 
       if (isEditModeByAdmin) {
         toast({ title: "Application Updated", description: "Artist application details saved by admin." });
@@ -413,12 +413,12 @@ export default function ArtistRegistrationPage() {
           const emailInput: NewArtistApplicationAdminEmailInput = {
             applicationId: targetUserIdForSubmit,
             ArtistName: completeFinalData.fullName || user?.displayName || "N/A",
-            ArtistEmail: completeFinalData.email || user?.email || "no-reply@newtalent.in",
+            ArtistEmail: completeFinalData.email || user?.email || "no-reply@connectfilmcircle.in",
             ArtistCategory: completeFinalData.workCategoryName || "N/A",
             applicationUrl: `${getBaseUrl()}/admin/artist-applications?appId=${targetUserIdForSubmit}`,
             smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort,
             smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail,
-            siteName: globalSettings.websiteName || "Newtalent",
+            siteName: globalSettings.websiteName || "Connect Film Circle",
             logoUrl: (globalSettings.logoUrl && globalSettings.logoUrl.startsWith('http'))
               ? globalSettings.logoUrl
               : `${getBaseUrl()}${globalSettings.logoUrl ? (globalSettings.logoUrl.startsWith('/') ? globalSettings.logoUrl : '/' + globalSettings.logoUrl) : '/android-chrome-512x512.png'}`,

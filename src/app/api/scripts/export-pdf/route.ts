@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       footerTemplate: `
         <div style="font-family: sans-serif; font-size: 11px; width: 100%; padding: 0 0.5in; display: flex; justify-content: space-between; color: #666; border-top: 1px solid #eee; padding-top: 5px;">
           <div style="width: 30%; text-align: left;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>
-          <div style="width: 40%; text-align: center;">Powered by NewTalent.in</div>
+          <div style="width: 40%; text-align: center;">Powered by Connect Film Circle.in</div>
           <div style="width: 30%; text-align: right;">Copyright © ${script.writtenBy || 'Author'}</div>
         </div>
       `,

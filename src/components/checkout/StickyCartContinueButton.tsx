@@ -28,7 +28,7 @@ const StickyCartContinueButton = () => {
     updateCartCount(); 
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'newtalentUserCart') {
+      if (event.key === 'connectfilmcircleUserCart') {
         updateCartCount();
       }
     };

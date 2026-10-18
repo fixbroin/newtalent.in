@@ -817,7 +817,7 @@ export default function ProfilePage() {
               Join as Artist
             </CardTitle>
             <CardDescription>
-              Become a service provider on Newtalent and grow your business.
+              Become a service provider on Connect Film Circle and grow your business.
             </CardDescription>
           </CardHeader>
           <CardContent>

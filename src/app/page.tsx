@@ -20,7 +20,7 @@ export async function generateMetadata(
   const webSettings = await getGlobalWebSettings();
   const appBaseUrl = getBaseUrl();
 
-  const title = seoSettings.homepageMetaTitle || seoSettings.siteName || 'Newtalent';
+  const title = seoSettings.homepageMetaTitle || seoSettings.siteName || 'Connect Film Circle';
   const description = seoSettings.homepageMetaDescription || seoSettings.defaultMetaDescription || '';
   const keywords = (seoSettings.homepageMetaKeywords || seoSettings.defaultMetaKeywords || '').split(',').map(k => k.trim()).filter(k => k);
 
@@ -28,7 +28,7 @@ export async function generateMetadata(
   const rawOgImage = ogImageFromWebSettings || seoSettings.structuredDataImage || `/default-image.png`;
   const ogImage = rawOgImage.startsWith('http') ? rawOgImage : `${appBaseUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`;
 
-  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || 'Newtalent';
+  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || 'Connect Film Circle';
 
   return {
     title: title,
@@ -59,7 +59,7 @@ export default async function Page() {
   ]);
 
   const appBaseUrl = getBaseUrl();
-  const siteName = homepageData.seoSettings.siteName || 'Newtalent';
+  const siteName = homepageData.seoSettings.siteName || 'Connect Film Circle';
   const seoSettings = homepageData.seoSettings;
 
   const rawSchemaImage = seoSettings.structuredDataImage || `/android-chrome-512x512.png`;

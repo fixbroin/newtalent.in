@@ -143,7 +143,7 @@ export default function UserDetailsModal({ user, onClose, onUpdateUser }: UserDe
       ? sanitizedPhone
       : `91${sanitizedPhone}`;
   
-    const message = encodeURIComponent("Hi, I'm contacting you from Newtalent.");
+    const message = encodeURIComponent("Hi, I'm contacting you from Connect Film Circle.");
   
     window.open(`https://wa.me/${internationalPhone}?text=${message}`, '_blank');
   };

@@ -10,7 +10,7 @@ export interface CartEntry {
   quantity: number;
 }
 
-const CART_STORAGE_KEY = 'newtalentUserCart';
+const CART_STORAGE_KEY = 'connectfilmcircleUserCart';
 
 /**
  * Gets cart entries from localStorage. This is the primary source for guests and the initial source for logged-in users before sync.
@@ -121,7 +121,7 @@ export const syncCartToFirestore = async (userId: string, cartEntries: CartEntry
  */
 export const saveActiveCheckoutEntries = (entries: CartEntry[]): void => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem('newtalentActiveCheckoutItems', JSON.stringify(entries));
+    window.localStorage.setItem('connectfilmcircleActiveCheckoutItems', JSON.stringify(entries));
   }
 };
 
@@ -132,7 +132,7 @@ export const getActiveCheckoutEntries = (): CartEntry[] => {
   if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
     return [];
   }
-  const storedActive = window.localStorage.getItem('newtalentActiveCheckoutItems');
+  const storedActive = window.localStorage.getItem('connectfilmcircleActiveCheckoutItems');
   if (storedActive) {
     try {
       const parsed = JSON.parse(storedActive);
@@ -157,9 +157,9 @@ export const removeCheckedOutItemsFromCart = async (userId: string | undefined):
     await syncCartToFirestore(userId, remaining);
   }
   if (typeof window !== 'undefined') {
-    window.localStorage.removeItem('newtalentActiveCheckoutItems');
-    window.localStorage.removeItem('newtalentActiveCheckoutCategory');
-    window.localStorage.removeItem('newtalentActiveCheckoutCategoryName');
+    window.localStorage.removeItem('connectfilmcircleActiveCheckoutItems');
+    window.localStorage.removeItem('connectfilmcircleActiveCheckoutCategory');
+    window.localStorage.removeItem('connectfilmcircleActiveCheckoutCategoryName');
     window.dispatchEvent(new StorageEvent('storage', { key: CART_STORAGE_KEY }));
   }
 };

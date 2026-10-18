@@ -27,8 +27,8 @@ export async function generateMetadata(
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
 
-  const title = pageData?.metaTitle || `Contact Us | ${seoSettings.siteName || 'Newtalent'}`;
-  const description = pageData?.metaDescription || "Contact Newtalent for any queries, support, or feedback regarding our home services in Bangalore.";
+  const title = pageData?.metaTitle || `Contact Us | ${seoSettings.siteName || 'Connect Film Circle'}`;
+  const description = pageData?.metaDescription || "Contact Connect Film Circle for any queries, support, or feedback regarding our home services in Bangalore.";
 
   return {
     title: title,
@@ -77,15 +77,15 @@ export default async function ContactUsPage() {
   const contactSchema = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": `Contact ${webSettings.websiteName || 'Newtalent'}`,
-    "description": `Contact ${webSettings.websiteName || 'Newtalent'} for professional artist services. Reach us via phone, email, or visit our office.`,
+    "name": `Contact ${webSettings.websiteName || 'Connect Film Circle'}`,
+    "description": `Contact ${webSettings.websiteName || 'Connect Film Circle'} for professional artist services. Reach us via phone, email, or visit our office.`,
     "url": `${appBaseUrl}/contact-us`,
     "mainEntity": {
       "@type": "LocalBusiness",
-      "name": webSettings.websiteName || "Newtalent",
+      "name": webSettings.websiteName || "Connect Film Circle",
       "image": `${appBaseUrl}/android-chrome-512x512.png`,
       ...(webSettings.showContactMobile ?? true ? { "telephone": webSettings.contactMobile || "+91-7353113455" } : {}),
-      ...(webSettings.showContactEmail ?? true ? { "email": webSettings.contactEmail || "sup@newtalent.in" } : {}),
+      ...(webSettings.showContactEmail ?? true ? { "email": webSettings.contactEmail || "sup@connectfilmcircle.in" } : {}),
       ...(webSettings.showContactAddress ?? true ? { 
         "address": {
           "@type": "PostalAddress",

@@ -133,9 +133,9 @@ const bulkMarketingEmailFlow = ai.defineFlow(
       let failedSends = 0;
 
       const appDetails = {
-        websiteName: globalSettings.websiteName || 'Newtalent',
+        websiteName: globalSettings.websiteName || 'Connect Film Circle',
         websiteUrl: getBaseUrl(),
-        supportEmail: globalSettings.contactEmail || 'support@newtalent.in',
+        supportEmail: globalSettings.contactEmail || 'support@connectfilmcircle.in',
         companyAddress: globalSettings.address || '',
         logoUrl: globalSettings.logoUrl || '',
       };

@@ -24,7 +24,7 @@ import dynamic from 'next/dynamic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = 'newtalent_reg_step5';
+const STORAGE_KEY = 'connectfilmcircle_reg_step5';
 
 const MapAddressSelector = dynamic(() => import('@/components/checkout/MapAddressSelector'), {
   loading: () => <div className="flex items-center justify-center h-64 bg-muted rounded-md"><Loader2 className="h-8 w-8 animate-spin" /></div>,
@@ -254,7 +254,7 @@ export default function Step5WorkAreaSignature({
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
               <p className="text-sm font-medium text-primary leading-relaxed">
-                "I hereby declare that all the information provided by me in this application is true, complete, and correct. I understand that any false statement or omission of facts may lead to the rejection of my profile on NewTalent.in or termination of my access to the networking platform."
+                "I hereby declare that all the information provided by me in this application is true, complete, and correct. I understand that any false statement or omission of facts may lead to the rejection of my profile on Connect Film Circle.in or termination of my access to the networking platform."
               </p>
             </div>
             

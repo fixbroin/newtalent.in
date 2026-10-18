@@ -127,7 +127,7 @@ const newArtistApplicationAdminEmailFlow = ai.defineFlow(
       const {
         smtpHost, smtpPort, smtpUser, smtpPass, senderEmail,
         applicationId, ArtistName, ArtistEmail, ArtistCategory, applicationUrl,
-        siteName = "Newtalent", logoUrl,
+        siteName = "Connect Film Circle", logoUrl,
         ArtistMobile, ArtistGender, ArtistExperience, ArtistLocation, ArtistAge, ArtistHeight, ArtistWeight, ArtistSkinTone, ArtistQualification, ArtistLanguages
       } = details;
 

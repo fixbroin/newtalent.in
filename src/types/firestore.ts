@@ -171,7 +171,7 @@ export interface AppliedPlatformFeeItem {
 
 export interface FirestoreBooking {
   id?: string; // Firestore document ID (optional before creation)
-  bookingId: string; // User-friendly booking ID (e.g., Newtalent-TIMESTAMP-RANDOM)
+  bookingId: string; // User-friendly booking ID (e.g., Connect Film Circle-TIMESTAMP-RANDOM)
   userId?: string; // If user is logged in
   artistId?: string; // ID of the assigned artist
   customerName: string;

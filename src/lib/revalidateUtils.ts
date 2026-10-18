@@ -42,7 +42,7 @@ export async function triggerRefresh(tag: 'services' | 'categories' | 'cities' |
 
 export async function submitProfileToGoogleIndexing(categorySlug: string, username: string, type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED') {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://newtalent.in';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://connectfilmcircle.in';
     const profileUrl = `${baseUrl}/category/${categorySlug}/${username}`;
     return await submitToGoogleIndexing(profileUrl, type);
   } catch (error: any) {
@@ -53,7 +53,7 @@ export async function submitProfileToGoogleIndexing(categorySlug: string, userna
 
 export async function submitPathToGoogleIndexing(path: string, type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED') {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://newtalent.in';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://connectfilmcircle.in';
     const fullUrl = `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
     return await submitToGoogleIndexing(fullUrl, type);
   } catch (error: any) {

@@ -328,7 +328,7 @@ export default function PublicProfileClient({ artist, relatedArtists = [], categ
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${artist.fullName} - ${artist.workCategoryName} on Newtalent`,
+        title: `${artist.fullName} - ${artist.workCategoryName} on Connect Film Circle`,
         url: window.location.href,
       });
     } else {

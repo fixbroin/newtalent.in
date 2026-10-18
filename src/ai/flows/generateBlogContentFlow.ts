@@ -18,7 +18,7 @@ const GenerateBlogContentOutputSchema = z.object({
   excerpt: z.string().describe("A short, catchy summary of the blog post (max 150 characters) to be used on the blog list card."),
   tags: z.string().describe("A comma-separated string of 3-5 relevant tags for the post (e.g., 'Maintenance, DIY, Plumbing')."),
   readingTime: z.string().describe("Estimated reading time, e.g., '5 min' or '8 min'."),
-  h1_title: z.string().describe("An H1 title with the exact format: '{Title Name} Service Near You | Newtalent'"),
+  h1_title: z.string().describe("An H1 title with the exact format: '{Title Name} Service Near You | Connect Film Circle'"),
   meta_title: z.string().describe("A meta title with the format: '{Title Name} Near Me {Category Name} Near Me' or '{Title Name} | Home Services Near Me' if no category is provided."),
   meta_description: z.string().describe("An SEO-optimized meta description, under 160 characters, including relevant service keywords (e.g., Carpentry, Plumber, Electrician, Home Cleaning)."),
   meta_keywords: z.string().describe("A comma-separated string of SEO keywords, including the title, Bangalore, and service keywords like Carpentry near me, Plumber near me, etc."),
@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
   name: 'generateArtistBlogPrompt',
   input: { schema: GenerateBlogContentInputSchema },
   output: { schema: GenerateBlogContentOutputSchema },
-  prompt: `You are an expert Talent SEO copywriter for an artist discovery platform called "Newtalent" based in India. Your goal is to write a blog post that ranks #1 on Google for talent hiring and artist discovery in India.
+  prompt: `You are an expert Talent SEO copywriter for an artist discovery platform called "Connect Film Circle" based in India. Your goal is to write a blog post that ranks #1 on Google for talent hiring and artist discovery in India.
 
 The content must be formatted in HTML using <h2> for headers, <p> for paragraphs, <br> for line breaks, and <ul> with <li> for lists. Do not use markdown symbols.
 
@@ -51,14 +51,14 @@ Generate highly aggressive, intent-driven content based on the following:
    - Use aggressive keywords like "Best", "Professional", "Top-Rated", "Hire", and "Connect" naturally throughout.
    - Mention the importance of verified profiles and high-quality portfolios.
    - Structure:
-     - <h2><strong>Introduction</strong>: Why Newtalent is the best platform for {{title}} in India.
+     - <h2><strong>Introduction</strong>: Why Connect Film Circle is the best platform for {{title}} in India.
      - <h2><strong>Finding Professional {{categoryName}} Artists</strong>: Focus on talent quality and portfolio verification.
-     - <h2><strong>Talent Categories on Newtalent</strong>: Use <ul> with <li>.
-     - <h2><strong>Why Hire Through Newtalent?</strong>: Highlight direct connection and secure platform.
+     - <h2><strong>Talent Categories on Connect Film Circle</strong>: Use <ul> with <li>.
+     - <h2><strong>Why Hire Through Connect Film Circle?</strong>: Highlight direct connection and secure platform.
      - <h2><strong>Industry Trends ({{currentYear}})</strong>: Provide insights into the artist and talent landscape in India.
      - <h2><strong>Tips for Artists and Hirers</strong>: Practical value for the community.
-     - <h2><strong>Conclusion</strong>: Call to action to join Newtalent and discover {{categoryName}} talent.
-   - **Keywords Footer**: An <h2> header 'Search Keywords' with a single <p> containing: "{{title}}, hire artists India, best {{categoryName}} profiles, discover talent online, professional performers India, Newtalent platform".
+     - <h2><strong>Conclusion</strong>: Call to action to join Connect Film Circle and discover {{categoryName}} talent.
+   - **Keywords Footer**: An <h2> header 'Search Keywords' with a single <p> containing: "{{title}}, hire artists India, best {{categoryName}} profiles, discover talent online, professional performers India, Connect Film Circle platform".
 
 2. **excerpt**: A high-CTR summary (under 150 chars) starting with "Looking for the best...".
 
@@ -66,9 +66,9 @@ Generate highly aggressive, intent-driven content based on the following:
 
 4. **readingTime**: An estimate of how long it takes to read (e.g., "5 min").
 
-5. **h1_title**: Format: "Best Professional {{title}} in India | Newtalent".
+5. **h1_title**: Format: "Best Professional {{title}} in India | Connect Film Circle".
 
-6. **meta_title**: Format: "Hire {{title}} | Top-Rated {{categoryName}} Artists | Newtalent".
+6. **meta_title**: Format: "Hire {{title}} | Top-Rated {{categoryName}} Artists | Connect Film Circle".
 
 7. **meta_description**: A compelling meta description (under 160 chars) starting with "Discover and hire the best professional artists for {{title}} in India...".
 

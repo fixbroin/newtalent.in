@@ -59,7 +59,7 @@ type MarketingAutomationFormData = z.infer<typeof marketingAutomationSchema>;
 const defaultMarketingAutomationSettings: Omit<MarketingAutomationSettings, 'updatedAt'> = {
     noBookingReminderEnabled: false,
     noBookingReminderDelay: { days: 1, hours: 0, minutes: 0 },
-    noBookingReminderTemplate: "Hi {{name}},\n\nWe noticed you haven't booked a service yet. Is there anything we can help you find?\n\nExplore our popular services: {{popular_services}}\n\nThanks,\nThe Newtalent Team",
+    noBookingReminderTemplate: "Hi {{name}},\n\nWe noticed you haven't booked a service yet. Is there anything we can help you find?\n\nExplore our popular services: {{popular_services}}\n\nThanks,\nThe Connect Film Circle Team",
     noBookingReminderCategoryId: "none",
 
     abandonedCartEnabled: false,
@@ -69,7 +69,7 @@ const defaultMarketingAutomationSettings: Omit<MarketingAutomationSettings, 'upd
 
     recurringEngagementEnabled: false,
     recurringEngagementDelay: { days: 15, hours: 0, minutes: 0 },
-    recurringEngagementTemplate: "Hi {{name}},\n\nJust a friendly check-in from Newtalent! We're always here for your home service needs. Check out our popular services in {{city}}:\n\n{{popular_services}}\n\nHave a great week!",
+    recurringEngagementTemplate: "Hi {{name}},\n\nJust a friendly check-in from Connect Film Circle! We're always here for your home service needs. Check out our popular services in {{city}}:\n\n{{popular_services}}\n\nHave a great week!",
     recurringEngagementCategoryId: "none",
 };
 
@@ -189,7 +189,7 @@ export default function MarketingAutomationPage() {
         const mergeData = {
           name: adminUser.displayName || 'Admin', email: adminUser.email, mobile: adminUser.phoneNumber || '',
           signupDate: adminUser.metadata.creationTime ? new Date(adminUser.metadata.creationTime).toLocaleDateString('en-IN') : '',
-          websiteName: globalSettings.websiteName || 'Newtalent', websiteUrl: baseUrl, supportEmail: globalSettings.contactEmail || 'support@example.com',
+          websiteName: globalSettings.websiteName || 'Connect Film Circle', websiteUrl: baseUrl, supportEmail: globalSettings.contactEmail || 'support@example.com',
           companyAddress: globalSettings.address || 'Company Address', popular_services: popularServicesHtml, popular_categories: popularCategoriesHtml,
           all_services: allServicesHtml, all_categories: allCategoriesHtml, category_services: categoryServicesHtml, cart_items: cartContentHtml,
           cart_item_name: "Sample Service A", cart_link: `${baseUrl}/cart`, city: "your city",
@@ -283,9 +283,9 @@ export default function MarketingAutomationPage() {
         <TabsContent value="send_email" className="mt-0 focus-visible:outline-none"><SendManualEmailForm /></TabsContent>
         <TabsContent value="email_automations" className="mt-0 focus-visible:outline-none">          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {renderAutomationCard('noBookingReminder', 'No Booking Reminder', "Follow-up with users who sign up but don't book a service.", <Users className="mr-2 h-5 w-5 text-primary"/>, "A friendly reminder from " + (globalSettings.websiteName || "Newtalent"), "noBookingReminderCategoryId")}
+              {renderAutomationCard('noBookingReminder', 'No Booking Reminder', "Follow-up with users who sign up but don't book a service.", <Users className="mr-2 h-5 w-5 text-primary"/>, "A friendly reminder from " + (globalSettings.websiteName || "Connect Film Circle"), "noBookingReminderCategoryId")}
               {renderAutomationCard('abandonedCart', 'Abandoned Cart Reminder', "Remind users who add items to cart but don't check out.", <ShoppingCart className="mr-2 h-5 w-5 text-primary"/>, "You left something in your cart!", "abandonedCartCategoryId")}
-              {renderAutomationCard('recurringEngagement', 'Recurring Engagement', "Send regular emails to all registered users to keep them engaged.", <Repeat className="mr-2 h-5 w-5 text-primary"/>, "Here's what's new at " + (globalSettings.websiteName || "Newtalent"), "recurringEngagementCategoryId")}
+              {renderAutomationCard('recurringEngagement', 'Recurring Engagement', "Send regular emails to all registered users to keep them engaged.", <Repeat className="mr-2 h-5 w-5 text-primary"/>, "Here's what's new at " + (globalSettings.websiteName || "Connect Film Circle"), "recurringEngagementCategoryId")}
               <CardFooter className="flex justify-end"><Button type="submit" disabled={isSaving || isTestSending}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save Automation Settings</Button></CardFooter>
             </form>
           </Form>

@@ -23,10 +23,10 @@ export async function generateMetadata(
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
 
-  if (!pageData) return { title: `About Us | Newtalent` };
+  if (!pageData) return { title: `About Us | Connect Film Circle` };
 
-  const title = pageData.metaTitle || `About Us | ${seoSettings.siteName || 'Newtalent'}`;
-  const description = pageData.metaDescription || pageData.excerpt || "Learn more about Newtalent - India's premier platform to discover and connect with top artists and creative talent.";
+  const title = pageData.metaTitle || `About Us | ${seoSettings.siteName || 'Connect Film Circle'}`;
+  const description = pageData.metaDescription || pageData.excerpt || "Learn more about Connect Film Circle - India's premier platform to discover and connect with top artists and creative talent.";
 
   return {
     title: title,
@@ -74,10 +74,10 @@ export default async function AboutUsPage() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Newtalent",
+    "name": "Connect Film Circle",
     "url": appBaseUrl,
     "logo": `${appBaseUrl}/android-chrome-512x512.png`,
-    "description": pageData.metaDescription || "Newtalent is India's leading artist discovery platform, connecting people with professional actors, singers, technicians, and creative performers.",
+    "description": pageData.metaDescription || "Connect Film Circle is India's leading artist discovery platform, connecting people with professional actors, singers, technicians, and creative performers.",
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "+91-7353113455",
@@ -86,11 +86,11 @@ export default async function AboutUsPage() {
       "availableLanguage": ["en", "kn", "hi"]
     },
     "sameAs": [
-      "https://www.facebook.com/newtalent.in",
-      "https://x.com/newtalent_in",
-      "https://www.instagram.com/newtalent.in/",
-      "https://www.linkedin.com/company/newtalent-in",
-      "https://www.youtube.com/@newtalent-in"
+      "https://www.facebook.com/connectfilmcircle.in",
+      "https://x.com/connectfilmcircle_in",
+      "https://www.instagram.com/connectfilmcircle.in/",
+      "https://www.linkedin.com/company/connectfilmcircle-in",
+      "https://www.youtube.com/@connectfilmcircle-in"
     ]
   };
 

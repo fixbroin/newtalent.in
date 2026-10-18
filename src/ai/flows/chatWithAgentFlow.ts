@@ -3,7 +3,7 @@
 /**
  * src/ai/flows/chatWithAgentFlow.ts
  *
- * Enhanced production-ready AI chat flow for Newtalent.
+ * Enhanced production-ready AI chat flow for Connect Film Circle.
  * Now location-aware, website-knowledgeable, and respects admin takeover.
  */
 
@@ -293,7 +293,7 @@ function buildSystemPrompt(params: {
   const areasText = locations.areas.map(a => `${a.name} (${a.cityName}): ${a.url}`).join('\n');
 
   return `
-You are the official Newtalent AI Support Specialist. Your goal is to provide accurate, helpful, and concise information about Newtalent's services, locations, and policies.
+You are the official Connect Film Circle AI Support Specialist. Your goal is to provide accurate, helpful, and concise information about Connect Film Circle's services, locations, and policies.
 
 Current User: ${name}
 
@@ -374,13 +374,13 @@ const chatAgentFlow = ai.defineFlow(
             smtpUser: appConfig?.smtpUser,
             smtpPass: appConfig?.smtpPass,
             senderEmail: appConfig?.senderEmail,
-            siteName: "Newtalent Support Alert",
+            siteName: "Connect Film Circle Support Alert",
         });
     };
 
     // 1) Greeting
     if (isGreeting(message)) {
-      return { response: `Hi ${name}! I'm your Newtalent assistant. How can I help you with our services or your bookings today?` };
+      return { response: `Hi ${name}! I'm your Connect Film Circle assistant. How can I help you with our services or your bookings today?` };
     }
 
     // 2) Human Support Explicit Intent
@@ -409,7 +409,7 @@ const chatAgentFlow = ai.defineFlow(
         }
         if (msg.includes('where') || msg.includes('city') || msg.includes('area')) {
             const cityNames = locations.cities.map(c => c.name).join(', ');
-            return { response: `Newtalent currently operates in ${cityNames}. We cover many areas including ${locations.areas.slice(0, 5).map(a => a.name).join(', ')}, and more!` };
+            return { response: `Connect Film Circle currently operates in ${cityNames}. We cover many areas including ${locations.areas.slice(0, 5).map(a => a.name).join(', ')}, and more!` };
         }
     }
 

@@ -417,7 +417,7 @@ export default function ArtistApplicationDetailsModal({
     setIsDownloadingPdf(true);
     try {
       const companyInfo = {
-        name: globalCompanySettings?.websiteName || "Newtalent.in",
+        name: globalCompanySettings?.websiteName || "Connect Film Circle.in",
         address: globalCompanySettings?.address || "Company Address Placeholder",
         contactEmail: globalCompanySettings?.contactEmail || 'support@example.com',
         contactMobile: globalCompanySettings?.contactMobile || '+91-XXXXXXXXXX',

@@ -55,7 +55,7 @@ const prompt = ai.definePrompt({
   name: 'generateServiceDetailsPrompt',
   input: { schema: GenerateServiceDetailsInputSchema },
   output: { schema: GenerateServiceDetailsOutputSchema },
-  prompt: `You are an expert Local SEO copywriter for a home services company called "Newtalent" operating specifically in Bangalore, India. Your task is to generate highly aggressive, intent-driven content and SEO metadata for a specific service to rank #1 on Google for Bangalore-based searches.
+  prompt: `You are an expert Local SEO copywriter for a home services company called "Connect Film Circle" operating specifically in Bangalore, India. Your task is to generate highly aggressive, intent-driven content and SEO metadata for a specific service to rank #1 on Google for Bangalore-based searches.
 
 Service Name: {{serviceName}}
 Category: {{categoryName}}

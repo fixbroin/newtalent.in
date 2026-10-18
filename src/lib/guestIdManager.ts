@@ -3,7 +3,7 @@
 
 import { nanoid } from 'nanoid';
 
-const GUEST_ID_KEY = 'newtalentGuestId';
+const GUEST_ID_KEY = 'connectfilmcircleGuestId';
 const GUEST_ID_EXPIRY_DAYS = 30; // How long to keep the guest ID
 
 export const getGuestId = (): string | null => {

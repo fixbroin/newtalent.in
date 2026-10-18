@@ -196,9 +196,9 @@ export async function POST(request: Request) {
     if (isCompleted) {
         try {
             const companyDetails = {
-                name: seoSettings?.websiteName || "Newtalent",
+                name: seoSettings?.websiteName || "Connect Film Circle",
                 address: appConfig?.companyAddress || "#44 G S Palya Road Konappana Agrahara Electronic City Phase 2 -560100",
-                contactEmail: appConfig?.companyEmail || 'support@newtalent.in',
+                contactEmail: appConfig?.companyEmail || 'support@connectfilmcircle.in',
                 contactMobile: appConfig?.companyPhone || '+91-7353113455',
             };
             const pdfDataUri = await generateInvoicePdf(booking, companyDetails);
@@ -234,7 +234,7 @@ export async function POST(request: Request) {
         totalAmount: booking.totalAmount,
         paymentMethod: booking.paymentMethod,
         status: booking.status,
-        siteName: seoSettings?.websiteName || "Newtalent",
+        siteName: seoSettings?.websiteName || "Connect Film Circle",
         logoUrl: seoSettings?.logoUrl,
         smtpHost: appConfig.smtpHost,
         smtpPort: appConfig.smtpPort,

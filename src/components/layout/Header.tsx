@@ -113,7 +113,7 @@ const Header = () => {
 
   useEffect(() => {
     const getInitialTheme = () => {
-        const storedTheme = localStorage.getItem('newtalent-theme') as 'light' | 'dark' | null;
+        const storedTheme = localStorage.getItem('connectfilmcircle-theme') as 'light' | 'dark' | null;
         if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
         if (typeof window.matchMedia !== 'function') return 'light';
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -130,7 +130,7 @@ const Header = () => {
 
     window.addEventListener('themeChanged', handleThemeChange);
     window.addEventListener('storage', (event) => {
-        if (event.key === 'newtalent-theme') {
+        if (event.key === 'connectfilmcircle-theme') {
             handleThemeChange();
         }
     });
@@ -138,7 +138,7 @@ const Header = () => {
     return () => {
         window.removeEventListener('themeChanged', handleThemeChange);
         window.removeEventListener('storage', (event) => {
-            if (event.key === 'newtalent-theme') handleThemeChange();
+            if (event.key === 'connectfilmcircle-theme') handleThemeChange();
         });
     };
   }, []);
@@ -155,7 +155,7 @@ const Header = () => {
     updateCartCount();
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'newtalentUserCart' || event.key === null) {
+      if (event.key === 'connectfilmcircleUserCart' || event.key === null) {
         updateCartCount();
       }
     };

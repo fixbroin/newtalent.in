@@ -41,7 +41,7 @@ export async function generateMetadata(
     const appBaseUrl = getBaseUrl();
 
     // Use city specific SEO or global pattern
-    const title = city.seo_title || city.metaTitle || (seoSettings.cityPageTitlePattern?.replace(/{{cityName}}/g, city.name)) || `${city.name} Artists | Newtalent`;
+    const title = city.seo_title || city.metaTitle || (seoSettings.cityPageTitlePattern?.replace(/{{cityName}}/g, city.name)) || `${city.name} Artists | Connect Film Circle`;
     const description = city.seo_description || city.metaDescription || (seoSettings.cityPageDescriptionPattern?.replace(/{{cityName}}/g, city.name)) || `Connect with professional artists in ${city.name}.`;
     const keywords = (city.seo_keywords || city.metaKeywords || (seoSettings.cityPageKeywordsPattern?.replace(/{{cityName}}/g, city.name)) || "").split(',').map(k => k.trim()).filter(k => k);
 

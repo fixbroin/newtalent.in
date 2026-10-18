@@ -115,7 +115,7 @@ export async function generateMetadata(
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
 
-  const title = post.metaTitle || post.meta_title || `${post.title} | Newtalent Blog`;
+  const title = post.metaTitle || post.meta_title || `${post.title} | Connect Film Circle Blog`;
   const description = post.metaDescription || post.meta_description || post.excerpt || post.title || '';
   
   const rawOgImage = post.coverImageUrl || seoSettings.structuredDataImage || `/default-image.png`;
@@ -202,11 +202,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     "dateModified": getIsoDate(post.updatedAt || post.createdAt),
     "author": {
       "@type": "Person",
-      "name": post.authorName || "Newtalent Expert"
+      "name": post.authorName || "Connect Film Circle Expert"
     },
     "publisher": {
       "@type": "Organization",
-      "name": "Newtalent",
+      "name": "Connect Film Circle",
       "logo": {
         "@type": "ImageObject",
         "url": `${appBaseUrl}/android-chrome-512x512.png`
@@ -247,7 +247,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {post.authorName?.charAt(0) || <User className="h-5 w-5" />}
                 </div>
-                <span>{post.authorName || 'Newtalent Expert'}</span>
+                <span>{post.authorName || 'Connect Film Circle Expert'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />

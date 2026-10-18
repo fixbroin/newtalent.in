@@ -59,24 +59,24 @@ const clearLocalStorageItems = async (uid?: string) => {
         console.error("Error clearing cart after booking:", e);
     }
     if (typeof window !== 'undefined') {
-        localStorage.removeItem('newtalentScheduledDate');
-        localStorage.removeItem('newtalentScheduledTimeSlot');
-        localStorage.removeItem('newtalentEstimatedEndTime');
-        localStorage.removeItem('newtalentCustomerAddress');
+        localStorage.removeItem('connectfilmcircleScheduledDate');
+        localStorage.removeItem('connectfilmcircleScheduledTimeSlot');
+        localStorage.removeItem('connectfilmcircleEstimatedEndTime');
+        localStorage.removeItem('connectfilmcircleCustomerAddress');
         localStorage.removeItem('razorpayPaymentId');
         localStorage.removeItem('razorpayOrderId');
         localStorage.removeItem('razorpaySignature');
-        localStorage.removeItem('newtalentAppliedPromoCode');
-        localStorage.removeItem('newtalentBookingDiscountCode');
-        localStorage.removeItem('newtalentBookingDiscountAmount');
-        localStorage.removeItem('newtalentAppliedPromoCodeId');
-        localStorage.removeItem('newtalentAppliedPlatformFees');
+        localStorage.removeItem('connectfilmcircleAppliedPromoCode');
+        localStorage.removeItem('connectfilmcircleBookingDiscountCode');
+        localStorage.removeItem('connectfilmcircleBookingDiscountAmount');
+        localStorage.removeItem('connectfilmcircleAppliedPromoCodeId');
+        localStorage.removeItem('connectfilmcircleAppliedPlatformFees');
         localStorage.removeItem('isProcessingCancellationFee');
         localStorage.removeItem('bookingIdForCancellationFee');
         localStorage.removeItem('cancellationFeeAmount');
-        localStorage.removeItem('newtalentPaymentMethod');
-        localStorage.removeItem('newtalentFinalBookingTotal');
-        localStorage.removeItem('newtalentPendingSubscriptionPlanId');
+        localStorage.removeItem('connectfilmcirclePaymentMethod');
+        localStorage.removeItem('connectfilmcircleFinalBookingTotal');
+        localStorage.removeItem('connectfilmcirclePendingSubscriptionPlanId');
     }
 };
 
@@ -152,7 +152,7 @@ export default function ThankYouPage() {
       setIsLoadingPage(true);
       hideLoading(); 
       
-      const paymentMethod = localStorage.getItem('newtalentPaymentMethod');
+      const paymentMethod = localStorage.getItem('connectfilmcirclePaymentMethod');
       const isOnlinePayment = paymentMethod === 'Online';
       
       const isProcessingCancellationFee = localStorage.getItem('isProcessingCancellationFee') === 'true';
@@ -161,7 +161,7 @@ export default function ThankYouPage() {
       const razorpayPaymentId = localStorage.getItem('razorpayPaymentId'); 
       const razorpayOrderId = localStorage.getItem('razorpayOrderId');
       const razorpaySignature = localStorage.getItem('razorpaySignature');
-      const pendingSubscriptionPlanId = localStorage.getItem('newtalentPendingSubscriptionPlanId');
+      const pendingSubscriptionPlanId = localStorage.getItem('connectfilmcirclePendingSubscriptionPlanId');
 
       // --- 1. Handle Subscription Payment Verification & Activation ---
       if (pendingSubscriptionPlanId && razorpayPaymentId && isOnlinePayment && currentUser?.uid) {
@@ -199,7 +199,7 @@ export default function ThankYouPage() {
           console.error("Error during subscription verification:", error);
           toast({ title: "Subscription Error", description: (error as Error).message || "Failed to activate subscription. Please contact support.", variant: "destructive" });
         } finally {
-          localStorage.removeItem('newtalentPendingSubscriptionPlanId');
+          localStorage.removeItem('connectfilmcirclePendingSubscriptionPlanId');
           await clearLocalStorageItems(currentUser?.uid);
           setIsLoadingPage(false);
         }
@@ -293,17 +293,17 @@ export default function ThankYouPage() {
         let estimatedEndTime: string | undefined;
 
         if (typeof window !== 'undefined') {
-          customerEmail = localStorage.getItem('newtalentCustomerEmail') || customerEmail;
-          scheduledDateStored = localStorage.getItem('newtalentScheduledDate') || scheduledDateStored; 
-          scheduledTimeSlot = localStorage.getItem('newtalentScheduledTimeSlot') || scheduledTimeSlot;
-          estimatedEndTime = localStorage.getItem('newtalentEstimatedEndTime') || undefined;
-          bookingDiscountCode = localStorage.getItem('newtalentBookingDiscountCode') || undefined;
-          const discountAmountStr = localStorage.getItem('newtalentBookingDiscountAmount');
+          customerEmail = localStorage.getItem('connectfilmcircleCustomerEmail') || customerEmail;
+          scheduledDateStored = localStorage.getItem('connectfilmcircleScheduledDate') || scheduledDateStored; 
+          scheduledTimeSlot = localStorage.getItem('connectfilmcircleScheduledTimeSlot') || scheduledTimeSlot;
+          estimatedEndTime = localStorage.getItem('connectfilmcircleEstimatedEndTime') || undefined;
+          bookingDiscountCode = localStorage.getItem('connectfilmcircleBookingDiscountCode') || undefined;
+          const discountAmountStr = localStorage.getItem('connectfilmcircleBookingDiscountAmount');
           bookingDiscountAmount = discountAmountStr ? parseFloat(discountAmountStr) : undefined;
-          appliedPromoCodeId = localStorage.getItem('newtalentAppliedPromoCodeId') || undefined;
-          const platformFeesStr = localStorage.getItem('newtalentAppliedPlatformFees');
+          appliedPromoCodeId = localStorage.getItem('connectfilmcircleAppliedPromoCodeId') || undefined;
+          const platformFeesStr = localStorage.getItem('connectfilmcircleAppliedPlatformFees');
           if (platformFeesStr) { try { storedAppliedPlatformFees = JSON.parse(platformFeesStr); } catch (e) { console.error("Error parsing stored platform fees:", e); } }
-          const addressDataString = localStorage.getItem('newtalentCustomerAddress');
+          const addressDataString = localStorage.getItem('connectfilmcircleCustomerAddress');
           if (addressDataString) { const addressData = JSON.parse(addressDataString); customerName = addressData.fullName || customerName; customerPhone = addressData.phone || customerPhone; addressLine1 = addressData.addressLine1 || addressLine1; addressLine2 = addressData.addressLine2 || undefined; city = addressData.city || city; state = addressData.state || state; pincode = addressData.pincode || pincode; latitude = addressData.latitude === null ? undefined : addressData.latitude; longitude = addressData.longitude === null ? undefined : addressData.longitude; }
         }
 

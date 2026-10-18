@@ -57,7 +57,7 @@ export async function generateMetadata(
   const appBaseUrl = getBaseUrl();
   const placeholderData = { categoryName: data.category.name };
 
-  const title = replacePlaceholders(data.category.metaTitle || seoSettings.categoryPageTitlePattern, placeholderData) || `${data.category.name} Services | Newtalent`;
+  const title = replacePlaceholders(data.category.metaTitle || seoSettings.categoryPageTitlePattern, placeholderData) || `${data.category.name} Services | Connect Film Circle`;
   const description = replacePlaceholders(data.category.metaDescription || seoSettings.categoryPageDescriptionPattern, placeholderData) || `Professional ${data.category.name} services near you.`;
   const keywords = (replacePlaceholders(data.category.metaKeywords || seoSettings.categoryPageKeywordsPattern, placeholderData) || `${data.category.name}, best ${data.category.name}`).split(',').map(k => k.trim()).filter(k => k);
 
@@ -133,7 +133,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       "image": schemaImage,
       "provider": {
         "@type": "LocalBusiness",
-        "name": "Newtalent"
+        "name": "Connect Film Circle"
       }
     };
 

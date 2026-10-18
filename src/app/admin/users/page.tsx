@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
           smtpUser: appConfig.smtpUser,
           smtpPass: appConfig.smtpPass,
           senderEmail: appConfig.senderEmail,
-          siteName: appConfig.siteName || "Newtalent",
+          siteName: appConfig.siteName || "Connect Film Circle",
           logoUrl: appConfig.logoUrl,
         }).catch(err => {
           console.error("Failed to send status update email:", err);
@@ -283,7 +283,7 @@ export default function AdminUsersPage() {
     e.stopPropagation();
     const sanitizedPhone = mobileNumber.replace(/\D/g, '');
     const internationalPhone = sanitizedPhone.startsWith('91') ? sanitizedPhone : `91${sanitizedPhone}`;
-    const message = encodeURIComponent("Hi, I'm contacting you from Newtalent.");
+    const message = encodeURIComponent("Hi, I'm contacting you from Connect Film Circle.");
     window.open(`https://wa.me/${internationalPhone}?text=${message}`, '_blank');
   };
 

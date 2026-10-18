@@ -58,9 +58,9 @@ const replaceMergeTags = (
     })());
     
     // Correctly sourced settings
-    body = body.replace(/\{\{websiteName\}\}/g, globalSettings.websiteName || 'Newtalent');
+    body = body.replace(/\{\{websiteName\}\}/g, globalSettings.websiteName || 'Connect Film Circle');
     body = body.replace(/\{\{websiteUrl\}\}/g, getBaseUrl());
-    body = body.replace(/\{\{supportEmail\}\}/g, globalSettings.contactEmail || 'support@newtalent.in');
+    body = body.replace(/\{\{supportEmail\}\}/g, globalSettings.contactEmail || 'support@connectfilmcircle.in');
     body = body.replace(/\{\{companyAddress\}\}/g, globalSettings.address || 'Company Address');
     
     // Dynamic content
@@ -228,7 +228,7 @@ export async function GET(req: NextRequest) {
 
                     const categoryServicesHtml = await getCategoryServicesHtml(marketingConfig.noBookingReminderCategoryId, userCart);
                     const body = replaceMergeTags(marketingConfig.noBookingReminderTemplate || "", user, appConfig, globalSettings, { popularServicesHtml, cartContentHtml, popularCategoriesHtml, allServicesHtml, allCategoriesHtml, categoryServicesHtml });
-                    await sendMarketingEmail({ toEmail: user.email, subject: "A Reminder from " + (globalSettings.websiteName || "Newtalent"), htmlBody: body.replace(/\n/g, '<br>'), smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort, smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail });
+                    await sendMarketingEmail({ toEmail: user.email, subject: "A Reminder from " + (globalSettings.websiteName || "Connect Film Circle"), htmlBody: body.replace(/\n/g, '<br>'), smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort, smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail });
                     await userDocRef.update({ 'marketingStatus.bookingReminderSent': true });
                     emailsSent++;
                     processedUserIds.add(user.id);
@@ -320,7 +320,7 @@ export async function GET(req: NextRequest) {
 
                     const categoryServicesHtml = await getCategoryServicesHtml(marketingConfig.recurringEngagementCategoryId, userCart);
                     const body = replaceMergeTags(marketingConfig.recurringEngagementTemplate || "", user, appConfig, globalSettings, { popularServicesHtml, cartContentHtml, popularCategoriesHtml, allServicesHtml, allCategoriesHtml, categoryServicesHtml });
-                    await sendMarketingEmail({ toEmail: user.email, subject: "A message from " + (globalSettings.websiteName || "Newtalent"), htmlBody: body.replace(/\n/g, '<br>'), smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort, smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail });
+                    await sendMarketingEmail({ toEmail: user.email, subject: "A message from " + (globalSettings.websiteName || "Connect Film Circle"), htmlBody: body.replace(/\n/g, '<br>'), smtpHost: appConfig.smtpHost, smtpPort: appConfig.smtpPort, smtpUser: appConfig.smtpUser, smtpPass: appConfig.smtpPass, senderEmail: appConfig.senderEmail });
                     await userDocRef.update({ 'marketingStatus.lastRecurringSent': Timestamp.fromMillis(now) });
                     emailsSent++;
                     processedUserIds.add(user.id);

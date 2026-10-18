@@ -3,19 +3,19 @@ import type { GlobalWebSettings } from '@/types/firestore';
 import { DEFAULT_LIGHT_THEME_COLORS_HSL, DEFAULT_DARK_THEME_COLORS_HSL } from '@/lib/colorUtils';
 
 export const defaultGlobalWebSettings: GlobalWebSettings = {
-  websiteName: "Newtalent",
-  contactEmail: "support@newtalent.in",
+  websiteName: "Connect Film Circle",
+  contactEmail: "support@connectfilmcircle.in",
   contactMobile: "+917353113455",
   address: "#44 G S Palya Road Konappana Agrahara Electronic City Phase 2 -560100",
   logoUrl: "/android-chrome-512x512.png",
   faviconUrl: "/favicon.ico",
   websiteIconUrl: "/android-chrome-512x512.png",
   socialMediaLinks: {
-    facebook: "https://www.facebook.com/newtalent.in",
-    instagram: "https://www.instagram.com/newtalent.in",
-    twitter: "https://x.com/newtalent_in",
-    linkedin: "https://www.linkedin.com/company/newtalent-in",
-    youtube: "https://www.youtube.com/@newtalent-in",
+    facebook: "https://www.facebook.com/connectfilmcircle.in",
+    instagram: "https://www.instagram.com/connectfilmcircle.in",
+    twitter: "https://x.com/connectfilmcircle_in",
+    linkedin: "https://www.linkedin.com/company/connectfilmcircle-in",
+    youtube: "https://www.youtube.com/@connectfilmcircle-in",
   },
   themeColors: {
     light: { ...DEFAULT_LIGHT_THEME_COLORS_HSL },

@@ -214,7 +214,7 @@ export default function ScriptWritingDashboardClient() {
               Writing a movie script requires adhering to the industry-standard screenplay layout. Standard formatting ensures that one page of screenplay translates roughly to one minute of screen time.
             </p>
             <p>
-              Newtalent's free screenplay editor makes scriptwriting simple. It supports all critical screenwriting elements:
+              Connect Film Circle's free screenplay editor makes scriptwriting simple. It supports all critical screenwriting elements:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li><strong>Scene Headings (Sluglines)</strong>: e.g., EXT. COFFEE SHOP - DAY. Identifies the location and time.</li>
@@ -248,7 +248,7 @@ export default function ScriptWritingDashboardClient() {
             <AccordionItem value="faq-3" className="border-primary/10">
               <AccordionTrigger className="font-bold text-left">Who owns the copyright to my script?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground leading-relaxed">
-                You retain 100% ownership of your work. Newtalent serves as a secure storage environment and holds no rights or claims to any screenplay written on the platform.
+                You retain 100% ownership of your work. Connect Film Circle serves as a secure storage environment and holds no rights or claims to any screenplay written on the platform.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

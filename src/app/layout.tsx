@@ -53,9 +53,9 @@ const tinos = Tinos({
 export async function generateMetadata(): Promise<Metadata> {
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
-  const siteName = seoSettings.siteName || 'Newtalent';
+  const siteName = seoSettings.siteName || 'Connect Film Circle';
   const defaultSuffix = seoSettings.defaultMetaTitleSuffix || ` - ${siteName}`;
-  const defaultDescription = seoSettings.defaultMetaDescription || 'Book home services easily with Newtalent.';
+  const defaultDescription = seoSettings.defaultMetaDescription || 'Book home services easily with Connect Film Circle.';
   const defaultKeywords = (seoSettings.defaultMetaKeywords || '').split(',').map(k => k.trim()).filter(k => k);
   const defaultOgImage = `/default-image.png`;
   const ogImage = seoSettings.structuredDataImage || defaultOgImage;
@@ -148,20 +148,20 @@ export default async function RootLayout({
     <html lang="en" className={`${roboto.variable} ${courierPrime.variable} ${notoSans.variable} ${tinos.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased no-select">
         <style 
-          id="newtalent-dynamic-theme-styles" 
+          id="connectfilmcircle-dynamic-theme-styles" 
           precedence="high"
-          href="newtalent-dynamic-theme-styles"
+          href="connectfilmcircle-dynamic-theme-styles"
           dangerouslySetInnerHTML={{ __html: serverThemeStyles }} 
         />
         <Script
-          id="newtalent-initial-theme"
+          id="connectfilmcircle-initial-theme"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 const theme = (function() { 
                   try {
-                    const storedTheme = localStorage.getItem('newtalent-theme');
+                    const storedTheme = localStorage.getItem('connectfilmcircle-theme');
                     if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
                     return 'light';
                   } catch (e) { return 'light'; }
@@ -172,8 +172,8 @@ export default async function RootLayout({
                   document.documentElement.classList.remove('dark');
                 }
                 try {
-                    if (localStorage.getItem('newtalent-theme') !== theme) {
-                        localStorage.setItem('newtalent-theme', theme);
+                    if (localStorage.getItem('connectfilmcircle-theme') !== theme) {
+                        localStorage.setItem('connectfilmcircle-theme', theme);
                     }
                 } catch (e) { }
               })();

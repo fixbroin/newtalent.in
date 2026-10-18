@@ -41,7 +41,7 @@ interface Step1CategorySkillsProps {
   isSaving: boolean;
 }
 
-const STORAGE_KEY = 'newtalent_reg_step1';
+const STORAGE_KEY = 'connectfilmcircle_reg_step1';
 
 const GENDER_OPTIONS = [
   { id: 'Male', label: 'Male' },

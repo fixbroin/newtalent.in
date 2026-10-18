@@ -29,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'generateAreaSeoPrompt',
   input: { schema: GenerateAreaSeoInputSchema },
   output: { schema: GenerateAreaSeoOutputSchema },
-  prompt: `You are an expert Talent SEO copywriter for an artist discovery platform called "Newtalent" operating in India.
+  prompt: `You are an expert Talent SEO copywriter for an artist discovery platform called "Connect Film Circle" operating in India.
 Your task is to generate highly aggressive, intent-driven SEO content for a specific locality or area within a city to rank #1 on Google for hyper-local talent searches.
 
 Area Name: {{areaName}}

@@ -62,7 +62,7 @@ export async function generateMetadata(
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
   
-  if (!artist) return { title: 'Artist Not Found | Newtalent' };
+  if (!artist) return { title: 'Artist Not Found | Connect Film Circle' };
 
   const placeholderData = { 
     serviceName: artist.fullName || '', 
@@ -70,10 +70,10 @@ export async function generateMetadata(
     cityName: artist.city || 'Bangalore'
   };
 
-  const title = replacePlaceholders(seoSettings.servicePageTitlePattern, placeholderData) || `${artist.fullName || ''} | ${artist.workCategoryName || ''} on Newtalent`;
-  const defaultDesc = `View ${artist.fullName || ''}'s professional portfolio. Connect with this verified ${artist.workCategoryName || ''} based in ${artist.city || 'Bangalore'} on Newtalent for film auditions, casting calls, and acting/production jobs.`;
+  const title = replacePlaceholders(seoSettings.servicePageTitlePattern, placeholderData) || `${artist.fullName || ''} | ${artist.workCategoryName || ''} on Connect Film Circle`;
+  const defaultDesc = `View ${artist.fullName || ''}'s professional portfolio. Connect with this verified ${artist.workCategoryName || ''} based in ${artist.city || 'Bangalore'} on Connect Film Circle for film auditions, casting calls, and acting/production jobs.`;
   const description = replacePlaceholders(seoSettings.servicePageDescriptionPattern, placeholderData) || 
-    (artist.bio ? `${artist.bio.slice(0, 140)}... Connect with this verified ${artist.workCategoryName || ''} in ${artist.city || 'Bangalore'} on Newtalent.` : defaultDesc);
+    (artist.bio ? `${artist.bio.slice(0, 140)}... Connect with this verified ${artist.workCategoryName || ''} in ${artist.city || 'Bangalore'} on Connect Film Circle.` : defaultDesc);
 
   let keywords = replacePlaceholders(seoSettings.servicePageKeywordsPattern, placeholderData)
     .split(',')
@@ -86,7 +86,7 @@ export async function generateMetadata(
       artist.workCategoryName || "",
       `${artist.workCategoryName || ""} in ${artist.city || 'Bangalore'}`,
       `${artist.workCategoryName || ""} portfolio`,
-      "film auditions", "casting calls", "movie jobs", "newtalent"
+      "film auditions", "casting calls", "movie jobs", "connectfilmcircle"
     ];
   }
   
@@ -116,7 +116,7 @@ export async function generateMetadata(
         alt: artist.fullName 
       }],
       type: 'profile',
-      siteName: seoSettings.siteName || 'Newtalent',
+      siteName: seoSettings.siteName || 'Connect Film Circle',
     },
     twitter: {
       card: 'summary_large_image',
@@ -202,7 +202,7 @@ export default async function ArtistProfileUnderCategoryPage({ params }: PagePro
     },
     "url": `${appBaseUrl}/category/${slug}/${username}`,
     "image": artist.profilePhotoUrl || `${appBaseUrl}/default-image.png`,
-    "description": artist.bio || `Professional ${artist.workCategoryName} based in ${artist.city || 'India'}. Connect with ${artist.fullName} on Newtalent.`
+    "description": artist.bio || `Professional ${artist.workCategoryName} based in ${artist.city || 'India'}. Connect with ${artist.fullName} on Connect Film Circle.`
   };
 
   return (

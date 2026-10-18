@@ -61,7 +61,7 @@ export async function generateMetadata(
     const seoSettings = seoSettingsDoc.exists ? serializeFirestoreData<FirestoreSEOSettings>(seoSettingsDoc.data()) : {};
     const appBaseUrl = getBaseUrl();
 
-    const title = area.seo_title || area.metaTitle || (seoSettings.areaPageTitlePattern?.replace(/{{areaName}}/g, area.name).replace(/{{cityName}}/g, city.name)) || `${area.name}, ${city.name} Artists | Newtalent`;
+    const title = area.seo_title || area.metaTitle || (seoSettings.areaPageTitlePattern?.replace(/{{areaName}}/g, area.name).replace(/{{cityName}}/g, city.name)) || `${area.name}, ${city.name} Artists | Connect Film Circle`;
     const description = area.seo_description || area.metaDescription || (seoSettings.areaPageDescriptionPattern?.replace(/{{areaName}}/g, area.name).replace(/{{cityName}}/g, city.name)) || `Connect with professional artists in ${area.name}, ${city.name}.`;
     const keywords = (area.seo_keywords || area.metaKeywords || (seoSettings.areaPageKeywordsPattern?.replace(/{{areaName}}/g, area.name).replace(/{{cityName}}/g, city.name)) || "").split(',').map(k => k.trim()).filter(k => k);
 

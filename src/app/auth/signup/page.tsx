@@ -112,7 +112,7 @@ export default function SignupPage() {
               websiteName={globalSettings?.websiteName}
             />
             <CardTitle className="text-2xl font-headline">Create Your Account</CardTitle>
-            <CardDescription>Join Newtalent to showcase your talent.</CardDescription>
+            <CardDescription>Join Connect Film Circle to showcase your talent.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {config.enableGoogleLogin && (

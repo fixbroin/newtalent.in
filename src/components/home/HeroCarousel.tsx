@@ -149,7 +149,7 @@ export function HeroCarousel() {
                      isActive ? "scale-110" : "scale-100"
                   )} style={{ transitionDuration: '10000ms' }}>                    <AppImage
                         src={slide.imageUrl}
-                        alt={slide.title || "Newtalent Promotion"}
+                        alt={slide.title || "Connect Film Circle Promotion"}
                         fill
                         priority={index === 0}
                         loading={index === 0 ? "eager" : "lazy"}

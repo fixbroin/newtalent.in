@@ -107,7 +107,7 @@ export async function generateMetadata(
     const appBaseUrl = getBaseUrl();
     const placeholderData = { cityName: city.name, areaName: area.name, categoryName: category.name };
 
-    const title = override?.meta_title || replacePlaceholders(seoSettings.areaCategoryPageTitlePattern, placeholderData) || `${category.name} in ${area.name}, ${city.name} | Newtalent`;
+    const title = override?.meta_title || replacePlaceholders(seoSettings.areaCategoryPageTitlePattern, placeholderData) || `${category.name} in ${area.name}, ${city.name} | Connect Film Circle`;
     const description = override?.meta_description || replacePlaceholders(seoSettings.areaCategoryPageDescriptionPattern, placeholderData) || `Professional ${category.name} in ${area.name}, ${city.name}.`;
     const keywords = (override?.meta_keywords || replacePlaceholders(seoSettings.areaCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
 
@@ -162,7 +162,7 @@ export default async function AreaCategoryPage({ params }: { params: Promise<{ c
         "description": `Professional ${categoryData.name} services in ${area.name}, ${city.name}.`,
         "provider": {
             "@type": "LocalBusiness",
-            "name": "Newtalent",
+            "name": "Connect Film Circle",
             "address": {
                 "@type": "PostalAddress",
                 "addressLocality": area.name,

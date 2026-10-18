@@ -632,7 +632,7 @@ export default function OsmGeneratorDialog({
               meta_description: seo_description,
               meta_keywords: seo_keywords,
               isActive: true,
-              imageHint: `Vibrant portfolio images of ${categoryName}s working in ${loc.name} on NewTalent.in`,
+              imageHint: `Vibrant portfolio images of ${categoryName}s working in ${loc.name} on Connect Film Circle.in`,
               updatedAt: Timestamp.now()
             };
 
@@ -815,7 +815,7 @@ export default function OsmGeneratorDialog({
               meta_description: seo_description,
               meta_keywords: seo_keywords,
               isActive: true,
-              imageHint: `Local portfolio profiles for verified ${categoryName}s in ${loc.name}, ${selectedParentCity.name} on NewTalent.in`,
+              imageHint: `Local portfolio profiles for verified ${categoryName}s in ${loc.name}, ${selectedParentCity.name} on Connect Film Circle.in`,
               updatedAt: Timestamp.now()
             };
 

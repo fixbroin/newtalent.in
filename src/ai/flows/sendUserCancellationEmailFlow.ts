@@ -23,7 +23,7 @@ const UserCancellationEmailInputSchema = z.object({
   smtpUser: z.string().optional().describe("SMTP username."),
   smtpPass: z.string().optional().describe("SMTP password."),
   senderEmail: z.string().email().optional().describe("The email address to send from."),
-  siteName: z.string().optional().default("Newtalent"),
+  siteName: z.string().optional().default("Connect Film Circle"),
   logoUrl: z.string().url().optional(),
 });
 
@@ -110,7 +110,7 @@ const userCancellationEmailFlow = ai.defineFlow(
   async (bookingDetails) => {
     try {
       const {
-        smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = "Newtalent", logoUrl,
+        smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, siteName = "Connect Film Circle", logoUrl,
         customerName, customerEmail, bookingId,
         paymentMethod, paidAmount, cancellationFee, refundableAmount,
       } = bookingDetails;

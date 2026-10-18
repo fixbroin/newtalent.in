@@ -20,9 +20,9 @@ import { triggerPushNotification } from '@/lib/fcmUtils';
 import { ADMIN_EMAIL } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
-const POPUP_SESSION_STORAGE_KEY_PREFIX = 'newtalentPopupShown_';
-const POPUP_DAY_STORAGE_KEY_PREFIX = 'newtalentPopupDayShown_'; 
-const NEWSLETTER_SUBMITTED_KEY = 'newtalent_newsletter_submitted'; // Key for permanent submission tracking
+const POPUP_SESSION_STORAGE_KEY_PREFIX = 'connectfilmcirclePopupShown_';
+const POPUP_DAY_STORAGE_KEY_PREFIX = 'connectfilmcirclePopupDayShown_'; 
+const NEWSLETTER_SUBMITTED_KEY = 'connectfilmcircle_newsletter_submitted'; // Key for permanent submission tracking
 
 export default function PopupDisplayManager() {
   const [allActivePopups, setAllActivePopups] = useState<FirestorePopup[]>([]);
@@ -228,7 +228,7 @@ export default function PopupDisplayManager() {
             document.documentElement.addEventListener('mouseout', handleDesktopMouseOut);
             exitIntentListenerRef.current = () => document.documentElement.removeEventListener('mouseout', handleDesktopMouseOut);
           } else { 
-            const mobileExitIntentStateKey = 'newtalentMobileExitIntentMarker';
+            const mobileExitIntentStateKey = 'connectfilmcircleMobileExitIntentMarker';
             let statePushedByManager = false;
             const pushOurState = () => {
                 if (history.state?.[mobileExitIntentStateKey] !== true) {

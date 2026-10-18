@@ -249,16 +249,16 @@ export default function SEOSettingsPage() {
               <Card>
                 <CardHeader><CardTitle>Global Defaults & Homepage SEO</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
-                  {renderSEOField("siteName", "Site Name (for OG & Structured Data)", "e.g., Newtalent Services", undefined, false, Settings2)}
-                  {renderSEOField("defaultMetaTitleSuffix", "Default Meta Title Suffix", "e.g., | Newtalent", "Appended to most page titles.")}
+                  {renderSEOField("siteName", "Site Name (for OG & Structured Data)", "e.g., Connect Film Circle Services", undefined, false, Settings2)}
+                  {renderSEOField("defaultMetaTitleSuffix", "Default Meta Title Suffix", "e.g., | Connect Film Circle", "Appended to most page titles.")}
                   {renderSEOField("defaultMetaDescription", "Default Meta Description", "e.g., Quality home services at your doorstep.", "Fallback description if a specific one isn't set.", true)}
                   {renderSEOField("defaultMetaKeywords", "Default Meta Keywords (comma-separated)", "e.g., home repair, plumbing, electrician")}
                   <hr className="my-6"/>
                   <h4 className="text-md font-semibold">Homepage Specific SEO:</h4>
                   {renderSEOField("homepageH1", "Homepage H1 Title", "e.g., Reliable Home Services", undefined, false, Type)}
-                  {renderSEOField("homepageMetaTitle", "Homepage Meta Title", "e.g., Newtalent - Trusted Home Services", undefined, false, Type)}
+                  {renderSEOField("homepageMetaTitle", "Homepage Meta Title", "e.g., Connect Film Circle - Trusted Home Services", undefined, false, Type)}
                   {renderSEOField("homepageMetaDescription", "Homepage Meta Description", "e.g., Book expert home services online.", undefined, true, FileText)}
-                  {renderSEOField("homepageMetaKeywords", "Homepage Meta Keywords (comma-separated)", "e.g., newtalent, home services, repair", undefined, false, Target)}
+                  {renderSEOField("homepageMetaKeywords", "Homepage Meta Keywords (comma-separated)", "e.g., connectfilmcircle, home services, repair", undefined, false, Target)}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -271,7 +271,7 @@ export default function SEOSettingsPage() {
                     <h4 className="text-md font-semibold mb-3">Default Category Pages (e.g., /category/slug):</h4>
                     <div className="space-y-4">
                       {renderSEOField("categoryPageH1Pattern", "H1 Title Pattern", "e.g., {{categoryName}} Services", undefined, false, Pilcrow)}
-                      {renderSEOField("categoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} | Newtalent", undefined, false, Type)}
+                      {renderSEOField("categoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("categoryPageDescriptionPattern", "Meta Description Pattern", "e.g., Best {{categoryName}} services.", undefined, true, FileText)}
                       {renderSEOField("categoryPageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{categoryName}}, book {{categoryName}}", undefined, false, Target)}
                     </div>
@@ -282,7 +282,7 @@ export default function SEOSettingsPage() {
                     <CardDescription>Placeholders: <code>{"{{cityName}}"}</code>, <code>{"{{categoryName}}"}</code></CardDescription>
                     <div className="space-y-4 mt-3">
                       {renderSEOField("cityCategoryPageH1Pattern", "H1 Title Pattern", "e.g., {{categoryName}} in {{cityName}}", undefined, false, Pilcrow)}
-                      {renderSEOField("cityCategoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} Services in {{cityName}} | Newtalent", undefined, false, Type)}
+                      {renderSEOField("cityCategoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} Services in {{cityName}} | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("cityCategoryPageDescriptionPattern", "Meta Description Pattern", "e.g., Find {{categoryName}} experts in {{cityName}}.", undefined, true, FileText)}
                       {renderSEOField("cityCategoryPageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{categoryName}} {{cityName}}, {{categoryName}} services", undefined, false, Target)}
                     </div>
@@ -293,7 +293,7 @@ export default function SEOSettingsPage() {
                     <CardDescription>Placeholders: <code>{"{{areaName}}"}</code>, <code>{"{{cityName}}"}</code>, <code>{"{{categoryName}}"}</code></CardDescription>
                     <div className="space-y-4 mt-3">
                       {renderSEOField("areaCategoryPageH1Pattern", "H1 Title Pattern", "e.g., {{categoryName}} in {{areaName}}, {{cityName}}", undefined, false, Pilcrow)}
-                      {renderSEOField("areaCategoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} - {{areaName}}, {{cityName}} | Newtalent", undefined, false, Type)}
+                      {renderSEOField("areaCategoryPageTitlePattern", "Meta Title Pattern", "e.g., {{categoryName}} - {{areaName}}, {{cityName}} | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("areaCategoryPageDescriptionPattern", "Meta Description Pattern", "e.g., Best {{categoryName}} in {{areaName}}, {{cityName}}.", undefined, true, FileText)}
                       {renderSEOField("areaCategoryPageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{categoryName}} {{areaName}}, {{areaName}} {{cityName}} services", undefined, false, Target)}
                     </div>
@@ -303,7 +303,7 @@ export default function SEOSettingsPage() {
                     <h4 className="text-md font-semibold mb-3">Service Pages:</h4>
                     <div className="space-y-4">
                       {renderSEOField("servicePageH1Pattern", "H1 Title Pattern", "e.g., {{serviceName}} in {{areaName}}", undefined, false, Pilcrow)}
-                      {renderSEOField("servicePageTitlePattern", "Meta Title Pattern", "e.g., {{serviceName}} - {{areaName}}, {{cityName}} | Newtalent", undefined, false, Type)}
+                      {renderSEOField("servicePageTitlePattern", "Meta Title Pattern", "e.g., {{serviceName}} - {{areaName}}, {{cityName}} | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("servicePageDescriptionPattern", "Meta Description Pattern", "e.g., Get expert {{serviceName}} for {{serviceDescription}} in {{areaName}}.", undefined, true, FileText)}
                       {renderSEOField("servicePageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{serviceName}}, {{categoryName}}, {{areaName}}, order {{serviceName}}", undefined, false, Target)}
                     </div>
@@ -314,7 +314,7 @@ export default function SEOSettingsPage() {
                     <CardDescription>Patterns for pages like <code>/bangalore</code>. Use <code>{"{{cityName}}"}</code>.</CardDescription>
                     <div className="space-y-4 mt-3">
                       {renderSEOField("cityPageH1Pattern", "H1 Title Pattern", "e.g., Trusted Services in {{cityName}}", undefined, false, Pilcrow)}
-                      {renderSEOField("cityPageTitlePattern", "Meta Title Pattern", "e.g., Home Services in {{cityName}} | Newtalent", undefined, false, Type)}
+                      {renderSEOField("cityPageTitlePattern", "Meta Title Pattern", "e.g., Home Services in {{cityName}} | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("cityPageDescriptionPattern", "Meta Description Pattern", "e.g., Professional home services across {{cityName}}.", undefined, true, FileText)}
                       {renderSEOField("cityPageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{cityName}} repair services, home maintenance {{cityName}}", undefined, false, Target)}
                     </div>
@@ -325,7 +325,7 @@ export default function SEOSettingsPage() {
                     <CardDescription>Patterns for pages like <code>/city-slug/area-slug</code>. Use <code>{"{{cityName}}"}</code> and <code>{"{{areaName}}"}</code>.</CardDescription>
                     <div className="space-y-4 mt-3">
                       {renderSEOField("areaPageH1Pattern", "H1 Title Pattern", "e.g., Services in {{areaName}}, {{cityName}}", undefined, false, Pilcrow)}
-                      {renderSEOField("areaPageTitlePattern", "Meta Title Pattern", "e.g., {{areaName}}, {{cityName}} Home Services | Newtalent", undefined, false, Type)}
+                      {renderSEOField("areaPageTitlePattern", "Meta Title Pattern", "e.g., {{areaName}}, {{cityName}} Home Services | Connect Film Circle", undefined, false, Type)}
                       {renderSEOField("areaPageDescriptionPattern", "Meta Description Pattern", "e.g., Find all home services in {{areaName}}, {{cityName}}.", undefined, true, FileText)}
                       {renderSEOField("areaPageKeywordsPattern", "Meta Keywords Pattern", "e.g., {{areaName}}, {{cityName}}, home services, local repair", undefined, false, Target)}
                     </div>
@@ -339,7 +339,7 @@ export default function SEOSettingsPage() {
                 <CardHeader><CardTitle>Structured Data Defaults (LocalBusiness)</CardTitle><CardDescription>Helps search engines understand your business.</CardDescription></CardHeader>
                 <CardContent className="space-y-6">
                   {renderSEOField("structuredDataType", "Schema Type", "e.g., LocalBusiness, Organization")}
-                  {renderSEOField("structuredDataName", "Business Name", "e.g., Newtalent")}
+                  {renderSEOField("structuredDataName", "Business Name", "e.g., Connect Film Circle")}
                   {renderSEOField("structuredDataStreetAddress", "Street Address", "e.g., 123 Main St")}
                   {renderSEOField("structuredDataLocality", "City / Locality", "e.g., Bangalore")}
                   {renderSEOField("structuredDataRegion", "State / Region", "e.g., KA")}

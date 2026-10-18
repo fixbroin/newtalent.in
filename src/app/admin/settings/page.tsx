@@ -33,7 +33,7 @@ export default function AdminSettingsPage() {
     }
   }, []);
 
-  const webhookUrl = `${siteOrigin || process.env.NEXT_PUBLIC_SITE_URL || 'https://newtalent.in'}/api/razorpay/webhook`;
+  const webhookUrl = `${siteOrigin || process.env.NEXT_PUBLIC_SITE_URL || 'https://connectfilmcircle.in'}/api/razorpay/webhook`;
 
   const loadSettingsFromFirestore = useCallback(async () => {
     setIsLoadingSettings(true);
@@ -294,7 +294,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="senderEmail" className="text-xs font-bold uppercase">Sender Email Address</Label>
-                    <Input id="senderEmail" name="senderEmail" type="email" value={settings.senderEmail} onChange={handleInputChange} placeholder="e.g., no-reply@newtalent.in" disabled={isSaving} className="rounded-xl font-bold"/>
+                    <Input id="senderEmail" name="senderEmail" type="email" value={settings.senderEmail} onChange={handleInputChange} placeholder="e.g., no-reply@connectfilmcircle.in" disabled={isSaving} className="rounded-xl font-bold"/>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">

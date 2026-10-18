@@ -97,8 +97,8 @@ export default function ReferralInfoTab({ settings }: ReferralInfoTabProps) {
     ? `${settings.referredUserBonus}%` 
     : `₹${settings.referredUserBonus || 0}`;
 
-  const shareMessage = `Hey! I've been using Newtalent for my home services and they are excellent. You should try them too! Sign up using my link you'll get a ${referredBonusDisplay} welcome reward in your wallet immediately! 🏠🛠️\n\nJoin here: ${referralLink}`;
-  const codeShareMessage = `Hey! Use my referral code: ${firestoreUser?.referralCode} on Newtalent to get a ${referredBonusDisplay} welcome bonus in your wallet! 🏠🛠️\n\nJoin here: ${referralLink}`;
+  const shareMessage = `Hey! I've been using Connect Film Circle for my home services and they are excellent. You should try them too! Sign up using my link you'll get a ${referredBonusDisplay} welcome reward in your wallet immediately! 🏠🛠️\n\nJoin here: ${referralLink}`;
+  const codeShareMessage = `Hey! Use my referral code: ${firestoreUser?.referralCode} on Connect Film Circle to get a ${referredBonusDisplay} welcome bonus in your wallet! 🏠🛠️\n\nJoin here: ${referralLink}`;
 
   const shareOnWhatsApp = () => {
     const encodedMessage = encodeURIComponent(shareMessage);

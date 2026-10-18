@@ -88,7 +88,7 @@ export async function generateMetadata(
     const placeholderData = { cityName: city.name, categoryName: category.name };
 
     // Use specific city-category override if exists, or global pattern
-    const title = override?.meta_title || replacePlaceholders(seoSettings.cityCategoryPageTitlePattern, placeholderData) || `${category.name} in ${city.name} | Newtalent`;
+    const title = override?.meta_title || replacePlaceholders(seoSettings.cityCategoryPageTitlePattern, placeholderData) || `${category.name} in ${city.name} | Connect Film Circle`;
     const description = override?.meta_description || replacePlaceholders(seoSettings.cityCategoryPageDescriptionPattern, placeholderData) || `Find and hire top ${category.name} in ${city.name}.`;
     const keywords = (override?.meta_keywords || replacePlaceholders(seoSettings.cityCategoryPageKeywordsPattern, placeholderData) || "").split(',').map(k => k.trim()).filter(k => k);
 
@@ -143,7 +143,7 @@ export default async function CityCategoryPage({ params }: { params: Promise<{ c
         "description": `Professional ${categoryData.name} services in ${city.name}.`,
         "provider": {
             "@type": "LocalBusiness",
-            "name": "Newtalent",
+            "name": "Connect Film Circle",
             "address": {
                 "@type": "PostalAddress",
                 "addressLocality": city.name,

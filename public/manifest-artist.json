@@ -1,7 +1,7 @@
 {
-  "name": "Newtalent Artist",
-  "short_name": "Newtalent Artist",
-  "description": "Artist Dashboard for Newtalent Services",
+  "name": "Connect Film Circle Artist",
+  "short_name": "Connect Film Circle Artist",
+  "description": "Artist Dashboard for Connect Film Circle",
   "start_url": "/artist",
   "display": "standalone",
   "orientation": "portrait",

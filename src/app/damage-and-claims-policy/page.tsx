@@ -38,7 +38,7 @@ export async function generateMetadata(
   const pageData = await getContentPageData(PAGE_SLUG);
   const seoSettings = await getGlobalSEOSettings();
   const webSettings = await getGlobalWebSettings();
-  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || "Newtalent";
+  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || "Connect Film Circle";
   const defaultSuffix = seoSettings.defaultMetaTitleSuffix || ` - ${siteName}`;
   const appBaseUrl = getBaseUrl(); 
 

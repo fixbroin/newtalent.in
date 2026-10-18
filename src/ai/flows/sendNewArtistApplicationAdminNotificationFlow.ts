@@ -113,7 +113,7 @@ const newArtistApplicationAdminEmailFlow = ai.defineFlow(
       const {
         smtpHost, smtpPort, smtpUser, smtpPass, senderEmail,
         applicationId, ArtistName, ArtistEmail, ArtistCategory, applicationUrl,
-        siteName = "Newtalent", logoUrl
+        siteName = "Connect Film Circle", logoUrl
       } = details;
 
       const adminEmail = "fixbro.in@gmail.com";

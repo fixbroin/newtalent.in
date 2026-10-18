@@ -44,7 +44,7 @@ export async function generateMetadata(
   const categoryData = await getCategoryData(slug);
   const seoSettings = await getGlobalSEOSettings();
   const webSettings = await getGlobalWebSettings();
-  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || "Newtalent";
+  const siteName = resolvedParent.openGraph?.siteName || seoSettings.siteName || "Connect Film Circle";
   const defaultSuffix = seoSettings.defaultMetaTitleSuffix || ` - ${siteName}`;
   const appBaseUrl = getBaseUrl(); // Use the helper
 

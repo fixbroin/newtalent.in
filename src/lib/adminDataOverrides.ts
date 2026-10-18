@@ -1,7 +1,7 @@
 
 'use client';
 
-const CATEGORY_NAME_OVERRIDES_KEY = 'newtalentCategoryNameOverrides';
+const CATEGORY_NAME_OVERRIDES_KEY = 'connectfilmcircleCategoryNameOverrides';
 
 interface CategoryNameOverrides {
   [categoryId: string]: string;

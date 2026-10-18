@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
         smtpUser: appConfig?.smtpUser || process.env.SMTP_USER,
         smtpPass: appConfig?.smtpPass || process.env.SMTP_PASS,
         senderEmail: appConfig?.senderEmail || process.env.SENDER_EMAIL,
-        siteName: globalSettings?.websiteName || appConfig?.websiteName || 'Newtalent',
+        siteName: globalSettings?.websiteName || appConfig?.websiteName || 'Connect Film Circle',
         logoUrl: globalSettings?.logoUrl || appConfig?.logoUrl || undefined
       });
 

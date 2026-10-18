@@ -46,7 +46,7 @@ const generateReviewsPrompt = ai.definePrompt({
       }) 
     },
     output: { schema: GenerateBulkReviewsOutputSchema },
-    prompt: `You are an expert content generator for an artist discovery platform called "Newtalent".
+    prompt: `You are an expert content generator for an artist discovery platform called "Connect Film Circle".
 Your task is to generate a batch of realistic user reviews for a specific artist or talent category.
 The reviews should sound authentic, use common Indian names, and have a mix of positive tones.
 

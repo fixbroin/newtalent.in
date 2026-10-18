@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kannada's Got Latent 🎤🔥 | Register & Perform",
     description: "Welcome to Kannada's Got Latent, the stage where anyone can become a star! Perform your talent in 2 minutes, impress the judges, score yourself, and win. Register today!",
-    url: "https://newtalent.in/kannadasgotlatent",
-    siteName: "Newtalent",
+    url: "https://connectfilmcircle.in/kannadasgotlatent",
+    siteName: "Connect Film Circle",
     images: [
       {
         url: '/kannadasgotlatent.png',

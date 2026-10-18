@@ -112,7 +112,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-3 text-muted-foreground font-black text-xs uppercase tracking-widest">Newtalent Admin Secure Load...</p>
+        <p className="ml-3 text-muted-foreground font-black text-xs uppercase tracking-widest">Connect Film Circle Admin Secure Load...</p>
       </div>
     );
   }

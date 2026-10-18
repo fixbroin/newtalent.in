@@ -26,7 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useApplicationConfig } from "@/hooks/useApplicationConfig";
 import axios from "axios";
 
-const STORAGE_KEY = 'newtalent_reg_step2';
+const STORAGE_KEY = 'connectfilmcircle_reg_step2';
 
 const generateRandomHexString = (length: number) => Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 const isFirebaseStorageUrl = (url: string | null | undefined): boolean => !!url && typeof url === 'string' && url.includes("firebasestorage.googleapis.com");

@@ -40,15 +40,15 @@ const PwaInstallButton = () => {
 
   // Determine which app we are installing
   const appInfo = {
-    name: "Newtalent App",
+    name: "Connect Film Circle App",
     desc: "Faster booking & real-time updates"
   };
 
   if (pathname.startsWith('/admin')) {
-    appInfo.name = "Newtalent Admin";
+    appInfo.name = "Connect Film Circle Admin";
     appInfo.desc = "Manage orders & Artists";
   } else if (pathname.startsWith('/artist')) {
-    appInfo.name = "Newtalent Artist";
+    appInfo.name = "Connect Film Circle Artist";
     appInfo.desc = "Manage your jobs & earnings";
   }
 
@@ -194,7 +194,7 @@ const PwaInstallButton = () => {
                             Install on iPhone
                         </DialogTitle>
                         <DialogDescription className="text-left pt-2">
-                            To install the Newtalent app on your iPhone, follow these simple steps:
+                            To install the Connect Film Circle app on your iPhone, follow these simple steps:
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -235,7 +235,7 @@ const PwaInstallButton = () => {
         
         <div className="ml-3 transition-all duration-500 opacity-0 group-hover:opacity-100 whitespace-nowrap">
           <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Desktop App</p>
-          <p className="text-xs font-bold text-foreground">Install Newtalent</p>
+          <p className="text-xs font-bold text-foreground">Install Connect Film Circle</p>
         </div>
       </div>
 

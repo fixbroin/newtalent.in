@@ -118,7 +118,7 @@ const ArtistBookingAssignmentEmailFlow = ai.defineFlow(
         smtpHost, smtpPort, smtpUser, smtpPass, senderEmail,
         ArtistName, ArtistEmail, bookingId, bookingDocId, serviceName,
         scheduledDate, scheduledTimeSlot, customerName, customerAddress,
-        siteName = "Newtalent", logoUrl,
+        siteName = "Connect Film Circle", logoUrl,
       } = details;
 
       const canAttemptRealEmail = smtpHost && smtpPort && smtpUser && smtpPass && senderEmail;

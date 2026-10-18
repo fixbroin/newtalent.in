@@ -57,7 +57,7 @@ export const defaultAppSettings: AppSettings = {
   // User needs to place default-notification.mp3 in public/sounds/
   chatNotificationSoundUrl: "/sounds/default-notification.mp3", 
   isChatEnabled: false, // Default chat to false. Will be managed in GlobalWebSettings now.
-  siteName: "Newtalent",
+  siteName: "Connect Film Circle",
   logoUrl: "/android-chrome-192x192.png",
   
   isArtistRegistrationEnabled: true, // Added default

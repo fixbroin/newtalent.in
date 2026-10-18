@@ -181,7 +181,7 @@ export const generateArtistApplicationPdf = async (
   let y = 22;
 
   const defaultCompanyDetails: CompanyDetailsForPdf = {
-    name: companyDetails?.name || "Newtalent.in",
+    name: companyDetails?.name || "Connect Film Circle.in",
     address: companyDetails?.address || "Company Address Placeholder",
     contactEmail: companyDetails?.contactEmail || 'support@example.com',
     contactMobile: companyDetails?.contactMobile || '+91-XXXXXXXXXX',
@@ -307,7 +307,7 @@ export const generateArtistApplicationPdf = async (
   
   doc.setFontSize(9);
   doc.setTextColor(80);
-  const consentText = `I, ${application.fullName || 'the applicant'}, hereby declare that I have read, understood, and agreed to the Terms and Conditions of Newtalent. I confirm that all information provided in this application is true and accurate to the best of my knowledge. I understand that any false information may lead to the rejection of my application or termination of my partnership. I provide my digital consent below as a formal agreement.`;
+  const consentText = `I, ${application.fullName || 'the applicant'}, hereby declare that I have read, understood, and agreed to the Terms and Conditions of Connect Film Circle. I confirm that all information provided in this application is true and accurate to the best of my knowledge. I understand that any false information may lead to the rejection of my application or termination of my partnership. I provide my digital consent below as a formal agreement.`;
   const splitConsent = doc.splitTextToSize(consentText, 180);
   doc.text(splitConsent, 14, y);
   y += (splitConsent.length * 5) + 5;

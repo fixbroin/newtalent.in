@@ -1,7 +1,7 @@
 {
-  "name": "Newtalent Admin",
-  "short_name": "Newtalent Admin",
-  "description": "Admin Panel for Newtalent Services",
+  "name": "Connect Film Circle Admin",
+  "short_name": "Connect Film Circle Admin",
+  "description": "Admin Panel for Connect Film Circle",
   "start_url": "/admin",
   "display": "standalone",
   "orientation": "portrait",

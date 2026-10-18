@@ -456,7 +456,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
           const citySnap = await getDocs(cityQuery);
           if (!citySnap.empty) {
             fetchedCityData = {id: citySnap.docs[0].id, ...(citySnap.docs[0].data() as Omit<FirestoreCity, 'id'>)} as FirestoreCity;
-            currentH1 = initialH1Title || fetchedCityData.h1_title || fetchedSeoSettings.homepageH1?.replace("Newtalent", fetchedCityData.name) || `Services in ${fetchedCityData.name}`;
+            currentH1 = initialH1Title || fetchedCityData.h1_title || fetchedSeoSettings.homepageH1?.replace("Connect Film Circle", fetchedCityData.name) || `Services in ${fetchedCityData.name}`;
             currentCityNameForLd = fetchedCityData.name;
           }
         } catch (e) { console.error("Error fetching city data for H1/LD:", e); }
@@ -475,8 +475,8 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
       setPageH1(currentH1);
       setCache('pageH1', currentH1);
 
-      const siteName = fetchedSeoSettings.siteName || 'Newtalent';
-      const defaultOgImage = (process.env.NEXT_PUBLIC_BASE_URL || 'https://newtalent.in') + '/android-chrome-512x512.png';
+      const siteName = fetchedSeoSettings.siteName || 'Connect Film Circle';
+      const defaultOgImage = (process.env.NEXT_PUBLIC_BASE_URL || 'https://connectfilmcircle.in') + '/android-chrome-512x512.png';
 
       let webSettingsData: GlobalWebSettings | null = null;
       try {
@@ -488,7 +488,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
       } catch (e) { console.error("Error fetching webSettings for LD+JSON:", e); }
 
       const ogImage = webSettingsData?.websiteIconUrl || webSettingsData?.logoUrl || fetchedSeoSettings.structuredDataImage || defaultOgImage;
-      const pageUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://newtalent.in';
+      const pageUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://connectfilmcircle.in';
       let specificPageUrl = pageUrl;
       if (citySlug && areaSlug) specificPageUrl = `${pageUrl}/${citySlug}/${areaSlug}`;
       else if (citySlug) specificPageUrl = `${pageUrl}/${citySlug}`;
@@ -907,7 +907,7 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
         <LazySection>
           <section className="py-8 md:py-10">
             <div className="container mx-auto px-4">
-              <SectionHeader title="Why Choose Newtalent.in" />
+              <SectionHeader title="Why Choose Connect Film Circle.in" />
               <WhyChooseUs />
             </div>
           </section>
@@ -967,10 +967,10 @@ export default function HomePageClient({ citySlug, areaSlug, breadcrumbItems, in
               </h2>
               <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed text-left md:text-center space-y-4">
                 <p>
-                  Newtalent is more than just a casting website or a standard casting agency; it is a professional social network designed for the pulse of the {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Indian'} film industry. In {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Bangalore and across the country'}, we connect directors with dancers, cinematographers with models, and singers with producers through a verified, secure platform.
+                  Connect Film Circle is more than just a casting website or a standard casting agency; it is a professional social network designed for the pulse of the {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Indian'} film industry. In {citySlug ? citySlug.charAt(0).toUpperCase() + citySlug.slice(1) : 'Bangalore and across the country'}, we connect directors with dancers, cinematographers with models, and singers with producers through a verified, secure platform.
                 </p>
                 <p>
-                  Whether you are searching for an <strong>actor near me</strong>, looking for a <strong>female actor Bangalore</strong>, preparing for <strong>child actor auditions</strong>, or building your professional <strong>model portfolio</strong> and <strong>assistant director portfolio</strong>, Newtalent serves as your ultimate digital launchpad. We catalog verified opportunities for <strong>film auditions</strong>, <strong>movie auditions</strong>, <strong>casting calls India</strong>, and <strong>short film actor</strong> bookings.
+                  Whether you are searching for an <strong>actor near me</strong>, looking for a <strong>female actor Bangalore</strong>, preparing for <strong>child actor auditions</strong>, or building your professional <strong>model portfolio</strong> and <strong>assistant director portfolio</strong>, Connect Film Circle serves as your ultimate digital launchpad. We catalog verified opportunities for <strong>film auditions</strong>, <strong>movie auditions</strong>, <strong>casting calls India</strong>, and <strong>short film actor</strong> bookings.
                 </p>
                 <p>
                   For film crew and creative specialists, our directory contains verified listings for <strong>assistant director jobs</strong>, <strong>cinematographer Bangalore</strong> profiles, <strong>music director for short film</strong> collaborations, <strong>singers for movies</strong>, <strong>voice over artists</strong>, <strong>screenplay writers</strong>, <strong>lyric writers</strong>, <strong>makeup artists for film</strong>, <strong>video editors freelance</strong>, and <strong>dance choreographers</strong>. We also list roles for <strong>production managers</strong>, <strong>camera operators</strong>, and partners looking for a <strong>casting agency</strong> or <strong>production house</strong>.

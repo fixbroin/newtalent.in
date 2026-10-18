@@ -623,7 +623,7 @@ export default function CategoryPageClient({
               })()}
             </p>
             <p>
-              By joining the Newtalent network, {category?.name || 'artists'} can build professional portfolios, showcase their work through videos and images, and securely connect with industry leaders. Experience the future of professional cinema networking with our unique "Request & Accept" model, designed to foster trust and meaningful collaborations in the {citySlug ? `${citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ')}` : 'vibrant Indian'} film ecosystem.
+              By joining the Connect Film Circle network, {category?.name || 'artists'} can build professional portfolios, showcase their work through videos and images, and securely connect with industry leaders. Experience the future of professional cinema networking with our unique "Request & Accept" model, designed to foster trust and meaningful collaborations in the {citySlug ? `${citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, ' ')}` : 'vibrant Indian'} film ecosystem.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 pt-4">

@@ -577,7 +577,7 @@ export default function OsmAreaGeneratorDialog({
               meta_description: seo_description,
               meta_keywords: seo_keywords,
               isActive: true,
-              imageHint: `Local portfolio profiles for verified ${categoryName}s working in ${loc.name}, ${selectedParentCity.name} on NewTalent.in`,
+              imageHint: `Local portfolio profiles for verified ${categoryName}s working in ${loc.name}, ${selectedParentCity.name} on Connect Film Circle.in`,
               updatedAt: Timestamp.now()
             };
 

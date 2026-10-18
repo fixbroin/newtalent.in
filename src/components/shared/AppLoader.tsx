@@ -11,7 +11,7 @@ export default function AppLoader({ text }: AppLoaderProps) {
   const appName =
     globalSettings?.websiteName ||
     process.env.NEXT_PUBLIC_WEBSITE_NAME ||
-    "Newtalent";
+    "Connect Film Circle";
   
   // Use the loaderType from settings, or a default if settings are not loaded yet
   const loaderType = isLoading ? "logo-pulse" : (globalSettings?.loaderType || "logo-pulse");

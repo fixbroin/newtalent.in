@@ -50,8 +50,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const seoSettings = await getGlobalSEOSettings();
   const appBaseUrl = getBaseUrl();
   
-  const title = `Expert Home Maintenance Tips & Guides | Blog${seoSettings.defaultMetaTitleSuffix || ' | Newtalent'}`;
-  const description = "Discover professional tips, DIY guides, and home maintenance advice from Newtalent experts. Learn how to keep your home in top shape.";
+  const title = `Expert Home Maintenance Tips & Guides | Blog${seoSettings.defaultMetaTitleSuffix || ' | Connect Film Circle'}`;
+  const description = "Discover professional tips, DIY guides, and home maintenance advice from Connect Film Circle experts. Learn how to keep your home in top shape.";
 
   const rawOgImage = seoSettings.structuredDataImage || `/default-image.png`;
   const ogImage = rawOgImage.startsWith('http') ? rawOgImage : `${appBaseUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`;
@@ -66,7 +66,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       url: `${appBaseUrl}/blog`,
-      siteName: seoSettings.siteName || 'Newtalent',
+      siteName: seoSettings.siteName || 'Connect Film Circle',
       type: 'website',
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
@@ -87,12 +87,12 @@ export default async function BlogListPage() {
   const blogListingSchema = {
     "@context": "https://schema.org",
     "@type": "Blog",
-    "name": "Newtalent Blog",
-    "description": "Expert home maintenance tips, guides, and updates from Newtalent.",
+    "name": "Connect Film Circle Blog",
+    "description": "Expert home maintenance tips, guides, and updates from Connect Film Circle.",
     "url": `${appBaseUrl}/blog`,
     "publisher": {
       "@type": "Organization",
-      "name": "Newtalent",
+      "name": "Connect Film Circle",
       "logo": {
         "@type": "ImageObject",
         "url": `${appBaseUrl}/android-chrome-512x512.png`
@@ -109,7 +109,7 @@ export default async function BlogListPage() {
         "image": absImage,
         "author": {
           "@type": "Person",
-          "name": post.authorName || "Newtalent Expert"
+          "name": post.authorName || "Connect Film Circle Expert"
         }
       };
     })
@@ -127,7 +127,7 @@ export default async function BlogListPage() {
               Our <span className="text-primary">Blog</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Expert tips, home maintenance guides, and the latest updates from the Newtalent team.
+              Expert tips, home maintenance guides, and the latest updates from the Connect Film Circle team.
             </p>
           </div>
         </div>

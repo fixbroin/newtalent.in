@@ -99,7 +99,7 @@ const accountStatusEmailFlow = ai.defineFlow(
   async (details) => {
     const { 
       smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, 
-      userName, userEmail, status, siteName = "Newtalent", logoUrl 
+      userName, userEmail, status, siteName = "Connect Film Circle", logoUrl 
     } = details;
     
     const canAttemptRealEmail = smtpHost && smtpPort && smtpUser && smtpPass && senderEmail;

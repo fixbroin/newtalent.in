@@ -113,7 +113,7 @@ export default function AdminInquiriesPage() {
         userEmail: selectedInquiryForReply.email,
         originalMessage: originalMessageSummary,
         replyMessage: replyMessage,
-        adminName: adminUser.displayName || "Newtalent Support",
+        adminName: adminUser.displayName || "Connect Film Circle Support",
         smtpHost: appConfig.smtpHost,
         smtpPort: appConfig.smtpPort,
         smtpUser: appConfig.smtpUser,
@@ -134,7 +134,7 @@ export default function AdminInquiriesPage() {
           const userNotification: any = {
             userId: inquiryWithUserId.userId,
             title: "Reply to Your Inquiry",
-            message: `Newtalent Support replied to your inquiry: "${replyMessage.substring(0, 50)}${replyMessage.length > 50 ? '...' : ''}"`,
+            message: `Connect Film Circle Support replied to your inquiry: "${replyMessage.substring(0, 50)}${replyMessage.length > 50 ? '...' : ''}"`,
             type: 'info',
             read: false,
             createdAt: Timestamp.now(),

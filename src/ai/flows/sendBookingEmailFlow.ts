@@ -167,7 +167,7 @@ const bookingEmailFlow = ai.defineFlow(
         invoicePdfBase64,
         previousScheduledDate,
         previousScheduledTimeSlot,
-        siteName = "Newtalent",
+        siteName = "Connect Film Circle",
         cancellationReason,
         logoUrl,
       } = bookingDetails;
