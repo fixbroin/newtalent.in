@@ -36,9 +36,9 @@ export const generateInvoicePdf = async (invoice: FirestoreInvoice, companyDetai
   const doc = new jsPDF();
 
   const defaultCompanyDetails: CompanyDetailsForPdf = {
-    name: companyDetails?.name || "Connect Film Circle.in",
+    name: companyDetails?.name || "Newtalent.in",
     address: companyDetails?.address || "#44 G S Palya Road Konappana Agrahara Electronic City Phase 2 -560100",
-    contactEmail: companyDetails?.contactEmail || 'support@connectfilmcircle.in',
+    contactEmail: companyDetails?.contactEmail || 'support@newtalent.in',
     contactMobile: companyDetails?.contactMobile || '+91-7353113455',
     logoUrl: companyDetails?.logoUrl, // Can be undefined
   };

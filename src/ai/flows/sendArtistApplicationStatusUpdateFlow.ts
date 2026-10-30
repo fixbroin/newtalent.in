@@ -115,7 +115,7 @@ const ArtistApplicationStatusEmailFlow = ai.defineFlow(
       const {
         smtpHost, smtpPort, smtpUser, smtpPass, senderEmail,
         ArtistName, ArtistEmail, applicationStatus, adminReviewNotes, applicationUrl,
-        siteName = "Connect Film Circle", logoUrl,
+        siteName = "Newtalent", logoUrl,
       } = details;
       
       const canAttemptRealEmail = smtpHost && smtpPort && smtpUser && smtpPass && senderEmail;

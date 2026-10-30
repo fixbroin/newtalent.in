@@ -1,7 +1,7 @@
 import SubscriptionPageClient from '@/components/subscription/SubscriptionPageClient';
 
 export const metadata = {
-  title: 'Contact Subscriptions | Connect Film Circle',
+  title: 'Contact Subscriptions | NewTalent',
   description: 'Choose a contact reveal subscription plan to unlock phone numbers and emails.',
 };
 
